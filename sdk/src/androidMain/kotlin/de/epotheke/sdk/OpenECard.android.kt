@@ -1,11 +1,11 @@
+package de.epotheke.sdk
+
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.openecard.android.activation.AndroidContextManager
 import org.openecard.android.activation.OpeneCard
-import org.openecard.android.utils.NfcIntentHelper
 import org.openecard.mobile.activation.ActivationSource
 import org.openecard.mobile.activation.ServiceErrorResponse
 import org.openecard.mobile.activation.StartServiceHandler

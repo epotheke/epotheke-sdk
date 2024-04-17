@@ -1,5 +1,4 @@
 pluginManagement {
-    includeBuild("convention-plugins")
     repositories {
         gradlePluginPortal()
         google()
@@ -22,7 +21,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ehealth-sdk"
+rootProject.name = "epotheke-sdk"
 
 include("sdk")
 include("demo-app")

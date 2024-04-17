@@ -1,9 +1,9 @@
-description = "eHealth SDK Package"
+description = "epotheke SDK Package"
 
 plugins {
-    id("ehealth.lib-jvm-conventions")
-    id("ehealth.lib-android-conventions")
-    id("ehealth.lib-ios-conventions")
+    id("epotheke.lib-jvm-conventions")
+    id("epotheke.lib-android-conventions")
+    id("epotheke.lib-ios-conventions")
 }
 
 kotlin {
@@ -34,5 +34,5 @@ kotlin {
 }
 
 android {
-    namespace = "de.ecsec.ehealth"
+    namespace = "de.epotheke"
 }

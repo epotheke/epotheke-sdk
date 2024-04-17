@@ -1,6 +1,6 @@
 plugins {
-    id("ehealth.kotlin-conventions")
-    id("ehealth.app-android-conventions")
+    id("epotheke.kotlin-conventions")
+    id("epotheke.app-android-conventions")
 }
 
 val androidCompileSdk: String by project
@@ -33,6 +33,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation(project(":sdk"))
+
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)

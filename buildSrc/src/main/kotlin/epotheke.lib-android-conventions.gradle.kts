@@ -1,10 +1,11 @@
+import gradle.kotlin.dsl.accessors._e17afd335abbdd9764f13315a15fdf50.kotlin
+
 val androidCompileSdk: String by project
 val androidMinSdk: String by project
 
 plugins {
-    id("ehealth.kotlin-conventions")
-    id("com.android.application")
-    id("org.jetbrains.compose")
+    id("epotheke.kotlin-conventions")
+    id("com.android.library")
 }
 
 kotlin {
