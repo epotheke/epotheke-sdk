@@ -10,6 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://mvn.ecsec.de/repository/openecard-public")
+        }
     }
 
     versionCatalogs {
