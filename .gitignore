@@ -32,3 +32,6 @@ gradle-app.setting
 
 # IDEs
 .idea/
+
+# Kotlin Multiplatform
+/*/*.podspec
