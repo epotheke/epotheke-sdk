@@ -9,7 +9,7 @@ kotlin {
     }
     //java.targetCompatibility = JavaVersion.valueOf("11")
 
-    jvm {  }
+    applyDefaultHierarchyTemplate()
 }
 
 val testHeapSize: String by project
