@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "ehealth-sdk"
 
 include("sdk")
+include("demo-app")
