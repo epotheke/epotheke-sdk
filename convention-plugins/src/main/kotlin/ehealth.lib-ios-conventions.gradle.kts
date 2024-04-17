@@ -3,10 +3,12 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.assign
 
 plugins {
-    id("ehealth.lib-conventions")
+    id("ehealth.kotlin-conventions")
+    id("org.jetbrains.kotlin.native.cocoapods")
 }
 
 kotlin {
     iosX64 {  }
     iosArm64 {  }
+    iosSimulatorArm64 {  }
 }

@@ -6,7 +6,10 @@ plugins {
 
 dependencies {
     implementation(libs.plugins.kotlinMultiplatform)
+    implementation(libs.plugins.kotlinCocoapods)
     implementation(libs.plugins.androidLibrary)
+    implementation(libs.plugins.androidApplication)
+    implementation(libs.plugins.jetbrainsCompose)
 }
 
 fun DependencyHandlerScope.implementation(pluginProv: Provider<PluginDependency>) {

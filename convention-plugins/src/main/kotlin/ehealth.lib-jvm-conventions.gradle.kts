@@ -3,7 +3,7 @@ import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.assign
 
 plugins {
-    id("ehealth.lib-conventions")
+    id("ehealth.kotlin-conventions")
 }
 
 kotlin {
