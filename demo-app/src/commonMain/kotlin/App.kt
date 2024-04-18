@@ -8,8 +8,8 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import de.epotheke.demo_app.generated.resources.Res
-import de.epotheke.demo_app.generated.resources.compose_multiplatform
+import com.epotheke.demo_app.generated.resources.Res
+import com.epotheke.demo_app.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

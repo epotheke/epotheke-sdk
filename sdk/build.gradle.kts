@@ -34,5 +34,5 @@ kotlin {
 }
 
 android {
-    namespace = "de.epotheke"
+    namespace = "com.epotheke"
 }

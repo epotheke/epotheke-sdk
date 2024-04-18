@@ -1,4 +1,4 @@
-package de.epotheke.sdk
+package com.epotheke.sdk
 
 import android.app.Activity
 import android.content.Intent
