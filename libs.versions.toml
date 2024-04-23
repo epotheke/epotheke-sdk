@@ -18,6 +18,8 @@ compose-plugin = "1.6.2"
 
 oec = "2.1.11"
 
+quarkus = "3.9.+"
+
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -44,14 +46,24 @@ ktor-client-websocket = { module = "io.ktor:ktor-client-websockets", version.ref
 
 oec-android = { module = "org.openecard.clients:android-lib", version.ref = "oec" }
 
+# quarkus
+quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkus" }
+quarkus-kotlin = { module = "io.quarkus:quarkus-kotlin" }
+quarkus-arc = { module = "io.quarkus:quarkus-arc" }
+quarkus-health = { module = "io.quarkus:quarkus-smallrye-health" }
+quarkus-websockets = { module = "io.quarkus:quarkus-websockets" }
 
 [bundles]
 test-basics = ["kotlin-test"]
-
+quarkus-basics = ["quarkus-kotlin", "quarkus-arc", "quarkus-health"]
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinAllOpen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
