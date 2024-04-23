@@ -25,3 +25,5 @@ rootProject.name = "epotheke-sdk"
 
 include("sdk")
 include("demo-app")
+
+include("cardlink-mock")
