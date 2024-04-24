@@ -18,7 +18,7 @@ compose-plugin = "1.6.2"
 
 oec = "2.1.11"
 
-quarkus = "3.9.+"
+quarkus = "3.9.4"
 
 
 [libraries]
