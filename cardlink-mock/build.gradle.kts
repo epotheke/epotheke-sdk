@@ -41,4 +41,6 @@ dependencies {
     implementation(platform(libs.quarkus.bom))
     implementation(libs.bundles.quarkus.basics)
     implementation(libs.quarkus.websockets)
+    implementation(libs.quarkus.jackson)
+    implementation(libs.kotlin.logging)
 }

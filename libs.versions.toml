@@ -52,6 +52,7 @@ quarkus-kotlin = { module = "io.quarkus:quarkus-kotlin" }
 quarkus-arc = { module = "io.quarkus:quarkus-arc" }
 quarkus-health = { module = "io.quarkus:quarkus-smallrye-health" }
 quarkus-websockets = { module = "io.quarkus:quarkus-websockets" }
+quarkus-jackson = { module = "io.quarkus:quarkus-jackson" }
 
 [bundles]
 test-basics = ["kotlin-test"]
