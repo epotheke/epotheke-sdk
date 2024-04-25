@@ -43,4 +43,7 @@ dependencies {
     implementation(libs.quarkus.websockets)
     implementation(libs.quarkus.jackson)
     implementation(libs.kotlin.logging)
+    implementation(libs.kotlin.jackson)
+
+    testImplementation(libs.bundles.quarkus.basics.test)
 }

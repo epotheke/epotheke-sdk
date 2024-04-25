@@ -16,6 +16,8 @@ androidx-test-junit = "1.1.+"
 compose = "1.6.7"
 compose-plugin = "1.6.2"
 
+kotlin-jackson = "2.17.0"
+
 oec = "2.3.0-cardlink-SNAPSHOT"
 
 quarkus = "3.10.1"
@@ -27,6 +29,7 @@ kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version = "6.0.+" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kx-co" }
 kotlin-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kx-co" }
+kotlin-jackson = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "kotlin-jackson" }
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core-ktx" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-junit" }
@@ -54,9 +57,13 @@ quarkus-health = { module = "io.quarkus:quarkus-smallrye-health" }
 quarkus-websockets = { module = "io.quarkus:quarkus-websockets" }
 quarkus-jackson = { module = "io.quarkus:quarkus-jackson" }
 
+quarkus-junit = { module = "io.quarkus:quarkus-junit5" }
+quarkus-jacoco = { module = "io.quarkus:quarkus-jacoco" }
+
 [bundles]
 test-basics = ["kotlin-test"]
 quarkus-basics = ["quarkus-kotlin", "quarkus-arc", "quarkus-health"]
+quarkus-basics-test = ["quarkus-junit", "quarkus-jacoco"]
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

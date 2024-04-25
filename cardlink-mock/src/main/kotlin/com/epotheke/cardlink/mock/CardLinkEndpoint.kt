@@ -11,6 +11,7 @@ import jakarta.inject.Inject
 import jakarta.websocket.*
 import jakarta.websocket.server.ServerEndpoint
 import java.util.Base64
+import java.util.UUID
 
 
 private val logger = KotlinLogging.logger {}
@@ -53,6 +54,7 @@ class CardLinkEndpoint {
         val correlationId : String? = if (payload.has(2)) payload.get(2).textValue() else null
 
         logger.debug { "New incoming websocket message with cardSessionId '$cardSessionId' and correlationId '$correlationId'." }
+        logger.debug { data }
 
         if (payload.has(0)) {
             val egkEnvelope = objMapper.treeToValue(payload.get(0), EgkEnvelope::class.java)
@@ -91,9 +93,8 @@ class CardLinkEndpoint {
 
         val sendApduJson = objMapper.createArrayNode()
         sendApduJson.add(sendApduEnvelopeJson)
-        sendApduJson.add(registerEgkPayload.cardVersion)
-        // TODO: set correlationId
-        sendApduJson.add(registerEgkPayload.cardVersion)
+        sendApduJson.add(registerEgkPayload.cardSessionId)
+        sendApduJson.add(UUID.randomUUID().toString())
 
         session.asyncRemote.sendObject(sendApduJson) {
             if (it.exception != null) {
