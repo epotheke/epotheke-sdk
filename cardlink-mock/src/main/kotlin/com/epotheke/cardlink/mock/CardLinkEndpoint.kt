@@ -1,5 +1,6 @@
 package com.epotheke.cardlink.mock
 
+import com.epotheke.cardlink.mock.encoding.JsonEncoder
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeType
@@ -15,7 +16,7 @@ import java.util.Base64
 private val logger = KotlinLogging.logger {}
 
 @ApplicationScoped
-@ServerEndpoint("/cardlink", subprotocols = ["cardlink"])
+@ServerEndpoint("/cardlink", subprotocols = ["cardlink"], encoders = [ JsonEncoder::class ])
 class CardLinkEndpoint {
 
     @Inject
