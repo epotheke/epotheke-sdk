@@ -32,6 +32,7 @@ class CardlinkTest {
     fun testWebsocketChat() {
         ContainerProvider.getWebSocketContainer().connectToServer(Client::class.java, uri).use {
             Assertions.assertEquals("CONNECT", MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+            expectReadyMessage()
             expectSendApduMessage()
             sendApduResponseMessage(it)
         }
@@ -46,6 +47,11 @@ class CardlinkTest {
             SendApduPayload::class.java
         )
         Assertions.assertEquals(CARD_SESSION_ID, sendApduPayload.cardSessionId)
+    }
+
+    private fun expectReadyMessage() {
+        EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(EgkEnvelopeTypes.READY, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
     }
 
     private fun sendApduResponseMessage(session: Session) {

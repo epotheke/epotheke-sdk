@@ -3,13 +3,14 @@ package com.epotheke.cardlink.mock
 
 data class EgkEnvelope(
     val type: String,
-    val payload: String,
+    val payload: String?,
 )
 
 object EgkEnvelopeTypes {
     const val REGISTER_EGK_ENVELOPE_TYPE = "registerEGK"
     const val TASK_LIST_ERROR_ENVELOPE = "receiveTasklistError"
     const val SEND_APDU_ENVELOPE = "sendAPDU"
+    const val READY = "ready"
     const val SEND_APDU_RESPONSE_ENVELOPE = "sendAPDUResponse"
 }
 

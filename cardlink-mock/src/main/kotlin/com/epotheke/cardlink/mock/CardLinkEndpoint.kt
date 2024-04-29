@@ -75,7 +75,12 @@ class CardLinkEndpoint {
         }
     }
 
-    fun handleRegisterEgkPayload(payload: String, session: Session) {
+    fun handleRegisterEgkPayload(payload: String?, session: Session) {
+        if (payload == null) {
+            logger.error { "Payload is null." }
+            // TODO send error to other participant
+        }
+
         val registerEgkPayload = objMapper.readValue(
             Base64.getDecoder().decode(payload),
             RegisterEgkPayload::class.java
@@ -84,6 +89,27 @@ class CardLinkEndpoint {
         logger.debug { "Send 'SICCT Card inserted Event' to Connector." }
         logger.debug { "Received 'cmdAPDU INTERNAL AUTHENTICATE' from Connector." }
 
+        sendReady(registerEgkPayload, session)
+        sendApdu(registerEgkPayload, session)
+    }
+
+    private fun sendReady(registerEgkPayload: RegisterEgkPayload, session: Session) {
+        val readyEvelope = EgkEnvelope(EgkEnvelopeTypes.READY, null)
+        val readyEnvelopeJson = objMapper.convertValue(readyEvelope, JsonNode::class.java)
+
+        val readyJson = objMapper.createArrayNode()
+        readyJson.add(readyEnvelopeJson)
+        readyJson.add(registerEgkPayload.cardSessionId)
+        readyJson.add(UUID.randomUUID().toString())
+
+        session.asyncRemote.sendObject(readyJson) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
+        }
+    }
+
+    private fun sendApdu(registerEgkPayload: RegisterEgkPayload, session: Session) {
         val sendApduPayload = SendApduPayload(registerEgkPayload.cardSessionId, "<BASE64_ENCODED_APDU>")
         val sendApduPayloadStr = objMapper.writeValueAsBytes(sendApduPayload)
         val sendApduPayloadBase64 = Base64.getEncoder().encodeToString(sendApduPayloadStr)
@@ -103,7 +129,12 @@ class CardLinkEndpoint {
         }
     }
 
-    private fun handleApduResponse(payload: String, session: Session) {
+    private fun handleApduResponse(payload: String?, session: Session) {
+        if (payload == null) {
+            logger.error { "Payload is null." }
+            // TODO send error to other participant
+        }
+
         val sendApduResponsePayload = objMapper.readValue(
             Base64.getDecoder().decode(payload),
             SendApduResponsePayload::class.java
