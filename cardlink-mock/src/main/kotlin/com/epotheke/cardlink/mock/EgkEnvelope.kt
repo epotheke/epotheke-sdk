@@ -7,12 +7,28 @@ data class EgkEnvelope(
 )
 
 object EgkEnvelopeTypes {
+    const val REQUEST_SMS_CODE = "requestSMSCode"
+    const val CONFIRM_SMS_CODE = "confirmSMSCode"
+    const val CONFIRM_SMS_CODE_RESPONSE = "confirmSMSCodeResponse"
     const val REGISTER_EGK_ENVELOPE_TYPE = "registerEGK"
     const val TASK_LIST_ERROR_ENVELOPE = "receiveTasklistError"
     const val SEND_APDU_ENVELOPE = "sendAPDU"
     const val READY = "ready"
     const val SEND_APDU_RESPONSE_ENVELOPE = "sendAPDUResponse"
 }
+
+data class RequestSmsCodePayload(
+    val senderId: String,
+    val phoneNumber: String,
+)
+
+data class ConfirmSmsCodePayload(
+    val smsCode: String,
+)
+
+data class ConfirmSmsCodeResponsePayload(
+    val result: String,
+)
 
 data class RegisterEgkPayload(
     val cardSessionId: String,

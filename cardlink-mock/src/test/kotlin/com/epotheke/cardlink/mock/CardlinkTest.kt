@@ -32,10 +32,20 @@ class CardlinkTest {
     fun testWebsocketChat() {
         ContainerProvider.getWebSocketContainer().connectToServer(Client::class.java, uri).use {
             Assertions.assertEquals("CONNECT", MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+            exceptConfirmSmsCodeResponseMessage(it)
             expectReadyMessage()
             expectSendApduMessage()
             sendApduResponseMessage(it)
         }
+    }
+
+    private fun exceptConfirmSmsCodeResponseMessage(session: Session) {
+        EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(EgkEnvelopeTypes.CONFIRM_SMS_CODE_RESPONSE, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+
+        // Send a register eGK Message after connecting
+        val registerEgkEnvelope = String.format(REGISTER_EGK_MESSAGE, CARD_SESSION_ID)
+        session.asyncRemote.sendText(registerEgkEnvelope)
     }
 
     private fun expectSendApduMessage() {
@@ -69,9 +79,14 @@ class CardlinkTest {
         fun open(session: Session) {
             MESSAGES_TYPES.add("CONNECT")
 
-            // Send a register eGK Message after connecting
-            val registerEgkEnvelope = String.format(REGISTER_EGK_MESSAGE, CARD_SESSION_ID)
-            session.asyncRemote.sendText(registerEgkEnvelope)
+            // Request SMS Code
+            val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE, CARD_SESSION_ID)
+            session.asyncRemote.sendText(requestSmsCodeEnvelope)
+
+            // Now we wait a little bit, and we will receive an SMS code what we will confirm
+            Thread.sleep(500)
+            val confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE, CARD_SESSION_ID)
+            session.asyncRemote.sendText(confirmSmsCodeEnvelope)
         }
 
         @OnMessage
@@ -98,6 +113,27 @@ class CardlinkTest {
         private val EGK_ENVELOPE_MESSAGES = LinkedBlockingDeque<EgkEnvelope>()
 
         private var correlationId : String? = null
+
+        private const val REQUEST_SMS_CODE = """
+            [
+                {
+                    "type": "requestSMSCode",
+                    "payload": "eyJzZW5kZXJJZCI6ICJ3cy1zbXMiLA0KICAgICAgICAidGV4dFRlbXBsYXRlIjogInswfSIsDQogICAgICAgICJwaG9uZU51bWJlciI6ICIwMTczNjMyMjYyMSIsDQogICAgICAgICJ0ZXh0UmVhc3NpZ25tZW50VGVtcGxhdGUiOiAiSWhyZSBHZXN1bmRoZWl0c2thcnRlIHswfSB3dXJkZSBkZXIgVGVsZWZvbm51bW1lciB7MX0gbmV1IHp1Z2VvcmRuZXQuIFdlbm4gU2llIGRpZXNlIFRlbGVmb25udW1tZXIga2VubmVuLCBpc3QgYWxsZXMgaW4gT3JkbnVuZy4gV2VubiBJaHJlIEthcnRlIGdlc3RvaGxlbiB3dXJkZSwgbGFzc2VuIFNpZSBkaWVzZSBiaXR0ZSB2b24gSWhyZXIgVmVyc2ljaGVydW5nIHNwZXJyZW4uIg0KICAgIH0="
+                },
+                "%s"
+            ]
+        """
+
+        private const val CONFIRM_SMS_CODE = """
+            [
+                {
+                    "type": "confirmSMSCode",
+                    "payload": "eyJzbXNDb2RlIjogNDYxOTE0fQ=="
+                },
+                "25b739dd-f94c-4687-b978-1b4a8246eb35",
+                "a7e35054-e095-4341-aa0e-c42349875c29"
+            ]
+        """
 
         private const val REGISTER_EGK_MESSAGE = """
             [

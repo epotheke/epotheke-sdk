@@ -62,6 +62,12 @@ class CardLinkEndpoint {
             logger.debug { "Incoming message with cardSessionId '$cardSessionId' from type '${egkEnvelope.type}'." }
 
             when (egkEnvelope.type) {
+                EgkEnvelopeTypes.REQUEST_SMS_CODE -> {
+                    handleRequestSmsCode(egkEnvelope.payload, session)
+                }
+                EgkEnvelopeTypes.CONFIRM_SMS_CODE -> {
+                    handleConfirmSmsCode(egkEnvelope.payload, cardSessionId, session)
+                }
                 EgkEnvelopeTypes.REGISTER_EGK_ENVELOPE_TYPE -> {
                     handleRegisterEgkPayload(egkEnvelope.payload, session)
                 }
@@ -73,6 +79,54 @@ class CardLinkEndpoint {
                 }
             }
         }
+    }
+
+    private fun handleConfirmSmsCode(payload: String?, cardSessionId: String?, session: Session) {
+        if (payload == null) {
+            logger.error { "Payload is null." }
+            // TODO send error to other participant
+        }
+
+        val confirmSmsCodePayload = objMapper.readValue(
+            Base64.getDecoder().decode(payload),
+            ConfirmSmsCodePayload::class.java
+        )
+
+        logger.debug { "Received 'confirmSmsCode' with sms code: '${confirmSmsCodePayload.smsCode}'." }
+        logger.debug { "Sending out 'confirmSmsCodeResponse' ..." }
+
+        val confirmSmsCodeResponse = ConfirmSmsCodeResponsePayload("SUCCESS")
+        val confirmSmsCodePayloadStr = objMapper.writeValueAsBytes(confirmSmsCodeResponse)
+        val confirmSmsCodePayloadBase64 = Base64.getEncoder().encodeToString(confirmSmsCodePayloadStr)
+
+        val confirmSmsCodeResponseEnvelope = EgkEnvelope(EgkEnvelopeTypes.CONFIRM_SMS_CODE_RESPONSE, confirmSmsCodePayloadBase64)
+        val confirmSmsCodeResponseEnvelopeJson = objMapper.convertValue(confirmSmsCodeResponseEnvelope, JsonNode::class.java)
+
+        val confirmSmsCodeResponseJson = objMapper.createArrayNode()
+        confirmSmsCodeResponseJson.add(confirmSmsCodeResponseEnvelopeJson)
+        confirmSmsCodeResponseJson.add(cardSessionId)
+        confirmSmsCodeResponseJson.add(UUID.randomUUID().toString())
+
+        session.asyncRemote.sendObject(confirmSmsCodeResponseJson) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
+        }
+    }
+
+    private fun handleRequestSmsCode(payload: String?, session: Session) {
+        if (payload == null) {
+            logger.error { "Payload is null." }
+            // TODO send error to other participant
+        }
+
+        val requestSmsCodePayload = objMapper.readValue(
+            Base64.getDecoder().decode(payload),
+            RequestSmsCodePayload::class.java
+        )
+
+        logger.debug { "Received 'requestSmsCode' with senderId '${requestSmsCodePayload.senderId}' and phoneNumber '${requestSmsCodePayload.phoneNumber}'." }
+        logger.debug { "Sending SMS out to '${requestSmsCodePayload.phoneNumber}'." }
     }
 
     fun handleRegisterEgkPayload(payload: String?, session: Session) {
