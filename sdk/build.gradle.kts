@@ -40,7 +40,8 @@ kotlin {
     cocoapods {
         pod("open-ecard") {
             // TODO: use version from catalogue
-            version = "2.1.11"
+//            version = "2.1.11"
+            source = path("/Users/florianotto/pod")
             ios.deploymentTarget = "13.0"
             moduleName = "OpenEcard"
         }
