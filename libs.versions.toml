@@ -56,6 +56,7 @@ quarkus-arc = { module = "io.quarkus:quarkus-arc" }
 quarkus-health = { module = "io.quarkus:quarkus-smallrye-health" }
 quarkus-websockets = { module = "io.quarkus:quarkus-websockets" }
 quarkus-jackson = { module = "io.quarkus:quarkus-jackson" }
+quarkus-rest-client = { module = "io.quarkus:quarkus-rest-client-jackson" }
 
 quarkus-junit = { module = "io.quarkus:quarkus-junit5" }
 quarkus-jacoco = { module = "io.quarkus:quarkus-jacoco" }

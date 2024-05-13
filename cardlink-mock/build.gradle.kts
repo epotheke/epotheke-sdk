@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.quarkus.jackson)
     implementation(libs.kotlin.logging)
     implementation(libs.kotlin.jackson)
+    implementation(libs.quarkus.rest.client)
 
     testImplementation(libs.bundles.quarkus.basics.test)
 }
