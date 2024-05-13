@@ -1,6 +1,9 @@
 package com.epotheke.cardlink.mock
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.i18n.phonenumbers.PhoneNumberUtil
+import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
+import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Consumes
 import jakarta.ws.rs.HeaderParam
@@ -14,6 +17,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 
 
 interface SMSSender {
+
+    fun phoneNumberToInternationalFormat(phoneNumber: String, region: String) : String
 
     fun createMessage(msg: SMSCreateMessage)
 
@@ -32,6 +37,12 @@ class SpryngsmsSender : SMSSender {
 
     @ConfigProperty(name = "spryngsms.api-key")
     lateinit var apiKey: String
+
+    override fun phoneNumberToInternationalFormat(phoneNumberRaw: String,  region: String) : String {
+        val phoneNumberUtil = PhoneNumberUtil.getInstance()
+        val phoneNumber : PhoneNumber = phoneNumberUtil.parse(phoneNumberRaw, region)
+        return phoneNumberUtil.format(phoneNumber, PhoneNumberFormat.INTERNATIONAL)
+    }
 
     override fun createMessage(msg: SMSCreateMessage) {
         val createMessage = SpryngsmsCreateMessage(

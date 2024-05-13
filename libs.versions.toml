@@ -22,6 +22,8 @@ oec = "2.3.0-cardlink-SNAPSHOT"
 
 quarkus = "3.10.1"
 
+libphonenumber = "8.13.36"
+
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -48,6 +50,8 @@ ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "kto
 ktor-client-websocket = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 
 oec-android = { module = "org.openecard.clients:android-lib", version.ref = "oec" }
+
+lib-phonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
 
 # quarkus
 quarkus-bom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkus" }

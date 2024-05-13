@@ -23,6 +23,9 @@ class CardLinkEndpoint {
     @Inject
     lateinit var objMapper: ObjectMapper
 
+    @Inject
+    lateinit var smsSender: SpryngsmsSender
+
     @OnOpen
     fun onOpen(session: Session, cfg: EndpointConfig) {
         val webSocketId = getWebSocketId(session)
@@ -125,8 +128,12 @@ class CardLinkEndpoint {
             RequestSmsCodePayload::class.java
         )
 
-        logger.debug { "Received 'requestSmsCode' with senderId '${requestSmsCodePayload.senderId}' and phoneNumber '${requestSmsCodePayload.phoneNumber}'." }
-        logger.debug { "Sending SMS out to '${requestSmsCodePayload.phoneNumber}'." }
+        val originalPhoneNumber = requestSmsCodePayload.phoneNumber
+        val phoneNumber = smsSender.phoneNumberToInternationalFormat(originalPhoneNumber, "DE")
+
+        logger.debug { "Received 'requestSmsCode' with senderId '${requestSmsCodePayload.senderId}' and phoneNumber '$originalPhoneNumber'." }
+        logger.debug { "Got phone number: '$originalPhoneNumber' / International Form: $phoneNumber" }
+        logger.debug { "Sending SMS out to '$phoneNumber'." }
     }
 
     fun handleRegisterEgkPayload(payload: String?, session: Session) {
