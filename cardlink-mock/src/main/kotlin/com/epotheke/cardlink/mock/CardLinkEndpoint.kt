@@ -56,7 +56,7 @@ class CardLinkEndpoint {
             logger.debug { "Payload is not from type array." }
         }
 
-        val cardSessionId : String? = if (payload.has(1)) payload.get(1).textValue() else null
+        val cardSessionId : String = if (payload.has(1)) payload.get(1).textValue() else throw IllegalArgumentException("No card-session-id provided by client.")
         val correlationId : String? = if (payload.has(2)) payload.get(2).textValue() else null
 
         logger.debug { "New incoming websocket message with cardSessionId '$cardSessionId' and correlationId '$correlationId'." }
@@ -69,16 +69,16 @@ class CardLinkEndpoint {
 
             when (egkEnvelope.type) {
                 EgkEnvelopeTypes.REQUEST_SMS_CODE -> {
-                    handleRequestSmsCode(egkEnvelope.payload, session)
+                    handleRequestSmsCode(egkEnvelope.payload, cardSessionId, session)
                 }
                 EgkEnvelopeTypes.CONFIRM_SMS_CODE -> {
                     handleConfirmSmsCode(egkEnvelope.payload, cardSessionId, session)
                 }
                 EgkEnvelopeTypes.REGISTER_EGK_ENVELOPE_TYPE -> {
-                    handleRegisterEgkPayload(egkEnvelope.payload, session)
+                    handleRegisterEgkPayload(egkEnvelope.payload, cardSessionId, session)
                 }
                 EgkEnvelopeTypes.SEND_APDU_RESPONSE_ENVELOPE -> {
-                    handleApduResponse(egkEnvelope.payload, session)
+                    handleApduResponse(egkEnvelope.payload, cardSessionId, session)
                 }
                 EgkEnvelopeTypes.TASK_LIST_ERROR_ENVELOPE -> {
                     logger.debug { "Received Tasklist Error Envelope message." }
@@ -87,10 +87,11 @@ class CardLinkEndpoint {
         }
     }
 
-    private fun handleConfirmSmsCode(payload: String?, cardSessionId: String?, session: Session) {
+    private fun handleConfirmSmsCode(payload: String?, cardSessionId: String, session: Session) {
         if (payload == null) {
-            logger.error { "Payload is null." }
-            // TODO send error to other participant
+            val errorMsg = "Payload is null."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, 400)
         }
 
         val confirmSmsCodePayload = objMapper.readValue(
@@ -141,10 +142,11 @@ class CardLinkEndpoint {
         }
     }
 
-    private fun handleRequestSmsCode(payload: String?, session: Session) {
+    private fun handleRequestSmsCode(payload: String?, cardSessionId: String, session: Session) {
         if (payload == null) {
-            logger.error { "Payload is null." }
-            // TODO send error to other participant
+            val errorMsg = "Payload is null."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, 400)
         }
 
         val requestSmsCodePayload = objMapper.readValue(
@@ -156,8 +158,9 @@ class CardLinkEndpoint {
         val isGermanNumber = smsSender.isGermanPhoneNumber(originalPhoneNumber)
 
         if (! isGermanNumber) {
-            logger.error { "Not a German phone number." }
-            // TODO send error to other participant
+            val errorMsg = "Not a German phone number."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, 400)
         }
 
         val phoneNumber = smsSender.phoneNumberToInternationalFormat(originalPhoneNumber, "DE")
@@ -176,15 +179,17 @@ class CardLinkEndpoint {
             )
             smsSender.createMessage(smsCreateMessage)
         } else {
-            logger.error { "Unable to get WebSocketID from query parameters." }
-            // TODO send error to other participant
+            val errorMsg = "Unable to get WebSocketID from query parameters."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, 400)
         }
     }
 
-    fun handleRegisterEgkPayload(payload: String?, session: Session) {
+    fun handleRegisterEgkPayload(payload: String?, cardSessionId: String, session: Session) {
         if (payload == null) {
-            logger.error { "Payload is null." }
-            // TODO send error to other participant
+            val errorMsg = "Payload is null."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, 400)
         }
 
         val registerEgkPayload = objMapper.readValue(
@@ -235,10 +240,11 @@ class CardLinkEndpoint {
         }
     }
 
-    private fun handleApduResponse(payload: String?, session: Session) {
+    private fun handleApduResponse(payload: String?, cardSessionId: String, session: Session) {
         if (payload == null) {
-            logger.error { "Payload is null." }
-            // TODO send error to other participant
+            val errorMsg = "Payload is null."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, 400)
         }
 
         val sendApduResponsePayload = objMapper.readValue(
@@ -248,6 +254,27 @@ class CardLinkEndpoint {
 
         logger.debug { "Received APDU response payload for card session: '${sendApduResponsePayload.cardSessionId}'." }
         logger.debug { "Send response of INTERNAL AUTHENTICATE to Connector." }
+    }
+
+    private fun sendError(session: Session, errorMsg: String, cardSessionId: String, status: Int) {
+        val errorPayload = TasklistErrorPayload(
+            cardSessionId = cardSessionId,
+            status = status,
+            errormessage = errorMsg,
+        )
+        val errorPayloadStr = objMapper.writeValueAsBytes(errorPayload)
+        val errorPayloadBase64 = Base64.getEncoder().encodeToString(errorPayloadStr)
+
+        val errorJson = objMapper.createArrayNode()
+        errorJson.add(errorPayloadBase64)
+        errorJson.add(cardSessionId)
+        errorJson.add(UUID.randomUUID().toString())
+
+        session.asyncRemote.sendObject(errorJson) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
+        }
     }
 
     private fun getWebSocketId(session: Session) : String? {
