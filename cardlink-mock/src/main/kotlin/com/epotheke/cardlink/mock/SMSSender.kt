@@ -18,6 +18,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 
 interface SMSSender {
 
+    fun isGermanPhoneNumber(phoneNumber: String) : Boolean
+
     fun phoneNumberToInternationalFormat(phoneNumber: String, region: String) : String
 
     fun createMessage(msg: SMSCreateMessage)
@@ -38,7 +40,13 @@ class SpryngsmsSender : SMSSender {
     @ConfigProperty(name = "spryngsms.api-key")
     lateinit var apiKey: String
 
-    override fun phoneNumberToInternationalFormat(phoneNumberRaw: String,  region: String) : String {
+    override fun isGermanPhoneNumber(phoneNumberRaw: String): Boolean {
+        val phoneNumberUtil = PhoneNumberUtil.getInstance()
+        val phoneNumber : PhoneNumber = phoneNumberUtil.parse(phoneNumberRaw, "DE")
+        return phoneNumberUtil.isValidNumberForRegion(phoneNumber, "DE")
+    }
+
+    override fun phoneNumberToInternationalFormat(phoneNumberRaw: String, region: String) : String {
         val phoneNumberUtil = PhoneNumberUtil.getInstance()
         val phoneNumber : PhoneNumber = phoneNumberUtil.parse(phoneNumberRaw, region)
         return phoneNumberUtil.format(phoneNumber, PhoneNumberFormat.INTERNATIONAL)
