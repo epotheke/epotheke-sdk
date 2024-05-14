@@ -34,6 +34,7 @@ class PhoneNumberTest {
             return Stream.of(
                 "+49 15172612345",
                 "015172612345",
+                "01736322621",
             )
         }
         @JvmStatic

@@ -4,14 +4,18 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeType
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.quarkus.test.InjectMock
 import io.quarkus.test.common.http.TestHTTPResource
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.inject.Inject
 import jakarta.websocket.*
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
+import org.mockito.Mockito.`when`
 import java.net.URI
-import java.util.Base64
+import java.util.*
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.TimeUnit
 
@@ -26,6 +30,21 @@ class CardlinkTest {
 
     @Inject
     lateinit var objMapper: ObjectMapper
+
+    @InjectMock
+    lateinit var smsSender: SpryngsmsSender
+
+    private fun <T> any(type: Class<T>): T = Mockito.any<T>(type)
+
+    @BeforeEach
+    fun setup() {
+        `when`(smsSender.createMessage(any(SMSCreateMessage::class.java)))
+            .then { logger.info { "[MOCK] Sending out SMS..." } }
+        `when`(smsSender.isGermanPhoneNumber(any(String::class.java)))
+            .thenCallRealMethod()
+        `when`(smsSender.phoneNumberToInternationalFormat(any(String::class.java), any(String::class.java)))
+            .thenCallRealMethod()
+    }
 
     @Test
     @Throws(Exception::class)

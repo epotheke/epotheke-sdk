@@ -26,6 +26,9 @@ class CardLinkEndpoint {
     @Inject
     lateinit var smsSender: SpryngsmsSender
 
+    @Inject
+    lateinit var smsCodeHandler: SMSCodeHandler
+
     @OnOpen
     fun onOpen(session: Session, cfg: EndpointConfig) {
         val webSocketId = getWebSocketId(session)
@@ -96,9 +99,30 @@ class CardLinkEndpoint {
         )
 
         logger.debug { "Received 'confirmSmsCode' with sms code: '${confirmSmsCodePayload.smsCode}'." }
+
+        val webSocketId = getWebSocketId(session)
+
+        val correctSMSCode = if (webSocketId != null) {
+            try {
+                smsCodeHandler.checkSMSCode(webSocketId, confirmSmsCodePayload.smsCode)
+            } catch (ex: MaxTriesReached) {
+                logger.error { "Reached max tries for SMS-Code confirmation." }
+                false
+            }
+        } else {
+            logger.error { "Received wrong SMS-Code." }
+            false
+        }
+
+        val resultCode = if (correctSMSCode) {
+            "SUCCESS"
+        } else {
+            "FAILURE"
+        }
+
         logger.debug { "Sending out 'confirmSmsCodeResponse' ..." }
 
-        val confirmSmsCodeResponse = ConfirmSmsCodeResponsePayload("SUCCESS")
+        val confirmSmsCodeResponse = ConfirmSmsCodeResponsePayload(resultCode)
         val confirmSmsCodePayloadStr = objMapper.writeValueAsBytes(confirmSmsCodeResponse)
         val confirmSmsCodePayloadBase64 = Base64.getEncoder().encodeToString(confirmSmsCodePayloadStr)
 
@@ -129,11 +153,32 @@ class CardLinkEndpoint {
         )
 
         val originalPhoneNumber = requestSmsCodePayload.phoneNumber
+        val isGermanNumber = smsSender.isGermanPhoneNumber(originalPhoneNumber)
+
+        if (! isGermanNumber) {
+            logger.error { "Not a German phone number." }
+            // TODO send error to other participant
+        }
+
         val phoneNumber = smsSender.phoneNumberToInternationalFormat(originalPhoneNumber, "DE")
 
         logger.debug { "Received 'requestSmsCode' with senderId '${requestSmsCodePayload.senderId}' and phoneNumber '$originalPhoneNumber'." }
         logger.debug { "Got phone number: '$originalPhoneNumber' / International Form: $phoneNumber" }
         logger.debug { "Sending SMS out to '$phoneNumber'." }
+
+        val webSocketId = getWebSocketId(session)
+
+        if (webSocketId != null) {
+            val smsCode = smsCodeHandler.createSMSCode(webSocketId)
+            val smsCreateMessage = SMSCreateMessage(
+                recipient = phoneNumber,
+                smsCode = smsCode
+            )
+            smsSender.createMessage(smsCreateMessage)
+        } else {
+            logger.error { "Unable to get WebSocketID from query parameters." }
+            // TODO send error to other participant
+        }
     }
 
     fun handleRegisterEgkPayload(payload: String?, session: Session) {

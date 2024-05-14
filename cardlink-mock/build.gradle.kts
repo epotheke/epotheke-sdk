@@ -48,4 +48,5 @@ dependencies {
     implementation(libs.lib.phonenumber)
 
     testImplementation(libs.bundles.quarkus.basics.test)
+    testImplementation(libs.quarkus.junit.mockito)
 }
