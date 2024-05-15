@@ -1,73 +1,82 @@
 import cocoapods.open_ecard.WebsocketProtocol
-import io.ktor.client.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.http.*
-import io.ktor.websocket.*
+import cocoapods.open_ecard.WebsocketListenerProtocol
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import platform.darwin.NSObject
 
 @OptIn(ExperimentalForeignApi::class)
-fun createWs(uri: String): WebsocketProtocol {
-    return WebsocketIos(uri)
+fun createWs(
+    url: String,
+    port: Int,
+    path: String = "",
+): WebsocketProtocol {
+    return WebsocketIos(url, port, path)
 }
 
 @OptIn(ExperimentalForeignApi::class)
-class WebsocketIos(private val url: String) : NSObject(), WebsocketProtocol {
-    override fun close(statusCode: Int, withReason: String?) {
-        TODO("Not yet implemented")
-    }
+private class WiredWSListenerImplementation constructor(
+    private val ws: WebsocketIos,
+    private val wsListener: WebsocketListenerProtocol,
+): WiredWSListener {
+    override fun onOpen() = wsListener.onOpen(ws)
+    override fun onClose(code: Int, reason: String?) = wsListener.onClose(ws, code, reason)
+    override fun onError(error: String?) = wsListener.onError(ws, error)
+    override fun onText(msg: String?) = wsListener.onText(ws, msg)
+}
 
+@OptIn(ExperimentalForeignApi::class)
+class WebsocketIos(
+    host: String,
+    port: Int,
+    path: String = ""
+) : NSObject(), WebsocketProtocol {
+
+    private val commonWS = WebsocketCommon(host, port, path)
+
+    private fun setListener(wsListener: WebsocketListenerProtocol) =
+        commonWS.setListener(WiredWSListenerImplementation(this, wsListener))
+    override fun removeListener() = commonWS.removeListener()
+    override fun getUrl(): String = commonWS.getUrl()
+    override fun getSubProtocol(): String? = commonWS.getSubProtocol()
+    override fun isOpen(): Boolean = commonWS.isOpen()
+    override fun isFailed(): Boolean = commonWS.isFailed()
+
+//    @Throws(WebsocketException::class)
     override fun connect() {
-        val client = HttpClient {
-            install(WebSockets)
-        }
-        runBlocking {
-            client.webSocket(method = HttpMethod.Get, host = "192.168.178.30", port = 8080, path = "/chat") {
-                val conn = launch {
-                    val othersMessage = incoming.receive() as? Frame.Text
-                    othersMessage?.let {
-                        println(othersMessage.readText())
-                        send("Hello from clientImp")
-                    }
-                }
-                conn.join()
+//        try {
+            commonWS.connect()
+ //       } catch (e : Exception){
+ //           throw WebsocketException(e.message)
+ //       }
+    }
+//    @Throws(WebsocketException::class)
+    override fun close(statusCode: Int, withReason: String?) {
+ //       try {
+            commonWS.close(statusCode, withReason)
+  //      } catch (e : Exception){
+  //          throw WebsocketException(e.message)
+  //      }
+    }
+
+ //   @Throws(WebsocketException::class)
+    override fun send(data: String?) {
+  //      try{
+            data?.let{
+                commonWS.send(data)
             }
-        }
-        client.close()
-        println("Connection closed. Goodbye!")
-    }
-
-    override fun getSubProtocol(): String? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getUrl(): String? {
-        TODO("Not yet implemented")
+   //     } catch (e : Exception){
+   //         throw WebsocketException(e.message)
+   //     }
     }
 
     override fun isClosed(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isFailed(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isOpen(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun removeListener() {
-        TODO("Not yet implemented")
-    }
-
-    override fun send(data: String?) {
-        TODO("Not yet implemented")
+        return !commonWS.isOpen()
     }
 
     override fun setListener(listener: NSObject?) {
-        TODO("Not yet implemented")
+        listener?.let{
+            this.setListener(listener as WebsocketListenerProtocol)
+        }
     }
+
+
 }

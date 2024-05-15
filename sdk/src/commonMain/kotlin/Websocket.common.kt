@@ -7,6 +7,9 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.*
 
 private val log = KotlinLogging.logger {}
+private fun KLogger.logOett(func: () -> String) {
+    debug { "OETT: ${func()}" }
+}
 
 interface WiredWSListener {
     fun onOpen()
@@ -39,6 +42,8 @@ class WebsocketCommon(
                     val reason: CloseReason? = msg.readReason()
                     val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
                     val reasonMsg = reason?.message ?: "No reason"
+
+                    log.logOett { "Close Frame received" }
 
                     wsListener?.onClose(code, reasonMsg)
                 }
