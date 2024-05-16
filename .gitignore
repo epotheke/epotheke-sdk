@@ -133,3 +133,6 @@ gradle-app.setting
 
 # Kotlin Multiplatform
 /*/*.podspec
+
+# android-sdk path
+local.properties
