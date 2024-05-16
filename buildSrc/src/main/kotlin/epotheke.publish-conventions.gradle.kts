@@ -2,7 +2,6 @@ plugins {
 	`maven-publish`
 }
 
-/*
 publishing {
 	repositories {
 		maven {
@@ -16,4 +15,3 @@ publishing {
 		}
 	}
 }
-*/
