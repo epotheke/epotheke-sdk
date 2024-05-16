@@ -38,6 +38,13 @@ kotlin {
     }
 
     cocoapods {
+        name = "epotheke-sdk"
+        homepage = "https://www.epotheke.com"
+        summary = "Framework for using cardlink protocol."
+        authors = "ecsec GmbH"
+        license = "GPLv3"
+
+
         pod("open-ecard") {
             // TODO: use version from catalogue
             version = "2.1.11"
