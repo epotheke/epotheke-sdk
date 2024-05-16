@@ -5,7 +5,7 @@ kx-co = "1.8.+"
 
 ktor = "2.3.+"
 
-androidx-activityCompose = "1.8.+"
+androidx-activityCompose = "1.9.+"
 androidx-appcompat = "1.6.+"
 androidx-constraintlayout = "2.1.+"
 androidx-core-ktx = "1.12.+"
@@ -13,12 +13,12 @@ androidx-espresso-core = "3.5.+"
 androidx-material = "1.11.+"
 androidx-test-junit = "1.1.+"
 
-compose = "1.6.5"
+compose = "1.6.7"
 compose-plugin = "1.6.2"
 
 oec = "2.3.0-cardlink-SNAPSHOT"
 
-quarkus = "3.9.4"
+quarkus = "3.10.1"
 
 
 [libraries]
