@@ -43,7 +43,10 @@ kotlin {
         summary = "Framework for using cardlink protocol."
         authors = "ecsec GmbH"
         license = "GPLv3"
-
+        framework {
+            baseName = "Epotheke"
+            binaryOption("bundleId", "com.epotheke.sdk")
+        }
 
         pod("open-ecard") {
             // TODO: use version from catalogue
