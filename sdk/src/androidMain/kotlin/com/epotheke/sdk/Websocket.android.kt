@@ -2,11 +2,6 @@ package com.epotheke.sdk
 
 import WebsocketCommon
 import WiredWSListener
-import io.ktor.client.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.client.plugins.websocket.cio.*
-import io.ktor.http.*
-import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import org.openecard.mobile.activation.Websocket
 import org.openecard.mobile.activation.WebsocketException

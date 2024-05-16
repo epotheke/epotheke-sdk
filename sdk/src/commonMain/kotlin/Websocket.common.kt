@@ -1,4 +1,3 @@
-import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
@@ -7,9 +6,6 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.*
 
 private val log = KotlinLogging.logger {}
-private fun KLogger.logOett(func: () -> String) {
-    debug { "OETT: ${func()}" }
-}
 
 interface WiredWSListener {
     fun onOpen()
@@ -33,6 +29,7 @@ class WebsocketCommon(
 
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
         for (msg in incoming) {
+            log.debug { "Socket receive received frame with type: ${msg.frameType}" }
             when {
                 (msg as? Frame.Text) != null -> {
                     wsListener?.onText(msg.readText())
@@ -43,12 +40,11 @@ class WebsocketCommon(
                     val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
                     val reasonMsg = reason?.message ?: "No reason"
 
-                    log.logOett { "Close Frame received" }
-
                     wsListener?.onClose(code, reasonMsg)
                 }
 
                 else -> {
+                    log.warn { "Unhandled frame type received." }
                     wsListener?.onError("Invalid data received")
                 }
             }
@@ -79,7 +75,6 @@ class WebsocketCommon(
      * Gets the selected subprotocol once the connection is established.
      * @return the selected subprotocol or null if no subprotocol was selected.
      */
-
     fun getSubProtocol(): String? {
         TODO("Not yet implemented")
     }
@@ -87,7 +82,6 @@ class WebsocketCommon(
     /**
      * Connect to the server.
      * This method can also be used to reestablish a lost connection.
-     * @throws WebsocketException if the connection could not be established.
      */
     fun connect() {
         runBlocking {
@@ -98,6 +92,7 @@ class WebsocketCommon(
                 path = path,
             )
             launch {
+                log.debug { "Websocket connected to ${getUrl()}" }
                 wsListener?.onOpen()
                 wsSession?.receiveLoop()
             }.join()
@@ -117,26 +112,31 @@ class WebsocketCommon(
      * @return true if the connection is failed, false otherwise.
      */
     fun isFailed(): Boolean {
-        return !isOpen()
+        TODO("Do this correctly")
+        //    return !isOpen()
     }
 
     /**
      * Initiate the closing handshake.
      * @param statusCode the status code to send.
      * @param reason the reason for closing the connection, or null if none should be given.
-     * @throws WebsocketException if the connection could not be closed.
      */
 
     fun close(statusCode: Int, reason: String?) {
+        log.debug { "Close was called. Close frame will be send." }
         runBlocking {
-            wsSession?.outgoing?.send(Frame.Close(CloseReason(statusCode.toShort(), reason ?: "")))
+            wsSession?.close(
+                CloseReason(
+                    statusCode.toShort(),
+                    reason ?: ""
+                )
+            )
         }
     }
 
     /**
      * Send a text frame.
      * @param data the data to send.
-     * @throws WebsocketException if the data could not be sent.
      */
     fun send(data: String) {
         runBlocking {
