@@ -44,7 +44,7 @@ kotlin {
         authors = "ecsec GmbH"
         license = "GPLv3"
         framework {
-            baseName = "Epotheke"
+            baseName = "epotheke"
             binaryOption("bundleId", "com.epotheke.sdk")
         }
 
