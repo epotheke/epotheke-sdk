@@ -16,7 +16,7 @@ androidx-test-junit = "1.1.+"
 compose = "1.6.5"
 compose-plugin = "1.6.2"
 
-oec = "2.1.12-SNAPSHOT"
+oec = "2.3.0-cardlink-SNAPSHOT"
 
 quarkus = "3.9.4"
 
