@@ -4,6 +4,7 @@ import java.util.*
 plugins {
     kotlin("jvm")
     kotlin("plugin.allopen")
+    kotlin("plugin.serialization")
     //id("io.quarkus")
     alias(libs.plugins.quarkus)
 }
@@ -44,6 +45,7 @@ dependencies {
     implementation(libs.quarkus.jackson)
     implementation(libs.kotlin.logging)
     implementation(libs.kotlin.jackson)
+    implementation(libs.kotlin.serialization.json)
     implementation(libs.quarkus.rest.client)
     implementation(libs.lib.phonenumber)
 

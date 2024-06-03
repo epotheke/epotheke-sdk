@@ -1,16 +1,13 @@
 package com.epotheke.cardlink.mock
 
 import com.epotheke.cardlink.mock.encoding.JsonEncoder
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.JsonNodeType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.netty.handler.codec.http.QueryStringDecoder
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import jakarta.websocket.*
 import jakarta.websocket.server.ServerEndpoint
-import java.util.Base64
 import java.util.UUID
 
 
@@ -49,228 +46,241 @@ class CardLinkEndpoint {
 
     @OnMessage
     fun onMessage(session: Session, data: String) {
-        val payload = objMapper.readValue(data, JsonNode::class.java)
+        logger.debug { "Received Gematik message in CardLink-Mock: $data" }
 
-        if (! payload.nodeType.equals(JsonNodeType.ARRAY)) {
-            // send error response payload
-            logger.debug { "Payload is not from type array." }
-        }
+        val gematikMessage = cardLinkJsonFormatter.decodeFromString<GematikEnvelope>(data)
 
-        val cardSessionId : String = if (payload.has(1)) payload.get(1).textValue() else throw IllegalArgumentException("No card-session-id provided by client.")
-        val correlationId : String? = if (payload.has(2)) payload.get(2).textValue() else null
-
-        logger.debug { "New incoming websocket message with cardSessionId '$cardSessionId' and correlationId '$correlationId'." }
-        logger.debug { data }
-
-        if (payload.has(0)) {
-            val egkEnvelope = objMapper.treeToValue(payload.get(0), EgkEnvelope::class.java)
-
-            logger.debug { "Incoming message with cardSessionId '$cardSessionId' from type '${egkEnvelope.type}'." }
-
-            when (egkEnvelope.type) {
-                EgkEnvelopeTypes.REQUEST_SMS_CODE -> {
-                    handleRequestSmsCode(egkEnvelope.payload, cardSessionId, session)
-                }
-                EgkEnvelopeTypes.CONFIRM_SMS_CODE -> {
-                    handleConfirmSmsCode(egkEnvelope.payload, cardSessionId, session)
-                }
-                EgkEnvelopeTypes.REGISTER_EGK_ENVELOPE_TYPE -> {
-                    handleRegisterEgkPayload(egkEnvelope.payload, cardSessionId, session)
-                }
-                EgkEnvelopeTypes.SEND_APDU_RESPONSE_ENVELOPE -> {
-                    handleApduResponse(egkEnvelope.payload, cardSessionId, session)
-                }
-                EgkEnvelopeTypes.TASK_LIST_ERROR_ENVELOPE -> {
-                    logger.debug { "Received Tasklist Error Envelope message." }
-                }
-            }
+        when (gematikMessage.payload) {
+            is SendPhoneNumber -> handleRequestSmsCode(gematikMessage, session)
+            is SendTan -> handleConfirmSmsCode(gematikMessage, session)
+            is RegisterEgk -> handleRegisterEgkPayload(gematikMessage, session)
+            is SendApduResponse -> handleApduResponse(gematikMessage, session)
+            is TasklistErrorPayload -> logger.debug { "Received Tasklist Error Envelope message." }
+            else -> logger.error { "Unsupported Gematik message: ${gematikMessage::class.java}" }
         }
     }
 
-    private fun handleConfirmSmsCode(payload: String?, cardSessionId: String, session: Session) {
-        if (payload == null) {
+    private fun handleConfirmSmsCode(sendTanMessage: GematikEnvelope, session: Session) {
+        val cardSessionId = sendTanMessage.cardSessionId
+        val correlationId = sendTanMessage.correlationId
+        val sendTan = sendTanMessage.payload
+
+        if (cardSessionId == null || correlationId == null) {
+            val errorMsg = "Didn't receive a cardSessionId or correlationId."
+            logger.error { errorMsg }
+            throw IllegalStateException(errorMsg)
+        }
+
+        if (sendTan == null) {
             val errorMsg = "Payload is null."
             logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, 400)
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
         }
 
-        val confirmSmsCodePayload = objMapper.readValue(
-            Base64.getDecoder().decode(payload),
-            ConfirmSmsCodePayload::class.java
-        )
+        if (sendTan !is SendTan) {
+            val errorMsg = "Payload is not from type: ConfirmTan."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
+        }
 
-        logger.debug { "Received 'confirmSmsCode' with sms code: '${confirmSmsCodePayload.smsCode}'." }
+        logger.debug { "Received 'confirmSmsCode' with sms code: '${sendTan.tan}'." }
 
         val webSocketId = getWebSocketId(session)
+        var errorMsg : String? = null
+        var minor : MinorResultCode? = null
 
-        val correctSMSCode = if (webSocketId != null) {
+        if (webSocketId != null) {
             try {
-                smsCodeHandler.checkSMSCode(webSocketId, confirmSmsCodePayload.smsCode)
+                val correctSMSCode = smsCodeHandler.checkSMSCode(webSocketId, sendTan.tan)
+                if (!correctSMSCode) {
+                    val error = "Tan is incorrect."
+                    logger.error { error }
+                    minor = MinorResultCode.TAN_INCORRECT
+                    errorMsg = error
+                }
             } catch (ex: MaxTriesReached) {
-                logger.error { "Reached max tries for SMS-Code confirmation." }
-                false
+                val error = "Reached max tries for SMS-Code confirmation."
+                logger.error { error }
+                minor = MinorResultCode.TAN_RETRY_LIMIT_EXCEEDED
+                errorMsg = error
             }
-        } else {
-            logger.error { "Received wrong SMS-Code." }
-            false
         }
 
-        val resultCode = if (correctSMSCode) {
-            "SUCCESS"
-        } else {
-            "FAILURE"
-        }
+        logger.debug { "Sending out confirmation for TAN ..." }
 
-        logger.debug { "Sending out 'confirmSmsCodeResponse' ..." }
+        val confirmTan = ConfirmTan(minor, errorMsg)
+        val confirmTanMessage = GematikEnvelope(confirmTan, correlationId, cardSessionId)
 
-        val confirmSmsCodeResponse = ConfirmSmsCodeResponsePayload(resultCode)
-        val confirmSmsCodePayloadStr = objMapper.writeValueAsBytes(confirmSmsCodeResponse)
-        val confirmSmsCodePayloadBase64 = Base64.getEncoder().encodeToString(confirmSmsCodePayloadStr)
-
-        val confirmSmsCodeResponseEnvelope = EgkEnvelope(EgkEnvelopeTypes.CONFIRM_SMS_CODE_RESPONSE, confirmSmsCodePayloadBase64)
-        val confirmSmsCodeResponseEnvelopeJson = objMapper.convertValue(confirmSmsCodeResponseEnvelope, JsonNode::class.java)
-
-        val confirmSmsCodeResponseJson = objMapper.createArrayNode()
-        confirmSmsCodeResponseJson.add(confirmSmsCodeResponseEnvelopeJson)
-        confirmSmsCodeResponseJson.add(cardSessionId)
-        confirmSmsCodeResponseJson.add(UUID.randomUUID().toString())
-
-        session.asyncRemote.sendObject(confirmSmsCodeResponseJson) {
+        session.asyncRemote.sendObject(confirmTanMessage) {
             if (it.exception != null) {
                 logger.debug(it.exception) { "Unable to send message." }
             }
         }
     }
 
-    private fun handleRequestSmsCode(payload: String?, cardSessionId: String, session: Session) {
-        if (payload == null) {
-            val errorMsg = "Payload is null."
+    private fun handleRequestSmsCode(requestSmsTanMessage: GematikEnvelope, session: Session) {
+        val cardSessionId = requestSmsTanMessage.cardSessionId
+        val correlationId = requestSmsTanMessage.correlationId
+        val requestSmsTan = requestSmsTanMessage.payload
+
+        if (cardSessionId == null || correlationId == null) {
+            val errorMsg = "Didn't receive a cardSessionId or correlationId."
             logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, 400)
+            throw IllegalStateException(errorMsg)
         }
 
-        val requestSmsCodePayload = objMapper.readValue(
-            Base64.getDecoder().decode(payload),
-            RequestSmsCodePayload::class.java
-        )
+        if (requestSmsTan == null) {
+            val errorMsg = "Payload is null."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
+        }
 
-        val originalPhoneNumber = requestSmsCodePayload.phoneNumber
+        if (requestSmsTan !is SendPhoneNumber) {
+            val errorMsg = "Payload is not from type: SendPhoneNumber."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
+        }
+
+        val originalPhoneNumber = requestSmsTan.phoneNumber
         val isGermanNumber = smsSender.isGermanPhoneNumber(originalPhoneNumber)
 
         if (! isGermanNumber) {
             val errorMsg = "Not a German phone number."
             logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, 400)
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
         }
 
         val phoneNumber = smsSender.phoneNumberToInternationalFormat(originalPhoneNumber, "DE")
 
-        logger.debug { "Received 'requestSmsCode' with senderId '${requestSmsCodePayload.senderId}' and phoneNumber '$originalPhoneNumber'." }
+        logger.debug { "Received 'requestSmsCode' with phone number: '$originalPhoneNumber'." }
         logger.debug { "Got phone number: '$originalPhoneNumber' / International Form: $phoneNumber" }
         logger.debug { "Sending SMS out to '$phoneNumber'." }
 
         val webSocketId = getWebSocketId(session)
 
-        if (webSocketId != null) {
+        val confirmPhoneNumber = if (webSocketId != null) {
             val smsCode = smsCodeHandler.createSMSCode(webSocketId)
             val smsCreateMessage = SMSCreateMessage(
                 recipient = phoneNumber,
                 smsCode = smsCode
             )
             smsSender.createMessage(smsCreateMessage)
+
+            ConfirmPhoneNumber(null, null)
         } else {
-            val errorMsg = "Unable to get WebSocketID from query parameters."
-            logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, 400)
+            val error = "Unable to get WebSocketID from query parameters."
+            logger.error { error }
+            ConfirmPhoneNumber(MinorResultCode.UNKNOWN_ERROR, error)
+        }
+
+        val gematikMessage = GematikEnvelope(confirmPhoneNumber, correlationId, cardSessionId)
+        session.asyncRemote.sendObject(gematikMessage) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
         }
     }
 
-    fun handleRegisterEgkPayload(payload: String?, cardSessionId: String, session: Session) {
-        if (payload == null) {
-            val errorMsg = "Payload is null."
+    fun handleRegisterEgkPayload(registerEgkMessage: GematikEnvelope, session: Session) {
+        val cardSessionId = registerEgkMessage.cardSessionId
+        val correlationId = registerEgkMessage.correlationId
+        val registerEgk = registerEgkMessage.payload
+
+        if (cardSessionId == null || correlationId == null) {
+            val errorMsg = "Didn't receive a cardSessionId or correlationId."
             logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, 400)
+            throw IllegalStateException(errorMsg)
         }
 
-        val registerEgkPayload = objMapper.readValue(
-            Base64.getDecoder().decode(payload),
-            RegisterEgkPayload::class.java
-        )
+        if (registerEgk == null) {
+            val errorMsg = "Payload is null."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
+        }
+
+        if (registerEgk !is RegisterEgk) {
+            val errorMsg = "Payload is not from Type: RegisterEgk."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
+        }
 
         logger.debug { "Send 'SICCT Card inserted Event' to Connector." }
         logger.debug { "Received 'cmdAPDU INTERNAL AUTHENTICATE' from Connector." }
 
-        sendReady(registerEgkPayload, session)
-        sendApdu(registerEgkPayload, session)
+        //sendReady(registerEgkPayload, session)
+        sendApdu(registerEgk, session)
     }
 
-    private fun sendReady(registerEgkPayload: RegisterEgkPayload, session: Session) {
-        val readyEvelope = EgkEnvelope(EgkEnvelopeTypes.READY, null)
-        val readyEnvelopeJson = objMapper.convertValue(readyEvelope, JsonNode::class.java)
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun sendApdu(registerEgkPayload: RegisterEgk, session: Session) {
+        val sendApduPayload = SendApdu(registerEgkPayload.cardSessionId, "00A4000C023F00".hexToByteArray())
+        val correlationId = UUID.randomUUID().toString()
+        val gematikEnvelope = GematikEnvelope(sendApduPayload, correlationId, registerEgkPayload.cardSessionId)
 
-        val readyJson = objMapper.createArrayNode()
-        readyJson.add(readyEnvelopeJson)
-        readyJson.add(registerEgkPayload.cardSessionId)
-        readyJson.add(UUID.randomUUID().toString())
-
-        session.asyncRemote.sendObject(readyJson) {
+        session.asyncRemote.sendObject(gematikEnvelope) {
             if (it.exception != null) {
                 logger.debug(it.exception) { "Unable to send message." }
             }
         }
     }
 
-    private fun sendApdu(registerEgkPayload: RegisterEgkPayload, session: Session) {
-        val sendApduPayload = SendApduPayload(registerEgkPayload.cardSessionId, "<BASE64_ENCODED_APDU>")
-        val sendApduPayloadStr = objMapper.writeValueAsBytes(sendApduPayload)
-        val sendApduPayloadBase64 = Base64.getEncoder().encodeToString(sendApduPayloadStr)
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun handleApduResponse(apduResponseMessage: GematikEnvelope, session: Session) {
+        val cardSessionId = apduResponseMessage.cardSessionId
+        val correlationId = apduResponseMessage.correlationId
+        val sendApduResponse = apduResponseMessage.payload
 
-        val sendApduEnvelope = EgkEnvelope(EgkEnvelopeTypes.SEND_APDU_ENVELOPE, sendApduPayloadBase64)
-        val sendApduEnvelopeJson = objMapper.convertValue(sendApduEnvelope, JsonNode::class.java)
-
-        val sendApduJson = objMapper.createArrayNode()
-        sendApduJson.add(sendApduEnvelopeJson)
-        sendApduJson.add(registerEgkPayload.cardSessionId)
-        sendApduJson.add(UUID.randomUUID().toString())
-
-        session.asyncRemote.sendObject(sendApduJson) {
-            if (it.exception != null) {
-                logger.debug(it.exception) { "Unable to send message." }
-            }
+        if (cardSessionId == null || correlationId == null) {
+            val errorMsg = "Didn't receive a cardSessionId or correlationId."
+            logger.error { errorMsg }
+            throw IllegalStateException(errorMsg)
         }
-    }
 
-    private fun handleApduResponse(payload: String?, cardSessionId: String, session: Session) {
-        if (payload == null) {
+        if (sendApduResponse == null) {
             val errorMsg = "Payload is null."
             logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, 400)
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
         }
 
-        val sendApduResponsePayload = objMapper.readValue(
-            Base64.getDecoder().decode(payload),
-            SendApduResponsePayload::class.java
-        )
+        if (sendApduResponse !is SendApduResponse) {
+            val errorMsg = "Gematik message is not from type: SendApduResponse."
+            logger.error { errorMsg }
+            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            return
+        }
 
-        logger.debug { "Received APDU response payload for card session: '${sendApduResponsePayload.cardSessionId}'." }
+        val apduResponse = sendApduResponse.response.toHexString()
+
+        logger.debug { "Received APDU response $apduResponse payload for card session: '${cardSessionId}'." }
         logger.debug { "Send response of INTERNAL AUTHENTICATE to Connector." }
+
+        val registerEgkFinish = RegisterEgkFinish(true)
+        val gematikMessage = GematikEnvelope(registerEgkFinish, correlationId, cardSessionId)
+        session.asyncRemote.sendObject(gematikMessage) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
+        }
     }
 
-    private fun sendError(session: Session, errorMsg: String, cardSessionId: String, status: Int) {
+    private fun sendError(session: Session, errorMsg: String, cardSessionId: String, correlationId: String, status: Int) {
         val errorPayload = TasklistErrorPayload(
             cardSessionId = cardSessionId,
             status = status,
             errormessage = errorMsg,
         )
-        val errorPayloadStr = objMapper.writeValueAsBytes(errorPayload)
-        val errorPayloadBase64 = Base64.getEncoder().encodeToString(errorPayloadStr)
 
-        val errorJson = objMapper.createArrayNode()
-        errorJson.add(errorPayloadBase64)
-        errorJson.add(cardSessionId)
-        errorJson.add(UUID.randomUUID().toString())
+        val gematikEnvelope = GematikEnvelope(errorPayload, correlationId, cardSessionId)
 
-        session.asyncRemote.sendObject(errorJson) {
+        session.asyncRemote.sendObject(gematikEnvelope) {
             if (it.exception != null) {
                 logger.debug(it.exception) { "Unable to send message." }
             }

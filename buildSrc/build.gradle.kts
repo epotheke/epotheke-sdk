@@ -13,6 +13,7 @@ dependencies {
 
     implementation(libs.plugins.kotlinJvm)
     implementation(libs.plugins.kotlinAllOpen)
+    implementation(libs.plugins.kotlinSerialization)
 }
 
 fun DependencyHandlerScope.implementation(pluginProv: Provider<PluginDependency>) {

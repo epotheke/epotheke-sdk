@@ -1,12 +1,14 @@
 package com.epotheke.cardlink.mock.encoding
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.epotheke.cardlink.mock.GematikEnvelope
+import com.epotheke.cardlink.mock.cardLinkJsonFormatter
 import jakarta.websocket.Encoder
+import kotlinx.serialization.encodeToString
 
 
-class JsonEncoder : Encoder.Text<JsonNode> {
+class JsonEncoder : Encoder.Text<GematikEnvelope> {
 
-    override fun encode(data: JsonNode): String {
-        return data.toPrettyString()
+    override fun encode(data: GematikEnvelope): String {
+        return cardLinkJsonFormatter.encodeToString(data)
     }
 }
