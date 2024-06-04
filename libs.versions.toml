@@ -68,9 +68,13 @@ quarkus-junit = { module = "io.quarkus:quarkus-junit5" }
 quarkus-junit-mockito = { module = "io.quarkus:quarkus-junit5-mockito" }
 quarkus-jacoco = { module = "io.quarkus:quarkus-jacoco" }
 
+quarkus-jib = { module = "io.quarkus:quarkus-container-image-jib" }
+quarkus-kubernetes = { module = "io.quarkus:quarkus-kubernetes" }
+
 [bundles]
 test-basics = ["kotlin-test"]
 quarkus-basics = ["quarkus-kotlin", "quarkus-arc", "quarkus-health"]
+quarkusBuild = ["quarkus-jib", "quarkus-kubernetes"]
 quarkus-basics-test = ["quarkus-junit", "quarkus-jacoco"]
 
 [plugins]

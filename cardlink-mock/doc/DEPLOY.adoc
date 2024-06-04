@@ -1,0 +1,15 @@
+= Deployment
+
+== Development Deployment
+
+[source,bash]
+----
+# Required for generating the Kubernetes Resources
+$ gradle build -Dquarkus.container-image.username=${DOCKER_USERNAME} -Dquarkus.container-image.password=${DOCKER_PASSWORD}
+# Secret Deployment (Spryng-API-Key must be set)
+$ kubectl apply -f ../kubernetes/secrets.yml
+# Deployment
+$ kubectl apply -f ../build/kubernetes/kubernetes.yml -n epotheke-dev
+----
+
+The kubernetes resources are also generated in the CI pipeline and can be downloaded from there.
