@@ -45,13 +45,30 @@ class CardlinkTest {
     fun testWebsocketChat() {
         ContainerProvider.getWebSocketContainer().connectToServer(Client::class.java, uri).use {
             Assertions.assertEquals("CONNECT", MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+            exceptSessionInformationMessage(it)
             exceptConfirmSmsCodeResponseMessage()
             expectConfirmTanRequestResponse(it)
             //expectReadyMessage()
             expectSendApduMessage()
-            sendApduResponseMessage(it)
+            sendApduResponseMessage(it, CardLinkEndpoint.mseCorrelationId)
+            expectSendApduMessage()
+            sendApduResponseMessage(it, CardLinkEndpoint.internalAuthCorrelationId)
             expectRegisterEgkFinish()
         }
+    }
+
+    private fun exceptSessionInformationMessage(session: Session) {
+        EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(SESSION_INFO, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+
+        // Request SMS Code
+        val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE, CARD_SESSION_ID)
+        session.asyncRemote.sendText(requestSmsCodeEnvelope)
+
+        // Now we wait a little bit, and we will receive an SMS code what we will confirm
+        Thread.sleep(500)
+        val confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE, CARD_SESSION_ID)
+        session.asyncRemote.sendText(confirmSmsCodeEnvelope)
     }
 
     private fun expectConfirmTanRequestResponse(session: Session) {
@@ -81,7 +98,7 @@ class CardlinkTest {
         Assertions.assertEquals(READY, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
     }
 
-    private fun sendApduResponseMessage(session: Session) {
+    private fun sendApduResponseMessage(session: Session, correlationId: String) {
         val sendApduResponseMsg = String.format(SEND_APDU_RESPONSE_MESSAGE, CARD_SESSION_ID, correlationId)
         session.asyncRemote.sendText(sendApduResponseMsg)
     }
@@ -97,15 +114,6 @@ class CardlinkTest {
         @OnOpen
         fun open(session: Session) {
             MESSAGES_TYPES.add("CONNECT")
-
-            // Request SMS Code
-            val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE, CARD_SESSION_ID)
-            session.asyncRemote.sendText(requestSmsCodeEnvelope)
-
-            // Now we wait a little bit, and we will receive an SMS code what we will confirm
-            Thread.sleep(500)
-            val confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE, CARD_SESSION_ID)
-            session.asyncRemote.sendText(confirmSmsCodeEnvelope)
         }
 
         @OnMessage
@@ -125,8 +133,6 @@ class CardlinkTest {
 
         private val MESSAGES_TYPES = LinkedBlockingDeque<String>()
         private val EGK_ENVELOPE_MESSAGES = LinkedBlockingDeque<GematikEnvelope>()
-
-        private var correlationId : String? = null
 
         private const val REQUEST_SMS_CODE = """
             [

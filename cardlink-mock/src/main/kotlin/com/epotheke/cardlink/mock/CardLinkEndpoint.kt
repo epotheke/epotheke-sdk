@@ -7,8 +7,10 @@ import io.netty.handler.codec.http.QueryStringDecoder
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import jakarta.websocket.*
+import jakarta.websocket.CloseReason.CloseCodes
 import jakarta.websocket.server.ServerEndpoint
 import java.util.UUID
+import kotlin.random.Random
 
 
 private val logger = KotlinLogging.logger {}
@@ -26,10 +28,22 @@ class CardLinkEndpoint {
     @Inject
     lateinit var smsCodeHandler: SMSCodeHandler
 
+    companion object {
+        const val mseCorrelationId = "mseMessage"
+        const val internalAuthCorrelationId = "internalAuthMessage"
+        val registerEgkCorrelationIds = mutableMapOf<String, String>()
+    }
+
     @OnOpen
     fun onOpen(session: Session, cfg: EndpointConfig) {
         val webSocketId = getWebSocketId(session)
-        logger.debug { "New WebSocket connection with ID: $webSocketId." }
+
+        if (webSocketId == null) {
+            session.close(CloseReason(CloseCodes.PROTOCOL_ERROR, "No webSocketID was provided."))
+        } else {
+            logger.debug { "New WebSocket connection with ID: $webSocketId." }
+            handleWSConnect(session, webSocketId)
+        }
     }
 
     @OnClose 
@@ -57,6 +71,22 @@ class CardLinkEndpoint {
             is SendApduResponse -> handleApduResponse(gematikMessage, session)
             is TasklistErrorPayload -> logger.debug { "Received Tasklist Error Envelope message." }
             else -> logger.error { "Unsupported Gematik message: ${gematikMessage::class.java}" }
+        }
+    }
+
+    private fun handleWSConnect(session: Session, webSocketId: String) {
+        val cardSessionId = UUID.randomUUID().toString()
+
+        val gematikEnvelope = GematikEnvelope(
+            SessionInformation(webSocketId, false),
+            null,
+            cardSessionId,
+        )
+
+        session.asyncRemote.sendObject(gematikEnvelope) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
         }
     }
 
@@ -211,20 +241,55 @@ class CardLinkEndpoint {
             return
         }
 
+        registerEgkCorrelationIds[cardSessionId] = correlationId
+
         logger.debug { "Send 'SICCT Card inserted Event' to Connector." }
         logger.debug { "Received 'cmdAPDU INTERNAL AUTHENTICATE' from Connector." }
 
         //sendReady(registerEgkPayload, session)
-        sendApdu(registerEgk, session)
+        sendMseAPDU(registerEgk.cardSessionId, session)
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    private fun sendApdu(registerEgkPayload: RegisterEgk, session: Session) {
-        val sendApduPayload = SendApdu(registerEgkPayload.cardSessionId, "00A4000C023F00".hexToByteArray())
-        val correlationId = UUID.randomUUID().toString()
-        val gematikEnvelope = GematikEnvelope(sendApduPayload, correlationId, registerEgkPayload.cardSessionId)
+    private fun sendMseAPDU(cardSessionId: String, session: Session) {
+        val mseApdu = "002241A406840109800100".hexToByteArray()
+        val mseMessage = GematikEnvelope(
+            SendApdu(cardSessionId, mseApdu),
+            mseCorrelationId,
+            cardSessionId,
+        )
 
-        session.asyncRemote.sendObject(gematikEnvelope) {
+        session.asyncRemote.sendObject(mseMessage) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun sendInternalAuthenticateAPDU(cardSessionId: String, session: Session) {
+        val randomBytes = Random.nextBytes(32).toHexString()
+        val internalAuthApdu = "0088000020${randomBytes}00".hexToByteArray()
+        val internalAuthMessage = GematikEnvelope(
+            SendApdu(cardSessionId, internalAuthApdu),
+            internalAuthCorrelationId,
+            cardSessionId,
+        )
+
+        session.asyncRemote.sendObject(internalAuthMessage) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
+        }
+    }
+
+    private fun sendRegisterEgkFinish(cardSessionId: String, session: Session) {
+        val registerEgkFinish = RegisterEgkFinish(true)
+        val correlationId = registerEgkCorrelationIds[cardSessionId]
+        val gematikMessage = GematikEnvelope(registerEgkFinish, correlationId, cardSessionId)
+
+        session.asyncRemote.sendObject(gematikMessage) {
+            registerEgkCorrelationIds.remove(cardSessionId)
             if (it.exception != null) {
                 logger.debug(it.exception) { "Unable to send message." }
             }
@@ -262,12 +327,10 @@ class CardLinkEndpoint {
         logger.debug { "Received APDU response $apduResponse payload for card session: '${cardSessionId}'." }
         logger.debug { "Send response of INTERNAL AUTHENTICATE to Connector." }
 
-        val registerEgkFinish = RegisterEgkFinish(true)
-        val gematikMessage = GematikEnvelope(registerEgkFinish, correlationId, cardSessionId)
-        session.asyncRemote.sendObject(gematikMessage) {
-            if (it.exception != null) {
-                logger.debug(it.exception) { "Unable to send message." }
-            }
+        when (correlationId) {
+            mseCorrelationId -> sendInternalAuthenticateAPDU(cardSessionId, session)
+            internalAuthCorrelationId -> sendRegisterEgkFinish(cardSessionId, session)
+            else -> throw IllegalStateException("Received an unknown message with correlationId: $correlationId")
         }
     }
 

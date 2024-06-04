@@ -121,6 +121,7 @@ val module = SerializersModule {
         subclass(ConfirmTan::class)
         subclass(ConfirmPhoneNumber::class)
         subclass(RegisterEgkFinish::class)
+        subclass(SessionInformation::class)
     }
 }
 
