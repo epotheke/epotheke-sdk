@@ -6,13 +6,27 @@ import android.os.Bundle
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.openecard.android.activation.AndroidContextManager
 import org.openecard.android.activation.OpeneCard
-import org.openecard.mobile.activation.ActivationSource
-import org.openecard.mobile.activation.ServiceErrorResponse
-import org.openecard.mobile.activation.StartServiceHandler
-import org.openecard.mobile.activation.StopServiceHandler
+import org.openecard.mobile.activation.*
+import org.openecard.mobile.activation.WebsocketListener
 
 
 private val logger = KotlinLogging.logger {}
+class WebsocketListenerImp: WebsocketListener{
+    override fun onOpen(p0: Websocket?) {
+        println("open")
+    }
+
+    override fun onClose(p0: Websocket?, p1: Int, p2: String?) {
+    }
+
+    override fun onError(p0: Websocket?, p1: String?) {
+    }
+
+    override fun onText(p0: Websocket?, p1: String?) {
+        println(p1)
+        p0?.send("answer")
+    }
+}
 
 abstract class OecActivity : Activity() {
     var oec: OpeneCard? = null
@@ -46,6 +60,9 @@ abstract class OecActivity : Activity() {
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
+                val websocket = WebsocketAndroid(getCardlinkUrl())
+//                websocket.setListener(WebsocketListenerImp())
+                actSource.cardLinkFactory().create(websocket, getControllerCallback(), getCardLinkInteraction())
             }
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
@@ -64,4 +81,25 @@ abstract class OecActivity : Activity() {
         super.onNewIntent(intent)
         ctxManager?.onNewIntent(intent)
     }
+
+
+
+    abstract fun getCardlinkUrl(): String;
+    abstract fun getControllerCallback() : ControllerCallback;
+    abstract fun getCardLinkInteraction() : CardLinkInteraction;
+    abstract fun getProtocols(): Set<CardLinkProtocol>
+
+//    fun cardlinkConnect(wsUrl: String,  ctrlCb: ControllerCallback, interaction: CardLinkInteraction, protocols: Set<CardLinkProtocol>){
+//        //match protocol to type and build use wslistener to execute it
+//
+//        when (protocols.first()) {
+//            is ErezeptProtocol -> {}
+//        }
+//
+//        val ws = WebsocketAndroid(wsUrl);
+////        ws.setListener(wsListener);
+//        this.activationSource?.let {
+//            it.cardLinkFactory().create(ws, ctrlCb, interaction)
+//        }
+//    }
 }
