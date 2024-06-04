@@ -13,3 +13,14 @@ $ kubectl apply -f ../build/kubernetes/kubernetes.yml -n epotheke-dev
 ----
 
 The kubernetes resources are also generated in the CI pipeline and can be downloaded from there.
+
+== Ingress Deployment
+
+If the CardLink-Mock is exposed, an ingress resource can be adjusted and deployed.
+The ingress resource is located in `../kubernetes/ingress.yml`.
+
+[source,bash]
+----
+# Ingress Deployment
+$ kubectl apply -f ../kubernetes/ingress.yml
+----

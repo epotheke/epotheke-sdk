@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    annotations:
+        app.quarkus.io/vcs-uri: https://git.ecsec.de/ec/epotheke/epotheke-sdk.git
+        cert-manager.io/cluster-issuer: letsencrypt-production
+    labels:
+        app.kubernetes.io/name: cardlink-mock
+    name: cardlink-mock
+spec:
+    rules:
+        - host: epotheke.mock.ecsec.services
+          http:
+              paths:
+                  - backend:
+                        service:
+                            name: cardlink-mock
+                            port:
+                                name: http
+                    path: /
+                    pathType: Prefix
+    tls:
+        - hosts:
+              - epotheke.mock.ecsec.services
+          secretName: tls-cardlink-mock
