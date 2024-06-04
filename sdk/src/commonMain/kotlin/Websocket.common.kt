@@ -15,9 +15,7 @@ interface WiredWSListener {
 }
 
 class WebsocketCommon(
-    private val host: String,
-    private val port: Int,
-    private val path: String = "",
+    private var url: String,
 ) {
 
     private var wsListener: WiredWSListener? = null
@@ -68,7 +66,10 @@ class WebsocketCommon(
     }
 
     fun getUrl(): String {
-        return "ws://$host:$port/$path"
+        return this.url
+    }
+    fun setUrl(url: String) {
+        this.url = url
     }
 
     /**
@@ -85,11 +86,13 @@ class WebsocketCommon(
      */
     fun connect() {
         runBlocking {
+            val uri = Url(url)
+
             wsSession = client.webSocketSession(
                 method = HttpMethod.Get,
-                host = host,
-                port = port,
-                path = path,
+                host = uri.host,
+                port = uri.port,
+                path = uri.encodedPath,
             )
             launch {
                 log.debug { "Websocket connected to ${getUrl()}" }

@@ -19,17 +19,17 @@ private class WiredWSListenerImplementation(
 
 
 class WebsocketAndroid(
-    host: String,
-    port: Int,
-    path: String = "",
+    url: String,
 ) : Websocket {
 
-    private val commonWS = WebsocketCommon(host, port, path)
+    private val commonWS = WebsocketCommon(url)
 
     override fun setListener(wsListener: WebsocketListener) =
         commonWS.setListener(WiredWSListenerImplementation(this, wsListener))
     override fun removeListener() = commonWS.removeListener()
     override fun getUrl(): String = commonWS.getUrl()
+    override fun setUrl(url: String) = commonWS.setUrl(url)
+
     override fun getSubProtocol(): String? = commonWS.getSubProtocol()
     override fun isOpen(): Boolean = commonWS.isOpen()
     override fun isFailed(): Boolean = commonWS.isFailed()
