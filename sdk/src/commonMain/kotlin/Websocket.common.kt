@@ -85,20 +85,26 @@ class WebsocketCommon(
      * This method can also be used to reestablish a lost connection.
      */
     fun connect() {
-        runBlocking {
+        CoroutineScope(Dispatchers.IO).launch {
             val uri = Url(url)
 
-            wsSession = client.webSocketSession(
+            wsSession = client.webSocketSession (
                 method = HttpMethod.Get,
                 host = uri.host,
                 port = uri.port,
-                path = uri.encodedPath,
-            )
-            launch {
+                path = uri.fullPath,
+            ){
+                url {
+                    url.protocol = URLProtocol.WSS
+                    url.port = uri.port
+                }
+            }
+
+            async(Dispatchers.IO) {
                 log.debug { "Websocket connected to ${getUrl()}" }
                 wsListener?.onOpen()
                 wsSession?.receiveLoop()
-            }.join()
+            }
         }
     }
 
