@@ -28,7 +28,7 @@ class WebsocketListenerImp: WebsocketListener{
     }
 }
 
-abstract class OecActivity : Activity() {
+abstract class EpothekeActivity : Activity() {
     var oec: OpeneCard? = null
     var ctxManager: AndroidContextManager? = null
     var activationSource: ActivationSource? = null
