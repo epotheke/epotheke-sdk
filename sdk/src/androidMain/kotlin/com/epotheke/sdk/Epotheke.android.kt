@@ -1,13 +1,17 @@
 package com.epotheke.sdk
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Bundle
+import android.os.Parcelable
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.openecard.android.activation.AndroidContextManager
 import org.openecard.android.activation.OpeneCard
+import org.openecard.android.utils.NfcIntentHelper
 import org.openecard.mobile.activation.*
-import org.openecard.mobile.activation.WebsocketListener
 
 
 private val logger = KotlinLogging.logger {}
@@ -32,6 +36,7 @@ abstract class EpothekeActivity : Activity() {
     var oec: OpeneCard? = null
     var ctxManager: AndroidContextManager? = null
     var activationSource: ActivationSource? = null
+    var nfcIntentHelper : NfcIntentHelper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +61,7 @@ abstract class EpothekeActivity : Activity() {
 
     protected fun initOecContext() {
         oec = OpeneCard.createInstance()
+        nfcIntentHelper = NfcIntentHelper.create(this)
         ctxManager = oec?.context(this)
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
@@ -76,11 +82,15 @@ abstract class EpothekeActivity : Activity() {
         activationSource = null
     }
 
+    @SuppressLint("NewApi")
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        ctxManager?.onNewIntent(intent)
-    }
 
+        val t : Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        t?.let {
+            ctxManager?.onNewIntent(intent)
+        }
+    }
 
 
     abstract fun getCardlinkUrl(): String;
