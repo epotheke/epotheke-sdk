@@ -92,6 +92,7 @@ abstract class EpothekeActivity : Activity() {
         }
     }
 
+    //maybe use delegate here see: https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
     private fun overridingCardlinIteraction(): CardLinkInteraction {
         val appImplementation = getCardLinkInteraction()
         return object: CardLinkInteraction{
@@ -117,17 +118,4 @@ abstract class EpothekeActivity : Activity() {
     abstract fun getCardLinkInteraction() : CardLinkInteraction;
     abstract fun getProtocols(): Set<CardLinkProtocol>
 
-//    fun cardlinkConnect(wsUrl: String,  ctrlCb: ControllerCallback, interaction: CardLinkInteraction, protocols: Set<CardLinkProtocol>){
-//        //match protocol to type and build use wslistener to execute it
-//
-//        when (protocols.first()) {
-//            is ErezeptProtocol -> {}
-//        }
-//
-//        val ws = WebsocketAndroid(wsUrl);
-////        ws.setListener(wsListener);
-//        this.activationSource?.let {
-//            it.cardLinkFactory().create(ws, ctrlCb, interaction)
-//        }
-//    }
 }
