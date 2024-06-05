@@ -67,7 +67,7 @@ abstract class EpothekeActivity : Activity() {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
                 val websocket = WebsocketAndroid(getCardlinkUrl())
-                actSource.cardLinkFactory().create(websocket, getControllerCallback(), getCardLinkInteraction(), WebsocketListenerImp())
+                actSource.cardLinkFactory().create(websocket, getControllerCallback(), overridingCardlinIteraction(), WebsocketListenerImp())
             }
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
@@ -92,6 +92,25 @@ abstract class EpothekeActivity : Activity() {
         }
     }
 
+    private fun overridingCardlinIteraction(): CardLinkInteraction {
+        val appImplementation = getCardLinkInteraction()
+        return object: CardLinkInteraction{
+            override fun requestCardInsertion() {
+                nfcIntentHelper?.enableNFCDispatch()
+                appImplementation.requestCardInsertion()
+            }
+            override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) = appImplementation.requestCardInsertion(p0)
+            override fun onCardInteractionComplete() {
+                nfcIntentHelper?.disableNFCDispatch()
+                appImplementation.onCardInteractionComplete()
+            }
+            override fun onCardRecognized() = appImplementation.onCardRecognized()
+            override fun onCardRemoved() = appImplementation.onCardRemoved()
+            override fun onCanRequest(p0: ConfirmPasswordOperation?) = appImplementation.onCanRequest(p0)
+            override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) = appImplementation.onPhoneNumberRequest(p0)
+            override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) = appImplementation.onSmsCodeRequest(p0)
+        }
+    }
 
     abstract fun getCardlinkUrl(): String;
     abstract fun getControllerCallback() : ControllerCallback;
