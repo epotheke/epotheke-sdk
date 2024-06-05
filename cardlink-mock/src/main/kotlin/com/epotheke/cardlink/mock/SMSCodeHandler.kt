@@ -1,12 +1,19 @@
 package com.epotheke.cardlink.mock
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.enterprise.context.ApplicationScoped
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.security.SecureRandom
 import java.util.Collections
 
 
+private val logger = KotlinLogging.logger {}
+
 @ApplicationScoped
 class SMSCodeHandler {
+
+    @ConfigProperty(name = "cardlink.mock.accept-all-tans")
+    var acceptAllTans: Boolean = true
 
     private var smsCodes = mutableMapOf<String, String>()
     private var smsCodeRemainingTries = mutableMapOf<String, Int>()
@@ -20,6 +27,11 @@ class SMSCodeHandler {
 
     @Throws(MaxTriesReached::class)
     fun checkSMSCode(webSocketId: String, smsCode: String) : Boolean {
+        if (acceptAllTans) {
+            logger.debug { "Accepting all TANs because the 'cardlink.mock.accept-all-tans' property is set to: $acceptAllTans." }
+            return true
+        }
+
         val hasCodeForWebSocket = smsCodes.containsKey(webSocketId)
 
         if (! hasCodeForWebSocket) {

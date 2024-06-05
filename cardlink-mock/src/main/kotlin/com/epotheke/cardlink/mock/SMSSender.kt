@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
 import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Consumes
 import jakarta.ws.rs.HeaderParam
@@ -15,6 +16,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 import org.eclipse.microprofile.rest.client.inject.RestClient
 
+
+private val logger = KotlinLogging.logger {}
 
 interface SMSSender {
 
@@ -40,6 +43,9 @@ class SpryngsmsSender : SMSSender {
     @ConfigProperty(name = "spryngsms.api-key")
     lateinit var apiKey: String
 
+    @ConfigProperty(name = "spryngsms.enabled")
+    var isEnabled: Boolean = false
+
     override fun isGermanPhoneNumber(phoneNumberRaw: String): Boolean {
         val phoneNumberUtil = PhoneNumberUtil.getInstance()
         val phoneNumber : PhoneNumber = phoneNumberUtil.parse(phoneNumberRaw, "DE")
@@ -53,13 +59,17 @@ class SpryngsmsSender : SMSSender {
     }
 
     override fun createMessage(msg: SMSCreateMessage) {
-        val createMessage = SpryngsmsCreateMessage(
-            body = "Your SMS-Code for Cardlink: ${msg.smsCode}",
-            originator = "Cardlink",
-            recipients = listOf(msg.recipient)
-        )
-
-        spryngsmsClient.createMessage("Bearer $apiKey", createMessage)
+        if (isEnabled) {
+            logger.debug { "Preparing sending SMS out..." }
+            val createMessage = SpryngsmsCreateMessage(
+                body = "Your SMS-Code for Cardlink: ${msg.smsCode}",
+                originator = "Cardlink",
+                recipients = listOf(msg.recipient)
+            )
+            spryngsmsClient.createMessage("Bearer $apiKey", createMessage)
+        } else {
+            logger.debug { "Sending SMS out is skipped because it is disabled with the 'spryngsms.enabled' property." }
+        }
     }
 }
 
