@@ -61,8 +61,7 @@ abstract class OecActivity : Activity() {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
                 val websocket = WebsocketAndroid(getCardlinkUrl())
-//                websocket.setListener(WebsocketListenerImp())
-                actSource.cardLinkFactory().create(websocket, getControllerCallback(), getCardLinkInteraction())
+                actSource.cardLinkFactory().create(websocket, getControllerCallback(), getCardLinkInteraction(), WebsocketListenerImp())
             }
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
