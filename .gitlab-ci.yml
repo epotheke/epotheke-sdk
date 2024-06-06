@@ -15,7 +15,7 @@ variables:
 stages:
     - compile
     - test
-    - package
+    - publish
 
 include:
     - project: 'ec/gitlab-ci-templates'
@@ -26,3 +26,4 @@ include:
       file: '/templates/.gitlab-ci-deployment.yml'
     - '/ci/compile.yml'
     - '/ci/test.yml'
+    - '/ci/publish.yml'
