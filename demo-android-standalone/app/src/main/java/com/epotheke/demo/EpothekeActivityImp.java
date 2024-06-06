@@ -265,10 +265,10 @@ public class EpothekeActivityImp extends EpothekeActivity {
                 sb.append(activationResult.getResultCode().equals(ActivationResultCode.OK) ? "SUCCESS" : "FAIL");
                 sb.append("\n");
                 if (activationResult.getResultCode().equals(ActivationResultCode.OK)) {
-                    for (String key : activationResult.getResultParameters().keySet()) {
+                    for (String key : activationResult.getResultParameterKeys()) {
                         sb.append(key);
                         sb.append(": ");
-                        sb.append(activationResult.getResultParameters().get(key));
+                        sb.append(activationResult.getResultParameterKeys());
                         sb.append("\n");
                     }
                 } else {
