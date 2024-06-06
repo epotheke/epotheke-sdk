@@ -26,26 +26,30 @@ class WebsocketCommon(
     private var wsSession: DefaultClientWebSocketSession? = null
 
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
-        for (msg in incoming) {
-            log.debug { "Socket receive received frame with type: ${msg.frameType}" }
-            when {
-                (msg as? Frame.Text) != null -> {
-                    wsListener?.onText(msg.readText())
-                }
+        try {
+            for (msg in incoming) {
+                log.debug { "Socket receive received frame with type: ${msg.frameType}" }
+                when {
+                    (msg as? Frame.Text) != null -> {
+                        wsListener?.onText(msg.readText())
+                    }
 
-                (msg as? Frame.Close) != null -> {
-                    val reason: CloseReason? = msg.readReason()
-                    val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
-                    val reasonMsg = reason?.message ?: "No reason"
+                    (msg as? Frame.Close) != null -> {
+                        val reason: CloseReason? = msg.readReason()
+                        val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
+                        val reasonMsg = reason?.message ?: "No reason"
 
-                    wsListener?.onClose(code, reasonMsg)
-                }
+                        wsListener?.onClose(code, reasonMsg)
+                    }
 
-                else -> {
-                    log.warn { "Unhandled frame type received." }
-                    wsListener?.onError("Invalid data received")
+                    else -> {
+                        log.warn { "Unhandled frame type received." }
+                        wsListener?.onError("Invalid data received")
+                    }
                 }
             }
+        } catch (e: Exception){
+            log.debug { "Websocket receiver through exception: " + e.message }
         }
     }
 
