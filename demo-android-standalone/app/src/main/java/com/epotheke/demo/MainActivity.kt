@@ -20,16 +20,13 @@
  *
  ***************************************************************************/
 
-package com.epotheke.demo;
+package com.epotheke.demo
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.widget.Button;
-
-import androidx.fragment.app.FragmentActivity;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import android.content.Intent
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import androidx.fragment.app.FragmentActivity
 
 /**
  * This activity is the main activity of the demo app and can be used, to start different activities
@@ -37,25 +34,18 @@ import org.slf4j.LoggerFactory;
  * Currently the connection establishment is the only activity, but further might be added in the future.
  * @author Florian Otto
  */
-public class MainActivity extends FragmentActivity {
+class MainActivity : FragmentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    private static final Logger LOG = LoggerFactory.getLogger(MainActivity.class);
+        setContentView(R.layout.base_layout)
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.base_layout);
-
-        Button btn_epothekeActivity = findViewById(R.id.epo);
-        if (btn_epothekeActivity != null) {
-            btn_epothekeActivity.setOnClickListener(v -> {
-                Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setClass(MainActivity.this, EpothekeActivityImp.class);
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
-            });
+        val btn_epothekeActivity = findViewById<Button>(R.id.epo)
+        btn_epothekeActivity?.setOnClickListener { _: View ->
+            val i = Intent(Intent.ACTION_VIEW)
+            i.setClass(this@MainActivity, EpothekeActivityImp::class.java)
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(i)
         }
     }
-
 }

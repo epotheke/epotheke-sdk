@@ -50,7 +50,7 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
-    implementation("com.google.android.material:material:1.11.0")
+    implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // the actual Epotheke library
@@ -60,6 +60,7 @@ dependencies {
 //    implementation("org.slf4j:slf4j-api:2.0.13")
 
     // logging library, use whatever you like to output the slf4j log statements
+    implementation("io.github.oshai:kotlin-logging:6.0.9")
     implementation("com.github.tony19:logback-android:3.0.0")
 
 }
