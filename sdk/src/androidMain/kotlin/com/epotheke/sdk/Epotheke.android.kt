@@ -17,18 +17,19 @@ import org.openecard.mobile.activation.*
 private val logger = KotlinLogging.logger {}
 class WebsocketListenerImp: WebsocketListener{
     override fun onOpen(p0: Websocket?) {
-        println("open")
+        logger.debug { "WSListener stub: onOpen" }
     }
 
     override fun onClose(p0: Websocket?, p1: Int, p2: String?) {
+        logger.debug { "WSListener stub: onClose" }
     }
 
     override fun onError(p0: Websocket?, p1: String?) {
+        logger.debug { "WSListener stub: error " + p1 }
     }
 
     override fun onText(p0: Websocket?, p1: String?) {
-        println(p1)
-        p0?.send("answer")
+        logger.debug { "WSListener stub: text " + p1 }
     }
 }
 
