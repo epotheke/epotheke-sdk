@@ -35,8 +35,8 @@ private class WiredWSListenerImplementation(
 ) : WiredWSListener {
     override fun onOpen() = wsListener.onOpen(ws)
     override fun onClose(code: Int, reason: String?) = wsListener.onClose(ws, code, reason)
-    override fun onError(error: String?) = wsListener.onError(ws, error)
-    override fun onText(msg: String?) = wsListener.onText(ws, msg)
+    override fun onError(error: String) = wsListener.onError(ws, error)
+    override fun onText(msg: String) = wsListener.onText(ws, msg)
 }
 
 
@@ -60,25 +60,26 @@ class WebsocketAndroid(
     override fun connect() {
         try {
             commonWS.connect()
-        } catch (e : Exception){
-            throw WebsocketException(e.message)
+        } catch (e: Exception) {
+            throw WebsocketException(e.message ?: "Unknown error", e)
         }
     }
+
     @Throws(WebsocketException::class)
     override fun close(statusCode: Int, reason: String?) {
         try {
             commonWS.close(statusCode, reason)
-        } catch (e : Exception){
-            throw WebsocketException(e.message)
+        } catch (e: Exception) {
+            throw WebsocketException(e.message ?: "Unknown error", e)
         }
     }
 
     @Throws(WebsocketException::class)
     override fun send(data: String) {
-        try{
+        try {
             commonWS.send(data)
-        } catch (e : Exception){
-            throw WebsocketException(e.message)
+        } catch (e: Exception) {
+            throw WebsocketException(e.message ?: "Unknown error", e)
         }
     }
 }

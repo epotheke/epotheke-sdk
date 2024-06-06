@@ -32,8 +32,8 @@ private val log = KotlinLogging.logger {}
 interface WiredWSListener {
     fun onOpen()
     fun onClose(code: Int, reason: String?)
-    fun onError(error: String?)
-    fun onText(msg: String?)
+    fun onError(error: String)
+    fun onText(msg: String)
 }
 
 class WebsocketCommon(
@@ -78,7 +78,7 @@ class WebsocketCommon(
     /**
      * Set the listener for the websocket events.
      * This method replaces an existing listener, if one is already set.
-     * @param listener the listener to set.
+     * @param wsListener the listener to set.
      */
     fun setListener(wsListener: WiredWSListener) {
         this.wsListener = wsListener
@@ -126,7 +126,7 @@ class WebsocketCommon(
                 }
             }
 
-            async(Dispatchers.IO) {
+            launch(Dispatchers.IO) {
                 log.debug { "Websocket connected to ${getUrl()}" }
                 wsListener?.onOpen()
                 wsSession?.receiveLoop()
@@ -156,7 +156,6 @@ class WebsocketCommon(
      * @param statusCode the status code to send.
      * @param reason the reason for closing the connection, or null if none should be given.
      */
-
     fun close(statusCode: Int, reason: String?) {
         log.debug { "Close was called. Close frame will be send." }
         runBlocking {

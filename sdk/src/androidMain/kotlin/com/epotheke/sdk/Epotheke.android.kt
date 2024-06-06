@@ -28,7 +28,6 @@ import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Bundle
-import android.os.Parcelable
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.openecard.android.activation.AndroidContextManager
 import org.openecard.android.activation.OpeneCard
@@ -37,20 +36,21 @@ import org.openecard.mobile.activation.*
 
 
 private val logger = KotlinLogging.logger {}
+
 class WebsocketListenerImp: WebsocketListener{
-    override fun onOpen(p0: Websocket?) {
+    override fun onOpen(p0: Websocket) {
         logger.debug { "WSListener stub: onOpen" }
     }
 
-    override fun onClose(p0: Websocket?, p1: Int, p2: String?) {
+    override fun onClose(p0: Websocket, p1: Int, p2: String?) {
         logger.debug { "WSListener stub: onClose" }
     }
 
-    override fun onError(p0: Websocket?, p1: String?) {
+    override fun onError(p0: Websocket, p1: String) {
         logger.debug { "WSListener stub: error " + p1 }
     }
 
-    override fun onText(p0: Websocket?, p1: String?) {
+    override fun onText(p0: Websocket, p1: String) {
         logger.debug { "WSListener stub: text " + p1 }
     }
 }
@@ -102,7 +102,7 @@ abstract class EpothekeActivity : Activity() {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
                 val websocket = WebsocketAndroid(getCardlinkUrl())
-                actSource.cardLinkFactory().create(websocket, getControllerCallback(), overridingCardlinIteraction(), WebsocketListenerImp())
+                actSource.cardLinkFactory().create(websocket, getControllerCallback(), overridingCardlinkIteraction(), WebsocketListenerImp())
             }
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
@@ -121,14 +121,14 @@ abstract class EpothekeActivity : Activity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
-        val t : Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        val t = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
         t?.let {
             ctxManager?.onNewIntent(intent)
         }
     }
 
-    //maybe use delegate here see: https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
-    private fun overridingCardlinIteraction(): CardLinkInteraction {
+    // TODO: maybe use delegate here see: https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
+    private fun overridingCardlinkIteraction(): CardLinkInteraction {
         val appImplementation = getCardLinkInteraction()
         return object: CardLinkInteraction{
             override fun requestCardInsertion() {

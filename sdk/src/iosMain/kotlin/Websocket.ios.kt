@@ -41,8 +41,8 @@ private class WiredWSListenerImplementation constructor(
 ) : WiredWSListener {
     override fun onOpen() = wsListener.onOpen(ws)
     override fun onClose(code: Int, reason: String?) = wsListener.onClose(ws, code, reason)
-    override fun onError(error: String?) = wsListener.onError(ws, error)
-    override fun onText(msg: String?) = wsListener.onText(ws, msg)
+    override fun onError(error: String) = wsListener.onError(ws, error)
+    override fun onText(msg: String) = wsListener.onText(ws, msg)
 }
 
 @OptIn(ExperimentalForeignApi::class)
