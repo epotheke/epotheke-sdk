@@ -13,6 +13,7 @@ test:
       paths: [ .cache-gradle-builds, paths ]
       policy: pull
     script:
+        - !reference [.versioning, script]
         - ./gradlew --full-stacktrace check
     allow_failure: false
     artifacts:

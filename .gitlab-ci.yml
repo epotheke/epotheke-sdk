@@ -24,6 +24,7 @@ include:
     - project: 'ec/gitlab-ci-templates'
       ref: main
       file: '/templates/.gitlab-ci-deployment.yml'
+    - '/ci/versioning.yml'
     - '/ci/compile.yml'
     - '/ci/test.yml'
     - '/ci/publish.yml'
