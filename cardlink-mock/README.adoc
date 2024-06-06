@@ -7,9 +7,9 @@
 # Required for generating the Kubernetes Resources
 $ gradle build -Dquarkus.container-image.username=${DOCKER_USERNAME} -Dquarkus.container-image.password=${DOCKER_PASSWORD}
 # Secret Deployment (Spryng-API-Key must be set)
-$ kubectl apply -f ../kubernetes/secrets.yml
+$ kubectl apply -f kubernetes/secrets.yml
 # Deployment
-$ kubectl apply -f ../build/kubernetes/kubernetes.yml -n epotheke-dev
+$ kubectl apply -f build/kubernetes/kubernetes.yml -n epotheke-dev
 ----
 
 The kubernetes resources are also generated in the CI pipeline and can be downloaded from there.
@@ -17,10 +17,10 @@ The kubernetes resources are also generated in the CI pipeline and can be downlo
 == Ingress Deployment
 
 If the CardLink-Mock is exposed, an ingress resource can be adjusted and deployed.
-The ingress resource is located in `../kubernetes/ingress.yml`.
+The ingress resource is located in `kubernetes/ingress.yml`.
 
 [source,bash]
 ----
 # Ingress Deployment
-$ kubectl apply -f ../kubernetes/ingress.yml
+$ kubectl apply -f kubernetes/ingress.yml
 ----
