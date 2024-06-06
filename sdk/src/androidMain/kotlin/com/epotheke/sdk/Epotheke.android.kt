@@ -37,6 +37,7 @@ abstract class EpothekeActivity : Activity() {
     var ctxManager: AndroidContextManager? = null
     var activationSource: ActivationSource? = null
     var nfcIntentHelper : NfcIntentHelper? = null
+    var needNfc = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +45,17 @@ abstract class EpothekeActivity : Activity() {
         initOecContext()
     }
 
+    override fun onPause() {
+        nfcIntentHelper?.disableNFCDispatch();
+        super.onPause()
+    }
+
+    override fun onResume() {
+        if(needNfc) {
+            nfcIntentHelper?.enableNFCDispatch();
+        }
+        super.onResume()
+    }
     override fun onDestroy() {
         ctxManager?.terminateContext(object : StopServiceHandler {
             override fun onSuccess() {
@@ -98,11 +110,13 @@ abstract class EpothekeActivity : Activity() {
         return object: CardLinkInteraction{
             override fun requestCardInsertion() {
                 nfcIntentHelper?.enableNFCDispatch()
+                needNfc = true
                 appImplementation.requestCardInsertion()
             }
             override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) = appImplementation.requestCardInsertion(p0)
             override fun onCardInteractionComplete() {
                 nfcIntentHelper?.disableNFCDispatch()
+                needNfc = false
                 appImplementation.onCardInteractionComplete()
             }
             override fun onCardRecognized() = appImplementation.onCardRecognized()
