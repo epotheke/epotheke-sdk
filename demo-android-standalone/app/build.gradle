@@ -1,0 +1,65 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.epotheke.demo"
+        minSdkVersion 21
+        targetSdkVersion 31
+        versionCode 12
+        versionName "1.0.4"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+    }
+    packagingOptions {
+        pickFirst 'META-INF/AL2.0'
+        pickFirst 'META-INF/LGPL2.1'
+        pickFirst 'META-INF/LICENSE.md'
+        pickFirst 'META-INF/NOTICE.md'
+    }
+    buildTypes {
+        release {
+            //shrinkResources true
+            minifyEnabled false
+            //useProguard false // disable to use the built in shrinker
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    // make sure the dex compiler translates all java 8 constructs to be compatible with older APIs
+    // https://developer.android.com/studio/write/java8-support
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+    namespace 'com.epotheke.demo'
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url "https://mvn.ecsec.de/repository/openecard-public"
+    }
+}
+
+def EpothekeSdkVersion = "1.0.0-SNAPSHOT"
+
+dependencies {
+    androidTestImplementation('androidx.test.espresso:espresso-core:3.5.1', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    testImplementation 'junit:junit:4.12'
+
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // the actual Epotheke library
+    implementation "com.epotheke:sdk:${EpothekeSdkVersion}"
+    // these dependencies are missing in the android-lib package, so it does not conflict in case the app already contains these
+    implementation 'xerces:xercesImpl:2.12.2'
+    implementation 'org.slf4j:slf4j-api:2.0.12'
+
+    // logging library, use whatever you like to output the slf4j log statements
+    implementation 'com.github.tony19:logback-android:3.0.0'
+
+}
