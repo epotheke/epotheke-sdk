@@ -16,6 +16,7 @@ stages:
     - compile
     - test
     - publish
+    - docs
 
 include:
     - project: 'ec/gitlab-ci-templates'
@@ -28,3 +29,4 @@ include:
     - '/ci/compile.yml'
     - '/ci/test.yml'
     - '/ci/publish.yml'
+    - '/ci/docs.yml'
