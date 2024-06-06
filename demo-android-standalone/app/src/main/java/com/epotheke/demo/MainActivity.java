@@ -32,6 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * This activity is the main activity of the demo app and can be used, to start different activities
+ * for demonstration purposes.
+ * Currently the connection establishment is the only activity, but further might be added in the future.
  * @author Florian Otto
  */
 public class MainActivity extends FragmentActivity {
@@ -44,9 +47,9 @@ public class MainActivity extends FragmentActivity {
 
         setContentView(R.layout.base_layout);
 
-        Button epo = findViewById(R.id.epo);
-        if (epo != null) {
-            epo.setOnClickListener(v -> {
+        Button btn_epothekeActivity = findViewById(R.id.epo);
+        if (btn_epothekeActivity != null) {
+            btn_epothekeActivity.setOnClickListener(v -> {
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setClass(MainActivity.this, EpothekeActivityImp.class);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

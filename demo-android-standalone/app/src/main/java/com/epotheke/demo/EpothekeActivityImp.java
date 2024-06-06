@@ -48,15 +48,29 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
+ * To use the Epotheke SDK within an app, the easiest way is to extend the abstract EpothekeActivity
+ * provided by the SDK.
+ * The EpothekeActivity will instantiate the framework and start a cardlink connection process in its onCreate() method.
+ * The controlflow during the connection establishment via Cardlink is encapsulated within the SDK.
+ * The interaction with the app and the user is handled via CallbackHandler interfaces, which have to be
+ * implemented within the app and handed to the SDK via the implementation of abstract getter methods
+ * of the EpothekeActivity.
+ *
+ * EpothekeActivity will also terminate and cleanup the SDK if the Activity gets destroyed.
+ * In also handles the switching of androids nfc foreground dispatch for nfc usage in onPause and onResume events.
  * @author Florian Otto
  */
 public class EpothekeActivityImp extends EpothekeActivity {
 
     private static final Logger LOG = LoggerFactory.getLogger(EpothekeActivityImp.class);
+    /**
+     * The address of the service to connect to is set to a mock service for this demo app.
+     */
     private static final String mockServiceUrl = "https://epotheke.mock.ecsec.services/cardlink";
 
     /**
-     * This method has to return the url of the epotheke service.
+     * This method has to return the url of the epotheke service, and will be called in
+     * EpothekeActivity during startup.
      *
      * @return
      */
@@ -67,8 +81,8 @@ public class EpothekeActivityImp extends EpothekeActivity {
     }
 
     /**
-     * This method has to return the CardLinkInteraction which contains handlers for different
-     * steps in the cardlink process, which have to be implemented by the app.
+     * This method has to return an implementation of the CardLinkInteraction interface,
+     * which contains handlers for different steps in the cardlink process.
      *
      * @return CardLinkInteraction
      */
@@ -91,8 +105,10 @@ public class EpothekeActivityImp extends EpothekeActivity {
     }
 
     /**
-     * This method has to return protocols which contain implememntations for processes after
+     * This method has to return protocols which contain implementations for processes after
      * a link is established.
+     *
+     * This is currently not used.
      *
      * @return Set<CardLinkProtocol>
      */
@@ -110,10 +126,10 @@ public class EpothekeActivityImp extends EpothekeActivity {
     private class CardLinkInteractionImp implements CardLinkInteraction {
 
         /**
-         * Called when the SDK communications with the card.
+         * Called when the SDK needs to communicates with the card.
          * The user must read the CAN from it card and enter it within the app.
          * The given CAN has then be handed back to the SDK via
-         * confirmPasswordOperation.confirmPassowrd("<TANVALUE>")
+         * confirmPasswordOperation.confirmPassowrd("<CANVALUE>")
          *
          * @param confirmPasswordOperation
          */
@@ -128,16 +144,18 @@ public class EpothekeActivityImp extends EpothekeActivity {
 
         /**
          * Called during the cardlink establishment.
-         * The service needs the number of the users device to send an sms for verification.
+         * The service needs the cellphone number of the users device to send an sms containing a TAN for verification.
          * The app should ask the user to enter a number, which is then handed back to the SDK via
          * confirmTextOperation.confirmText("<NUMBER>");
          *
+         * Note: The mock service won't send real sms to the given number but also will accept any TAN.
+         * The number must however be in a format valid for german mobile numbers to be accepted by the mock service.
          * @param confirmTextOperation
          */
         @Override
         public void onPhoneNumberRequest(ConfirmTextOperation confirmTextOperation) {
             LOG.debug("EpothekeImplementation onPhoneNumberRequest");
-            getValueFromUser("Please provide valid german phonenumber (mock won't send sms)", "+4915123456789", (String val) -> {
+            getValueFromUser("Please provide valid german phone number (mock won't send sms)", "+4915123456789", (String val) -> {
                 confirmTextOperation.confirmText(val);
             });
         }
@@ -148,6 +166,7 @@ public class EpothekeActivityImp extends EpothekeActivity {
          * The given TAN has then be handed back to the SDK via
          * confirmPasswordOperation.confirmPassowrd("<TANVALUE>")
          *
+         * Note: The mock service will accept any TAN.
          * @param confirmPasswordOperation
          */
         @Override
@@ -159,9 +178,9 @@ public class EpothekeActivityImp extends EpothekeActivity {
         }
 
         /**
-         * Called during the cardlink establishment, when the SDK has to communicate with the card.
+         * Called during the connection establishment, when the SDK has to communicate with the card.
          * The method is called to enable the app to inform the user, to bring the card to
-         * the device.
+         * the devices nfc sensor.
          */
         @Override
         public void requestCardInsertion() {
@@ -184,7 +203,7 @@ public class EpothekeActivityImp extends EpothekeActivity {
 
         /**
          * Gets called, when the communication with the card is over.
-         * The app may inform the user.
+         * The app may inform the user that the card is no longer needed.
          */
         @Override
         public void onCardInteractionComplete() {
@@ -192,8 +211,8 @@ public class EpothekeActivityImp extends EpothekeActivity {
         }
 
         /**
-         * Gets called, when the intent from android with a detected card, is consumed by the SDK.
-         * The app may inform the user.
+         * Gets called, when the intent from android of a detected card, is consumed by the SDK.
+         * The app may inform the user, that the card was detected.
          */
         @Override
         public void onCardRecognized() {
@@ -206,7 +225,7 @@ public class EpothekeActivityImp extends EpothekeActivity {
 
         /**
          * Gets called, when the card is removed from the reader.
-         * The app may inform the user.
+         * The app may inform the user, that the app was removed.
          */
         @Override
         public void onCardRemoved() {
@@ -216,12 +235,13 @@ public class EpothekeActivityImp extends EpothekeActivity {
 
 
     /**
-     * The ControllerCallback informs about the start of the CardLink process and returns results.
+     * The ControllerCallback informs about the start of the CardLink process and returns its results.
      */
     private class ControllerCallbackImp implements ControllerCallback {
 
         /**
          * Called when the process starts.
+         * The app may inform the user.
          */
         @Override
         public void onStarted() {
@@ -230,9 +250,9 @@ public class EpothekeActivityImp extends EpothekeActivity {
         }
 
         /**
-         * Called when the process finishes.
+         * Called when the connection establishment finishes.
          * The Result contains values for further usage in Protocols when the connection was
-         * successfully.
+         * successfully established.
          * If something went wrong the Result will contain an error.
          */
         @Override
@@ -255,8 +275,8 @@ public class EpothekeActivityImp extends EpothekeActivity {
                     sb.append(activationResult.getErrorMessage());
                 }
                 showInfo(sb.toString());
-                Button c = findViewById(R.id.btn_cancel);
-                c.setText("FINISH");
+                Button btn_cancel = findViewById(R.id.btn_cancel);
+                btn_cancel.setText("FINISH");
             });
         }
     }
@@ -269,7 +289,8 @@ public class EpothekeActivityImp extends EpothekeActivity {
     }
 
     /**
-     * Updates info label
+     * Updates the info label to inform the user.
+     *
      * @param text
      */
     public void showInfo(String text) {
@@ -281,6 +302,7 @@ public class EpothekeActivityImp extends EpothekeActivity {
 
     /**
      * Shows inputfield and button to let the user enter data.
+     *
      * @param infoText
      * @param defaultValue
      * @param action
@@ -290,8 +312,8 @@ public class EpothekeActivityImp extends EpothekeActivity {
             showInfo(infoText);
             TextView inputField = findViewById(R.id.input);
             inputField.setText(defaultValue);
-            Button b = findViewById(R.id.btn_ok);
-            b.setOnClickListener(v -> {
+            Button btn_ok = findViewById(R.id.btn_ok);
+            btn_ok.setOnClickListener(v -> {
                 setInputActive(false);
                 TextView input = findViewById(R.id.input);
                 action.act(input.getText().toString());
@@ -302,37 +324,39 @@ public class EpothekeActivityImp extends EpothekeActivity {
 
     /**
      * Shows and hides input elements
+     *
      * @param active
      */
     private void setInputActive(boolean active) {
         runOnUiThread(() -> {
             TextView inputField = findViewById(R.id.input);
             inputField.setVisibility(active ? View.VISIBLE : View.INVISIBLE);
-            Button b = findViewById(R.id.btn_ok);
-            b.setVisibility(active ? View.VISIBLE : View.INVISIBLE);
+            Button btn_ok = findViewById(R.id.btn_ok);
+            btn_ok.setVisibility(active ? View.VISIBLE : View.INVISIBLE);
             setBusy(!active);
         });
     }
 
     /**
      * Shows and hides busy indicator.
+     *
      * @param busy
      */
     private void setBusy(boolean busy) {
-        ProgressBar b = findViewById(R.id.busy);
-        b.setVisibility(busy ? View.VISIBLE : View.INVISIBLE);
+        ProgressBar p = findViewById(R.id.busy);
+        p.setVisibility(busy ? View.VISIBLE : View.INVISIBLE);
     }
 
     @Override
     public void onCreate(Bundle savedInstance) {
         setContentView(R.layout.epo_layout);
-        TextView service = findViewById(R.id.service);
-        service.setText(service.getText() + "\n" + mockServiceUrl);
+        TextView serviceLabel = findViewById(R.id.service);
+        serviceLabel.setText(serviceLabel.getText() + "\n" + mockServiceUrl);
         TextView inputField = findViewById(R.id.input);
         inputField.setEnabled(true);
         setInputActive(false);
-        Button c = findViewById(R.id.btn_cancel);
-        c.setOnClickListener((v) -> finish());
+        Button cancelButton = findViewById(R.id.btn_cancel);
+        cancelButton.setOnClickListener((v) -> finish());
         super.onCreate(savedInstance);
     }
 
