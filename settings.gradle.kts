@@ -2,6 +2,10 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         google()
+
+        maven {
+            url = uri("https://mvn.ecsec.de/repository/openecard-public")
+        }
     }
 }
 
@@ -23,6 +27,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "epotheke-sdk"
+
+include("manual")
 
 include("sdk")
 include("demo-app")
