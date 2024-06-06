@@ -66,4 +66,7 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 
+asciidoctor = { id = "org.asciidoctor.jvm.convert", version = "4.0.2" }
+rawPublish = { id = "de.ecsec.nexus-raw-publish", version = "0.9.1" }
+
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
