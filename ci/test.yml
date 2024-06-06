@@ -1,0 +1,22 @@
+test:
+    stage: test
+    image: docker.io/mobiledevops/android-sdk-image:34.0.1
+    tags:
+        - "podman"
+    needs:
+        - compile
+    cache:
+    - key: "$CACHE_KEY"
+      paths: !reference [ .cache-gradle-base, paths ]
+      policy: pull
+    - key: "$CACHE_TMP_KEY"
+      paths: [ .cache-gradle-builds, paths ]
+      policy: pull
+    script:
+        - !reference [.versioning, script]
+        - ./gradlew --full-stacktrace check
+    allow_failure: false
+    artifacts:
+        when: on_failure
+        paths:
+            - "**/build"

@@ -16,7 +16,7 @@ androidx-test-junit = "1.1.+"
 compose = "1.6.7"
 compose-plugin = "1.6.2"
 
-oec = "2.3.0-cardlink-SNAPSHOT"
+oec = "2.3.0-SNAPSHOT"
 
 quarkus = "3.10.1"
 
@@ -65,5 +65,8 @@ kotlinAllOpen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kot
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+
+asciidoctor = { id = "org.asciidoctor.jvm.convert", version = "4.0.2" }
+rawPublish = { id = "de.ecsec.nexus-raw-publish", version = "0.9.1" }
 
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }

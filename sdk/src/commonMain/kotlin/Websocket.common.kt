@@ -1,3 +1,25 @@
+/****************************************************************************
+ * Copyright (C) 2024 ecsec GmbH.
+ * All rights reserved.
+ * Contact: ecsec GmbH (info@ecsec.de)
+ *
+ * This file is part of the epotheke SDK.
+ *
+ * GNU General Public License Usage
+ * This file may be used under the terms of the GNU General Public
+ * License version 3.0 as published by the Free Software Foundation
+ * and appearing in the file LICENSE.GPL included in the packaging of
+ * this file. Please review the following information to ensure the
+ * GNU General Public License version 3.0 requirements will be met:
+ * http://www.gnu.org/copyleft/gpl.html.
+ *
+ * Other Usage
+ * Alternatively, this file may be used in accordance with the terms
+ * and conditions contained in a signed written agreement between
+ * you and ecsec GmbH.
+ *
+ ***************************************************************************/
+
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
@@ -10,14 +32,12 @@ private val log = KotlinLogging.logger {}
 interface WiredWSListener {
     fun onOpen()
     fun onClose(code: Int, reason: String?)
-    fun onError(error: String?)
-    fun onText(msg: String?)
+    fun onError(error: String)
+    fun onText(msg: String)
 }
 
 class WebsocketCommon(
-    private val host: String,
-    private val port: Int,
-    private val path: String = "",
+    private var url: String,
 ) {
 
     private var wsListener: WiredWSListener? = null
@@ -28,33 +48,37 @@ class WebsocketCommon(
     private var wsSession: DefaultClientWebSocketSession? = null
 
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
-        for (msg in incoming) {
-            log.debug { "Socket receive received frame with type: ${msg.frameType}" }
-            when {
-                (msg as? Frame.Text) != null -> {
-                    wsListener?.onText(msg.readText())
-                }
+        try {
+            for (msg in incoming) {
+                log.debug { "Socket receive received frame with type: ${msg.frameType}" }
+                when {
+                    (msg as? Frame.Text) != null -> {
+                        wsListener?.onText(msg.readText())
+                    }
 
-                (msg as? Frame.Close) != null -> {
-                    val reason: CloseReason? = msg.readReason()
-                    val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
-                    val reasonMsg = reason?.message ?: "No reason"
+                    (msg as? Frame.Close) != null -> {
+                        val reason: CloseReason? = msg.readReason()
+                        val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
+                        val reasonMsg = reason?.message ?: "No reason"
 
-                    wsListener?.onClose(code, reasonMsg)
-                }
+                        wsListener?.onClose(code, reasonMsg)
+                    }
 
-                else -> {
-                    log.warn { "Unhandled frame type received." }
-                    wsListener?.onError("Invalid data received")
+                    else -> {
+                        log.warn { "Unhandled frame type received." }
+                        wsListener?.onError("Invalid data received")
+                    }
                 }
             }
+        } catch (e: Exception){
+            log.debug { "Websocket receiver through exception: " + e.message }
         }
     }
 
     /**
      * Set the listener for the websocket events.
      * This method replaces an existing listener, if one is already set.
-     * @param listener the listener to set.
+     * @param wsListener the listener to set.
      */
     fun setListener(wsListener: WiredWSListener) {
         this.wsListener = wsListener
@@ -68,7 +92,10 @@ class WebsocketCommon(
     }
 
     fun getUrl(): String {
-        return "ws://$host:$port/$path"
+        return this.url
+    }
+    fun setUrl(url: String) {
+        this.url = url
     }
 
     /**
@@ -84,18 +111,26 @@ class WebsocketCommon(
      * This method can also be used to reestablish a lost connection.
      */
     fun connect() {
-        runBlocking {
-            wsSession = client.webSocketSession(
+        CoroutineScope(Dispatchers.IO).launch {
+            val uri = Url(url)
+
+            wsSession = client.webSocketSession (
                 method = HttpMethod.Get,
-                host = host,
-                port = port,
-                path = path,
-            )
-            launch {
+                host = uri.host,
+                port = uri.port,
+                path = uri.fullPath,
+            ){
+                url {
+                    url.protocol = URLProtocol.WSS
+                    url.port = uri.port
+                }
+            }
+
+            launch(Dispatchers.IO) {
                 log.debug { "Websocket connected to ${getUrl()}" }
                 wsListener?.onOpen()
                 wsSession?.receiveLoop()
-            }.join()
+            }
         }
     }
 
@@ -121,7 +156,6 @@ class WebsocketCommon(
      * @param statusCode the status code to send.
      * @param reason the reason for closing the connection, or null if none should be given.
      */
-
     fun close(statusCode: Int, reason: String?) {
         log.debug { "Close was called. Close frame will be send." }
         runBlocking {

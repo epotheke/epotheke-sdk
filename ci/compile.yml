@@ -1,0 +1,15 @@
+compile:
+    stage: compile
+    image: docker.io/mobiledevops/android-sdk-image:34.0.1
+    tags:
+        - "podman"
+    cache:
+    - key: "$CACHE_KEY"
+      paths: !reference [ .cache-gradle-base, paths ]
+      policy: pull-push
+    - key: "$CACHE_TMP_KEY"
+      paths: [ .cache-gradle-builds, paths ]
+      policy: pull-push
+    script:
+        - !reference [.versioning, script]
+        - ./gradlew assemble

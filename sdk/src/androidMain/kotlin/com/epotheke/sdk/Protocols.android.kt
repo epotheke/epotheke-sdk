@@ -20,6 +20,8 @@
  *
  ***************************************************************************/
 
-import androidx.compose.ui.window.ComposeUIViewController
+package com.epotheke.sdk
 
-fun MainViewController() = ComposeUIViewController { App() }
+sealed interface CardLinkProtocol { }
+
+interface ErezeptProtocol: CardLinkProtocol {}
