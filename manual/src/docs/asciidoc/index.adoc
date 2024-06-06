@@ -1,1 +1,4 @@
 = epotheke-SDK Manual
+
+include::introduction.adoc[]
+include::project_setup.adoc[]

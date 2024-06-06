@@ -17,12 +17,16 @@ tasks.asciidoctor {
     sources {
         include("index.adoc")
     }
+
+    val versionMinor = "^([1-9][0-9]*\\.[0-9]+)\\.[0-9]+.*".toRegex().find(project.version.toString())?.groups?.get(1)?.value
     attributes(mapOf(
         "toc" to "left",
         "toclevels" to "4",
         "sectnums" to "",
         "sectanchors" to "",
         "source-highlighter" to "rouge",
+        "release" to project.version,
+        "releaseMinor" to versionMinor
     ))
 }
 
