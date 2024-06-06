@@ -1,0 +1,65 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.epotheke.demo"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.epotheke.demo"
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 12
+        versionName = "1.0.4"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+//        multiDexEnabled = true
+    }
+
+    buildTypes {
+        release {
+            //shrinkResources true
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    // make sure the dex compiler translates all java 8 constructs to be compatible with older APIs
+    // https://developer.android.com/studio/write/java8-support
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{LICENSE.md,NOTICE.md,AL2.0,LGPL2.1}"
+        }
+    }
+}
+
+val EpothekeSdkVersion = "1.0.0-SNAPSHOT"
+
+dependencies {
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
+    // the actual Epotheke library
+    implementation("com.epotheke:sdk:${EpothekeSdkVersion}")
+    // these dependencies are missing in the android-lib package, so it does not conflict in case the app already contains these
+//    implementation("xerces:xercesImpl:2.12.2")
+//    implementation("org.slf4j:slf4j-api:2.0.13")
+
+    // logging library, use whatever you like to output the slf4j log statements
+    implementation("com.github.tony19:logback-android:3.0.0")
+
+}
