@@ -22,6 +22,7 @@
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
@@ -118,26 +119,28 @@ class WebsocketCommon(
      * This method can also be used to reestablish a lost connection.
      */
     fun connect() {
-        CoroutineScope(Dispatchers.IO).launch {
+        runBlocking {
             val uri = Url(url)
 
-            wsSession = client.webSocketSession (
+            wsSession = client.webSocketSession(
                 method = HttpMethod.Get,
                 host = uri.host,
                 port = uri.port,
                 path = uri.fullPath,
-            ){
+            ) {
                 url {
                     url.protocol = URLProtocol.WSS
                     url.port = uri.port
                 }
             }
 
-            launch(Dispatchers.IO) {
-                log.debug { "Websocket connected to ${getUrl()}" }
-                wsListener?.onOpen()
-                wsSession?.receiveLoop()
-            }
+            log.debug { "Websocket connected to ${getUrl()}" }
+            wsListener?.onOpen()
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            log.debug { "Entering websocket receive loop." }
+            wsSession?.receiveLoop()
         }
     }
 
