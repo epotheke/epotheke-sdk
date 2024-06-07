@@ -24,6 +24,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
+import io.ktor.utils.io.core.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 
@@ -51,12 +52,13 @@ class WebsocketCommon(
         try {
             for (msg in incoming) {
                 log.debug { "Socket receive received frame with type: ${msg.frameType}" }
-                when {
-                    (msg as? Frame.Text) != null -> {
+                when (msg) {
+                    is Frame.Text -> {
                         wsListener?.onText(msg.readText())
                     }
 
-                    (msg as? Frame.Close) != null -> {
+                   is Frame.Close -> {
+                       // only used when websocket raw is used
                         val reason: CloseReason? = msg.readReason()
                         val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
                         val reasonMsg = reason?.message ?: "No reason"
@@ -70,8 +72,13 @@ class WebsocketCommon(
                     }
                 }
             }
+        } catch (e: EOFException) {
+            log.debug { "Websocket channel closed by receiving EOFException." }
+            val reasonMsg = e.message
+            val code = CloseReason.Codes.NORMAL
+            wsListener?.onClose(code.code.toInt(), reasonMsg)
         } catch (e: Exception){
-            log.debug { "Websocket receiver through exception: " + e.message }
+            log.debug(e) { "Exception during websocket receive." }
         }
     }
 
