@@ -19,7 +19,7 @@ The dependency must be defined as follows in the gradle file’s dependency sect
 
 [source,kotlin,subs="+attributes"]
 ----
-implementation("com.epotheke:sdk:<SDK_VERSION>")
+implementation("com.epotheke:sdk:{release}")
 ----
 
 Logging is performed with the https://www.slf4j.org/[SLF4J API].
