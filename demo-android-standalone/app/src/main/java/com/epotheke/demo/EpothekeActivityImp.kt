@@ -242,7 +242,7 @@ class EpothekeActivityImp : EpothekeActivity() {
                     for (key in activationResult.resultParameterKeys) {
                         sb.append(key)
                         sb.append(": ")
-                        sb.append(activationResult.resultParameterKeys)
+                        sb.append(activationResult.getResultParameter(key))
                         sb.append("\n")
                     }
                 } else {
