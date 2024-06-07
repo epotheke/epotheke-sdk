@@ -55,9 +55,6 @@ dependencies {
 
     // the actual Epotheke library
     implementation("com.epotheke:sdk:${EpothekeSdkVersion}")
-    // these dependencies are missing in the android-lib package, so it does not conflict in case the app already contains these
-//    implementation("xerces:xercesImpl:2.12.2")
-//    implementation("org.slf4j:slf4j-api:2.0.13")
 
     // logging library, use whatever you like to output the slf4j log statements
     implementation("io.github.oshai:kotlin-logging:6.0.9")
