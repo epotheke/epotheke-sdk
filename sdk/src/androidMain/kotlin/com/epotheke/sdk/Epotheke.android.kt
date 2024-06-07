@@ -102,7 +102,7 @@ abstract class EpothekeActivity : Activity() {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
                 val websocket = WebsocketAndroid(getCardlinkUrl())
-                actSource.cardLinkFactory().create(websocket, getControllerCallback(), overridingCardlinkIteraction(), WebsocketListenerImp())
+                actSource.cardLinkFactory().create(websocket, overridingControllerCallback(), overridingCardlinkIteraction(), WebsocketListenerImp())
             }
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
@@ -147,6 +147,17 @@ abstract class EpothekeActivity : Activity() {
             override fun onCanRequest(p0: ConfirmPasswordOperation?) = appImplementation.onCanRequest(p0)
             override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) = appImplementation.onPhoneNumberRequest(p0)
             override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) = appImplementation.onSmsCodeRequest(p0)
+        }
+    }
+    private fun overridingControllerCallback(): ControllerCallback {
+        val appImplementation = getControllerCallback()
+        return object: ControllerCallback {
+            override fun onStarted() = appImplementation.onStarted()
+            override fun onAuthenticationCompletion(p0: ActivationResult?) {
+                nfcIntentHelper?.disableNFCDispatch()
+                needNfc = false
+                appImplementation.onAuthenticationCompletion(p0)
+            }
         }
     }
 
