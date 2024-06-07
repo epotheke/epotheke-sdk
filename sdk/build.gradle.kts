@@ -3,7 +3,7 @@ description = "epotheke SDK Package"
 plugins {
     id("epotheke.lib-jvm-conventions")
     id("epotheke.lib-android-conventions")
-    id("epotheke.lib-ios-conventions")
+    //id("epotheke.lib-ios-conventions")
     id("epotheke.publish-conventions")
 }
 
@@ -30,32 +30,32 @@ kotlin {
                 implementation(libs.kotlin.coroutines.android)
             }
         }
-        val iosMain by getting {
-            dependencies {
-                implementation(libs.ktor.client.darwin)
-            }
-        }
+//        val iosMain by getting {
+//            dependencies {
+//                implementation(libs.ktor.client.darwin)
+//            }
+//        }
     }
 
-    cocoapods {
-        name = "epotheke-sdk"
-        homepage = "https://www.epotheke.com"
-        summary = "Framework for using cardlink protocol."
-        authors = "ecsec GmbH"
-        license = "GPLv3"
-        framework {
-            baseName = "epotheke"
-            binaryOption("bundleId", "com.epotheke.sdk")
-        }
-
-        pod("open-ecard") {
-            // TODO: use version from catalogue
-            version = "2.1.11"
-            //source = path("/Users/florianotto/pod")
-            ios.deploymentTarget = "13.0"
-            moduleName = "OpenEcard"
-        }
-    }
+//    cocoapods {
+//        name = "epotheke-sdk"
+//        homepage = "https://www.epotheke.com"
+//        summary = "Framework for using cardlink protocol."
+//        authors = "ecsec GmbH"
+//        license = "GPLv3"
+//        framework {
+//            baseName = "epotheke"
+//            binaryOption("bundleId", "com.epotheke.sdk")
+//        }
+//
+//        pod("open-ecard") {
+//            // TODO: use version from catalogue
+//            version = "2.1.11"
+//            //source = path("/Users/florianotto/pod")
+//            ios.deploymentTarget = "13.0"
+//            moduleName = "OpenEcard"
+//        }
+//    }
 }
 
 android {
