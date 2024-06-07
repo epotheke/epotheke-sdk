@@ -1,20 +1,29 @@
-publish-manual:
-    stage: docs
-    image: docker.io/mobiledevops/android-sdk-image:34.0.1
-    tags:
-        - "podman"
-    cache:
-        - key: "$CACHE_KEY"
-          paths: !reference [ .cache-gradle-base, paths ]
-          policy: pull
-        - key: "$CACHE_TMP_KEY"
-          paths: [ .cache-gradle-builds, paths ]
-          policy: pull
-    script:
-        - !reference [.versioning, script]
-        - ./gradlew publishNexusRawVersion
-    rules:
-        - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)?$/
-        - if: $CI_MERGE_REQUEST_IID
-          allow_failure: true
-        - if: $CI_COMMIT_BRANCH == "main"
+.publish-manual:
+  stage: docs
+  image: docker.io/mobiledevops/android-sdk-image:34.0.1
+  tags:
+    - "podman"
+  cache:
+    - key: "$CACHE_KEY"
+      paths: !reference [ .cache-gradle-base, paths ]
+      policy: pull
+    - key: "$CACHE_TMP_KEY"
+      paths: [ .cache-gradle-builds, paths ]
+      policy: pull
+
+publish-manual-dev:
+  extends: .publish-manual
+  script:
+    - !reference [.versioning, script]
+    - ./gradlew publishNexusRawDev
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+publish-manual-prod:
+  extends: .publish-manual
+  script:
+    - !reference [.versioning, script]
+    - ./gradlew publishNexusRawVersion
+    - ./gradlew publishNexusRawLatest
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)?$/
