@@ -15,6 +15,12 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://mvn.ecsec.de/repository/openecard-public")
         }
+        maven {
+            url = uri("https://mvn.ecsec.de/repository/openecard-snapshot")
+            mavenContent {
+                snapshotsOnly()
+            }
+        }
     }
 }
 
