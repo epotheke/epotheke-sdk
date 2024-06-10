@@ -26,7 +26,6 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 api(libs.oec.android)
-                implementation(libs.ktor.client.okhttp)
                 implementation(libs.kotlin.coroutines.android)
             }
         }
