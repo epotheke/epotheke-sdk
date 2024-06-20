@@ -24,14 +24,19 @@ package com.epotheke.demo
 
 import android.os.Bundle
 import android.view.View
+import android.view.View.VISIBLE
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.transition.Visibility
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.EpothekeActivity
+import com.epotheke.sdk.ErezeptProtocol
+import com.epotheke.sdk.ErezeptProtocolImp
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.openecard.mobile.activation.*
 import java.util.*
+import kotlin.collections.HashSet
 
 
 private val LOG = KotlinLogging.logger {}
@@ -82,20 +87,8 @@ class EpothekeActivityImp : EpothekeActivity() {
      *
      * @return ControllerCallback
      */
-    override fun getControllerCallback(): ControllerCallback {
+    override fun getControllerCallback(): CardlinkControllerCallback {
         return ControllerCallbackImp()
-    }
-
-    /**
-     * This method has to return protocols which contain implementations for processes after
-     * a link is established.
-     *
-     * This is currently not used.
-     *
-     * @return Set<CardLinkProtocol>
-    </CardLinkProtocol> */
-    override fun getProtocols(): Set<CardLinkProtocol> {
-        return HashSet()
     }
 
     /**
@@ -214,7 +207,7 @@ class EpothekeActivityImp : EpothekeActivity() {
     /**
      * The ControllerCallback informs about the start of the CardLink process and returns its results.
      */
-    private inner class ControllerCallbackImp : ControllerCallback {
+    private inner class ControllerCallbackImp : CardlinkControllerCallback {
         /**
          * Called when the process starts.
          * The app may inform the user.
@@ -230,15 +223,16 @@ class EpothekeActivityImp : EpothekeActivity() {
          * successfully established.
          * If something went wrong the Result will contain an error.
          */
-        override fun onAuthenticationCompletion(activationResult: ActivationResult) {
+
+        override fun onAuthenticationCompletion(activationResult: ActivationResult?, cardlinkProtocols: Set<CardLinkProtocol>) {
             LOG.debug { "EpothekeImplementation onAuthenticationCompletion" }
             LOG.debug { (activationResult.toString()) }
             runOnUiThread {
                 setBusy(false)
                 val sb = StringBuilder()
-                sb.append(if (activationResult.resultCode == ActivationResultCode.OK) "SUCCESS" else "FAIL")
+                sb.append(if (activationResult?.resultCode == ActivationResultCode.OK) "SUCCESS" else "FAIL")
                 sb.append("\n")
-                if (activationResult.resultCode == ActivationResultCode.OK) {
+                if (activationResult?.resultCode == ActivationResultCode.OK) {
                     for (key in activationResult.resultParameterKeys) {
                         sb.append(key)
                         sb.append(": ")
@@ -246,9 +240,26 @@ class EpothekeActivityImp : EpothekeActivity() {
                         sb.append("\n")
                     }
                 } else {
-                    sb.append(activationResult.errorMessage)
+                    sb.append(activationResult?.errorMessage)
                 }
                 showInfo(sb.toString())
+
+                LOG.debug {"Start action for Erezeptprotocol"}
+                val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
+                btn_ereceipts.visibility = VISIBLE
+                btn_ereceipts.isEnabled = true
+
+                val protocol = cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first()
+
+                btn_ereceipts.setOnClickListener {
+                    val result = runBlocking { protocol.requestReceipts(RequestPrescriptionList(
+                            type="",
+                            messageId=""
+                        )
+                    )}
+                    LOG.debug { "recieved result: $result" }
+                }
+
                 val btn_cancel = findViewById<Button>(R.id.btn_cancel)
                 btn_cancel.text = "FINISH"
             }

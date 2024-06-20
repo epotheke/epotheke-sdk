@@ -1,3 +1,8 @@
+import com.epotheke.erezept.model.AvailablePrescriptionList
+import com.epotheke.erezept.model.RequestPrescriptionList
+import com.epotheke.erezept.model.SelectedPrescriptionList
+import kotlinx.coroutines.channels.Channel
+
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
  * All rights reserved.
@@ -20,8 +25,12 @@
  *
  ***************************************************************************/
 
-package com.epotheke.sdk
+sealed interface CardLinkProtocol{
+    fun getInputChannel(): Channel<String>?
+}
 
-sealed interface CardLinkProtocol { }
-
-interface ErezeptProtocol: CardLinkProtocol {}
+interface ErezeptProtocol: CardLinkProtocol {
+    //use classes from model
+    suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionList?
+    suspend fun selectReceipts(selection: SelectedPrescriptionList)
+}

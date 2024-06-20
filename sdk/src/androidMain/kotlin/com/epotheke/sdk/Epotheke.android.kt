@@ -22,6 +22,7 @@
 
 package com.epotheke.sdk
 
+import CardLinkProtocol
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -29,6 +30,7 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Bundle
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.openecard.android.activation.AndroidContextManager
 import org.openecard.android.activation.OpeneCard
 import org.openecard.android.utils.NfcIntentHelper
@@ -37,21 +39,25 @@ import org.openecard.mobile.activation.*
 
 private val logger = KotlinLogging.logger {}
 
-class WebsocketListenerImp: WebsocketListener{
+class WebsocketListener(private val protos: Set<CardLinkProtocol>):
+    org.openecard.mobile.activation.WebsocketListener {
+
     override fun onOpen(p0: Websocket) {
-        logger.debug { "WSListener stub: onOpen" }
     }
 
     override fun onClose(p0: Websocket, p1: Int, p2: String?) {
-        logger.debug { "WSListener stub: onClose" }
     }
 
     override fun onError(p0: Websocket, p1: String) {
-        logger.debug { "WSListener stub: error " + p1 }
+//        protos.map { p-> p.getErrorHandler()(p1) }
     }
 
     override fun onText(p0: Websocket, p1: String) {
-        logger.debug { "WSListener stub: text " + p1 }
+        runBlocking {
+            protos.map { protocol ->
+                protocol.getInputChannel()?.send(p1)
+            }
+        }
     }
 }
 
@@ -102,13 +108,21 @@ abstract class EpothekeActivity : Activity() {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
                 val websocket = WebsocketAndroid(getCardlinkUrl())
-                actSource.cardLinkFactory().create(websocket, overridingControllerCallback(), overridingCardlinkIteraction(), WebsocketListenerImp())
+                val protocols = buildProtocols(websocket)
+                val wsListener = WebsocketListener(protocols)
+                actSource.cardLinkFactory().create(websocket, overridingControllerCallback(protocols), overridingCardlinkIteraction(), wsListener)
             }
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
                 cleanupOecInstances()
             }
         })
+    }
+
+    private fun buildProtocols(websocket: WebsocketAndroid): Set<CardLinkProtocol> {
+        return HashSet<CardLinkProtocol>().apply {
+            add(ErezeptProtocolImp(websocket))
+        }
     }
 
     protected fun cleanupOecInstances() {
@@ -149,21 +163,28 @@ abstract class EpothekeActivity : Activity() {
             override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) = appImplementation.onSmsCodeRequest(p0)
         }
     }
-    private fun overridingControllerCallback(): ControllerCallback {
+
+    interface CardlinkControllerCallback {
+        fun onStarted()
+        fun onAuthenticationCompletion(p0: ActivationResult?, cardlinkProtocols: Set<CardLinkProtocol>)
+    }
+
+    private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>): ControllerCallback {
         val appImplementation = getControllerCallback()
-        return object: ControllerCallback {
+
+        return object: ControllerCallback{
             override fun onStarted() = appImplementation.onStarted()
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
                 nfcIntentHelper?.disableNFCDispatch()
                 needNfc = false
-                appImplementation.onAuthenticationCompletion(p0)
+                appImplementation.onAuthenticationCompletion(p0, protocols)
             }
         }
     }
 
+
     abstract fun getCardlinkUrl(): String;
-    abstract fun getControllerCallback() : ControllerCallback;
+    abstract fun getControllerCallback() : CardlinkControllerCallback;
     abstract fun getCardLinkInteraction() : CardLinkInteraction;
-    abstract fun getProtocols(): Set<CardLinkProtocol>
 
 }
