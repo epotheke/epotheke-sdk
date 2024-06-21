@@ -84,15 +84,104 @@ class CardLinkEndpoint {
     fun onMessage(session: Session, data: String) {
         logger.debug { "Received Gematik message in CardLink-Mock: $data" }
 
-        val gematikMessage = cardLinkJsonFormatter.decodeFromString<GematikEnvelope>(data)
+        try {
+            val gematikMessage = cardLinkJsonFormatter.decodeFromString<GematikEnvelope>(data)
 
-        when (gematikMessage.payload) {
-            is SendPhoneNumber -> handleRequestSmsCode(gematikMessage, session)
-            is SendTan -> handleConfirmSmsCode(gematikMessage, session)
-            is RegisterEgk -> handleRegisterEgkPayload(gematikMessage, session)
-            is SendApduResponse -> handleApduResponse(gematikMessage, session)
-            is TasklistErrorPayload -> logger.debug { "Received Tasklist Error Envelope message." }
-            else -> logger.error { "Unsupported Gematik message: ${gematikMessage::class.java}" }
+            when (gematikMessage.payload) {
+                is SendPhoneNumber -> handleRequestSmsCode(gematikMessage, session)
+                is SendTan -> handleConfirmSmsCode(gematikMessage, session)
+                is RegisterEgk -> handleRegisterEgkPayload(gematikMessage, session)
+                is SendApduResponse -> handleApduResponse(gematikMessage, session)
+                is TasklistErrorPayload -> logger.debug { "Received Tasklist Error Envelope message." }
+                else -> logger.error { "Unsupported Gematik message: ${gematikMessage::class.java}" }
+            }
+        } catch (ex: IllegalArgumentException) {
+            val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(data)
+
+            when (eRezeptMessage) {
+                is RequestPrescriptionList -> sendPrescriptionList(eRezeptMessage, session)
+                is SelectedPrescriptionList -> sendConfirmSelectedPrescriptionList(eRezeptMessage, session)
+            }
+        }
+    }
+
+    private fun sendPrescriptionList(eRezeptMessage: RequestPrescriptionList, session: Session) {
+        val medicationPzn = MedicationPzn(
+            kategorie = "0",
+            impfstoff = false,
+            normgroesse = "N3",
+            pzn = "6313728",
+            handelsname = "Sumatriptan-1a Pharma 100 mg Tabletten",
+            darreichungsform = "TAB",
+            packungsgroesseNachMenge = "12",
+            einheit = "TAB"
+        )
+
+        val medicationIngredient = MedicationIngredient(
+            kategorie = "0",
+            impfstoff = false,
+            normgroesse = "N3",
+            darreichungsform = "Tabletten",
+            packungsgroesseNachMenge = "100",
+            einheit = "Stück",
+            listeBestandteilWirkstoffverordnung = listOf(
+                BestandteilWirkstoffverordnung(
+                    wirkstoffnummer = "22686",
+                    wirkstoffname = "Ramipril",
+                    wirkstaerke = "5",
+                    wirkstaerkeneinheit = "mg"
+                )
+            )
+        )
+
+        val medicationFreeText = MedicationFreeText(
+            impfstoff = false,
+            kategorie = "0",
+            freitextverordnung = "Metformin 850mg Tabletten N3",
+            darreichungsform = "Tabletten"
+        )
+
+        val availablePrescriptionLists = AvailablePrescriptionLists(
+            messageId = UUID.randomUUID().toString(),
+            correlationId = eRezeptMessage.messageId,
+            availablePrescriptionLists = listOf(
+                AvailablePrescriptionList(
+                    medicationSummaryList = listOf(
+                        MedicationSummary(
+                            index = 0,
+                            medication = medicationPzn,
+                        ),
+                        MedicationSummary(
+                            index = 1,
+                            medication = medicationIngredient
+                        ),
+                        MedicationSummary(
+                            index = 2,
+                            medication = medicationFreeText
+                        )
+                    ),
+                    iccsn = eRezeptMessage.iccsns?.get(0) ?: throw IllegalArgumentException("No ICCSN provided.")
+                )
+            )
+        )
+
+        session.asyncRemote.sendObject(availablePrescriptionLists) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
+        }
+    }
+
+    private fun sendConfirmSelectedPrescriptionList(eRezeptMessage: SelectedPrescriptionList, session: Session) {
+        val confirmSelectedPrescriptionList = ConfirmPrescriptionList(
+            messageId = UUID.randomUUID().toString(),
+            correlationId = eRezeptMessage.messageId
+        )
+
+        session.asyncRemote.sendObject(confirmSelectedPrescriptionList) {
+            if (it.exception != null) {
+                logger.debug(it.exception) { "Unable to send message." }
+            }
         }
     }
 

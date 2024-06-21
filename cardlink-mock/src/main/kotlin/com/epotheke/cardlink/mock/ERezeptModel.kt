@@ -1,20 +1,12 @@
-package com.epotheke.erezept.model
+package com.epotheke.cardlink.mock
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 
 const val REQUEST_PRESCRIPTION_LIST = "requestPrescriptionList"
@@ -171,11 +163,12 @@ enum class SupplyOptionsType(val value: String) {
     DELIVERY("delivery");
 }
 
-val module = SerializersModule {
+val eRezeptModule = SerializersModule {
     polymorphic(ERezeptMessage::class) {
         subclass(RequestPrescriptionList::class)
         subclass(AvailablePrescriptionLists::class)
         subclass(SelectedPrescriptionList::class)
+        subclass(ConfirmPrescriptionList::class)
         subclass(ConfirmPrescriptionList::class)
         subclass(GenericErrorMessage::class)
     }
@@ -187,20 +180,4 @@ val module = SerializersModule {
     }
 }
 
-val eRezeptJsonFormatter = Json { serializersModule = module; classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS }
-
-typealias ByteArrayAsBase64 = @Serializable(ByteArrayAsBase64Serializer::class) ByteArray
-
-@OptIn(ExperimentalEncodingApi::class)
-object ByteArrayAsBase64Serializer : KSerializer<ByteArray> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ByteArrayAsBase64Serializer", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: ByteArray) {
-        val base64Encoded = Base64.encode(value).trimEnd('=')
-        encoder.encodeString(base64Encoded)
-    }
-
-    override fun deserialize(decoder: Decoder): ByteArray {
-        return Base64.decode(decoder.decodeString())
-    }
-}
+val eRezeptJsonFormatter = Json { serializersModule = eRezeptModule; classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS }
