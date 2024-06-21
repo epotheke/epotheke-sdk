@@ -81,7 +81,6 @@ data class ConfirmPrescriptionList(
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LIST)
 data class AvailablePrescriptionList(
-    val type: String,
     val iccsn: String,
     val medicationSummaryList: List<MedicationSummary>,
     val hint: String? = null,
@@ -90,7 +89,6 @@ data class AvailablePrescriptionList(
 @Serializable
 @SerialName(BESTANDTEIL_WIRKSTOFF_VERORDNUNG)
 data class BestandteilWirkstoffverordnung(
-    val type: String,
     val wirkstoffnummer: String,
     val wirkstoffname: String,
     val wirkstaerke: String,
