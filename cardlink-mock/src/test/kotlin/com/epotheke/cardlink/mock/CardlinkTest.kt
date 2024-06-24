@@ -76,7 +76,29 @@ class CardlinkTest {
             expectSendApduMessage()
             sendApduResponseMessage(it, CardLinkEndpoint.internalAuthCorrelationId)
             expectRegisterEgkFinish()
+            sendAvailablePrescriptionMessage(it)
+            expectAvailablePrescriptions()
+            sendSelectPrescriptions(it)
+            expectPrescriptionConfirmMessage()
         }
+    }
+
+    private fun sendAvailablePrescriptionMessage(session: Session) {
+        session.asyncRemote.sendText(REQUEST_AVAILABLE_PRESCRIPTION)
+    }
+
+    private fun expectAvailablePrescriptions() {
+        PRESCRIPTION_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(AVAILABLE_PRESCRIPTION_LISTS, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+    }
+
+    private fun sendSelectPrescriptions(session: Session) {
+        session.asyncRemote.sendText(SELECT_PRESCRIPTIONS)
+    }
+
+    private fun expectPrescriptionConfirmMessage() {
+        PRESCRIPTION_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(CONFIRM_PRESCRIPTION_LIST, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
     }
 
     private fun exceptSessionInformationMessage(session: Session) {
@@ -140,12 +162,19 @@ class CardlinkTest {
 
         @OnMessage
         fun message(data: String) {
-            logger.debug { "Received message at client: $data" }
-            val gematikMessage = cardLinkJsonFormatter.decodeFromString<GematikEnvelope>(data)
-            val payload = gematikMessage.payload
-            if (payload != null) {
-                payload::class.java.getAnnotation(SerialName::class.java)?.value?.let { MESSAGES_TYPES.add(it) }
-                EGK_ENVELOPE_MESSAGES.add(gematikMessage)
+            try {
+                val gematikMessage = cardLinkJsonFormatter.decodeFromString<GematikEnvelope>(data)
+                logger.debug { "Received Gematik message at client: $data" }
+                val payload = gematikMessage.payload
+                if (payload != null) {
+                    payload::class.java.getAnnotation(SerialName::class.java)?.value?.let { MESSAGES_TYPES.add(it) }
+                    EGK_ENVELOPE_MESSAGES.add(gematikMessage)
+                }
+            } catch (ex: IllegalArgumentException) {
+                val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(data)
+                logger.debug { "Received eRezept message at client: $data" }
+                eRezeptMessage::class.java.getAnnotation(SerialName::class.java)?.value?.let { MESSAGES_TYPES.add(it) }
+                PRESCRIPTION_ENVELOPE_MESSAGES.add(eRezeptMessage)
             }
         }
     }
@@ -155,6 +184,7 @@ class CardlinkTest {
 
         private val MESSAGES_TYPES = LinkedBlockingDeque<String>()
         private val EGK_ENVELOPE_MESSAGES = LinkedBlockingDeque<GematikEnvelope>()
+        private val PRESCRIPTION_ENVELOPE_MESSAGES = LinkedBlockingDeque<ERezeptMessage>()
 
         private const val REQUEST_SMS_CODE = """
             [
@@ -198,6 +228,33 @@ class CardlinkTest {
               "%s",
               "%s"
             ]
+        """
+
+        private const val REQUEST_AVAILABLE_PRESCRIPTION = """
+            {
+                "type": "requestPrescriptionList",
+                "ICCSNs": [
+                    "MTIzNDU2Nzg5"
+                ],
+                "messageId": "df094bd9-4669-458a-b47f-8330e8254306"
+            }
+        """
+
+        private const val SELECT_PRESCRIPTIONS = """
+            {
+                "type": "selectedPrescriptionList",
+                "ICCSN": "MTIzNDU2Nzg5",
+                "medicationIndexList": [
+                    0,
+                    1,
+                    2
+                ],
+                "supplyOptionsType": "delivery",
+                "name": "Nachbar: Heinz Müller (2. OG)",
+                "hint": "Bitte beim Nachbarn (Heinz Müller (2. OG)) abgeben und bei Belieferung anrufen.",
+                "phone": "+49 89 123 456789"
+                "messageId": "e9a148b9-e70a-498e-af0e-358c8226cae8"
+            }
         """
     }
 }
