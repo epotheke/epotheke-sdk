@@ -44,6 +44,7 @@ data class AvailablePrescriptionLists(
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST)
 data class SelectedPrescriptionList(
+    @SerialName("ICCSN")
     val iccsn: String,
     val medicationIndexList: List<Int>,
     val supplyOptionsType: SupplyOptionsType,
@@ -73,6 +74,7 @@ data class ConfirmPrescriptionList(
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LIST)
 data class AvailablePrescriptionList(
+    @SerialName("ICCSN")
     val iccsn: ByteArrayAsBase64,
     val medicationSummaryList: List<MedicationSummary>,
     val hint: String? = null,
@@ -157,10 +159,13 @@ data class MedicationSummary(
     val medication: Medication,
 )
 
-enum class SupplyOptionsType(val value: String) {
-    ON_PREMISE("onPremise"),
-    SHIPMENT("shipment"),
-    DELIVERY("delivery");
+enum class SupplyOptionsType {
+    @SerialName("onPremise")
+    ON_PREMISE,
+    @SerialName("shipment")
+    SHIPMENT,
+    @SerialName("delivery")
+    DELIVERY;
 }
 
 val eRezeptModule = SerializersModule {
@@ -180,4 +185,8 @@ val eRezeptModule = SerializersModule {
     }
 }
 
-val eRezeptJsonFormatter = Json { serializersModule = eRezeptModule; classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS }
+val eRezeptJsonFormatter = Json {
+    serializersModule = eRezeptModule;
+    classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS;
+    ignoreUnknownKeys = true
+}
