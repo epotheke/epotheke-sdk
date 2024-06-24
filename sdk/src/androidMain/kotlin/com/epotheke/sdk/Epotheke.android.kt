@@ -22,8 +22,6 @@
 
 package com.epotheke.sdk
 
-import CardLinkProtocol
-import ChannelDispatcher
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -42,8 +40,7 @@ import org.openecard.mobile.activation.*
 private val logger = KotlinLogging.logger {}
 
 
-
-class WebsocketListener(): ChannelDispatcher,
+class WebsocketListener() : ChannelDispatcher,
     org.openecard.mobile.activation.WebsocketListener {
 
     private val channels: MutableList<Channel<String>> = ArrayList<Channel<String>>()
@@ -76,7 +73,7 @@ abstract class EpothekeActivity : Activity() {
     var oec: OpeneCard? = null
     var ctxManager: AndroidContextManager? = null
     var activationSource: ActivationSource? = null
-    var nfcIntentHelper : NfcIntentHelper? = null
+    var nfcIntentHelper: NfcIntentHelper? = null
     var needNfc = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,11 +88,12 @@ abstract class EpothekeActivity : Activity() {
     }
 
     override fun onResume() {
-        if(needNfc) {
+        if (needNfc) {
             nfcIntentHelper?.enableNFCDispatch();
         }
         super.onResume()
     }
+
     override fun onDestroy() {
         ctxManager?.terminateContext(object : StopServiceHandler {
             override fun onSuccess() {
@@ -103,6 +101,7 @@ abstract class EpothekeActivity : Activity() {
                 logger.debug { "Open eCard stopped successfully." }
                 cleanupOecInstances()
             }
+
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to stop Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
                 cleanupOecInstances()
@@ -121,8 +120,14 @@ abstract class EpothekeActivity : Activity() {
                 val websocket = WebsocketAndroid(getCardlinkUrl())
                 val wsListener = WebsocketListener()
                 val protocols = buildProtocols(websocket, wsListener)
-                actSource.cardLinkFactory().create(websocket, overridingControllerCallback(protocols), overridingCardlinkIteraction(), wsListener)
+                actSource.cardLinkFactory().create(
+                    websocket,
+                    overridingControllerCallback(protocols),
+                    overridingCardlinkIteraction(),
+                    wsListener
+                )
             }
+
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
                 cleanupOecInstances()
@@ -159,18 +164,22 @@ abstract class EpothekeActivity : Activity() {
     // TODO: maybe use delegate here see: https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
     private fun overridingCardlinkIteraction(): CardLinkInteraction {
         val appImplementation = getCardLinkInteraction()
-        return object: CardLinkInteraction{
+        return object : CardLinkInteraction {
             override fun requestCardInsertion() {
                 nfcIntentHelper?.enableNFCDispatch()
                 needNfc = true
                 appImplementation.requestCardInsertion()
             }
-            override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) = appImplementation.requestCardInsertion(p0)
+
+            override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) =
+                appImplementation.requestCardInsertion(p0)
+
             override fun onCardInteractionComplete() {
                 nfcIntentHelper?.disableNFCDispatch()
                 needNfc = false
                 appImplementation.onCardInteractionComplete()
             }
+
             override fun onCardRecognized() = appImplementation.onCardRecognized()
             override fun onCardRemoved() = appImplementation.onCardRemoved()
             override fun onCanRequest(p0: ConfirmPasswordOperation?) = appImplementation.onCanRequest(p0)
@@ -187,7 +196,7 @@ abstract class EpothekeActivity : Activity() {
     private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>): ControllerCallback {
         val appImplementation = getControllerCallback()
 
-        return object: ControllerCallback{
+        return object : ControllerCallback {
             override fun onStarted() = appImplementation.onStarted()
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
                 nfcIntentHelper?.disableNFCDispatch()
@@ -199,7 +208,7 @@ abstract class EpothekeActivity : Activity() {
 
 
     abstract fun getCardlinkUrl(): String;
-    abstract fun getControllerCallback() : CardlinkControllerCallback;
-    abstract fun getCardLinkInteraction() : CardLinkInteraction;
+    abstract fun getControllerCallback(): CardlinkControllerCallback;
+    abstract fun getCardLinkInteraction(): CardLinkInteraction;
 
 }

@@ -1,6 +1,7 @@
+package com.epotheke.sdk
+
 import com.epotheke.erezept.model.*
 import kotlinx.coroutines.channels.Channel
-import kotlin.jvm.Throws
 
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
@@ -25,19 +26,19 @@ import kotlin.jvm.Throws
  ***************************************************************************/
 
 
-class ErezeptProtocolException(val msg: GenericErrorMessage): Exception() {}
+class ErezeptProtocolException(val msg: GenericErrorMessage) : Exception()
 
-interface ChannelDispatcher{
+interface ChannelDispatcher {
     fun addProtocolChannel(channel: Channel<String>)
 }
 
-sealed interface CardLinkProtocol{
+interface CardLinkProtocol {
     fun registerListener(channelDispatcher: ChannelDispatcher)
 }
 
 interface ErezeptProtocol: CardLinkProtocol {
-    //use classes from model
     @Throws(ErezeptProtocolException::class)
     suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists
-    suspend fun selectReceipts(selection: SelectedPrescriptionList)
+    @Throws(ErezeptProtocolException::class)
+    suspend fun selectReceipts(selection: SelectedPrescriptionList): ConfirmPrescriptionList
 }

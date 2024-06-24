@@ -24,21 +24,24 @@ package com.epotheke.demo
 
 import android.os.Bundle
 import android.view.View
+import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.transition.Visibility
+import com.epotheke.erezept.model.AvailablePrescriptionLists
+import com.epotheke.erezept.model.Medication
+import com.epotheke.erezept.model.MedicationPzn
 import com.epotheke.erezept.model.RequestPrescriptionList
+import com.epotheke.erezept.model.SelectedPrescriptionList
+import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.EpothekeActivity
 import com.epotheke.sdk.ErezeptProtocol
-import com.epotheke.sdk.ErezeptProtocolImp
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.openecard.mobile.activation.*
 import java.util.*
-import kotlin.collections.HashSet
 
 
 private val LOG = KotlinLogging.logger {}
@@ -226,7 +229,10 @@ class EpothekeActivityImp : EpothekeActivity() {
          * If something went wrong the Result will contain an error.
          */
 
-        override fun onAuthenticationCompletion(activationResult: ActivationResult?, cardlinkProtocols: Set<CardLinkProtocol>) {
+        override fun onAuthenticationCompletion(
+            activationResult: ActivationResult?,
+            cardlinkProtocols: Set<CardLinkProtocol>
+        ) {
             LOG.debug { "EpothekeImplementation onAuthenticationCompletion" }
             LOG.debug { (activationResult.toString()) }
             runOnUiThread {
@@ -246,32 +252,98 @@ class EpothekeActivityImp : EpothekeActivity() {
                 }
                 showInfo(sb.toString())
 
-                LOG.debug {"Start action for Erezeptprotocol"}
-                //refactor to function the whole process
                 val protocol = cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first()
-
-                //activate protocol use case ->
-                val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
-                btn_ereceipts.visibility = VISIBLE
-                btn_ereceipts.isEnabled = true
-
-
-                btn_ereceipts.setOnClickListener {
-                    val result = runBlocking {
-                        try{
-                            protocol.requestReceipts(RequestPrescriptionList(
-                                type="",
-                                messageId=""
-                            )
-                            LOG.debug { "recieved result: $result" }
-                        } catch  {
-
-                        }
-                    )}
-                }
+                enableErezeptProtocol(protocol)
 
                 val btn_cancel = findViewById<Button>(R.id.btn_cancel)
                 btn_cancel.text = "FINISH"
+            }
+        }
+    }
+
+    private fun enableErezeptProtocol(protocol: ErezeptProtocol) {
+        LOG.debug { "Start action for Erezeptprotocol" }
+        val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
+        btn_ereceipts.visibility = VISIBLE
+        btn_ereceipts.isEnabled = true
+
+        btn_ereceipts.setOnClickListener {
+            startErezeptFlow(protocol)
+        }
+    }
+
+    private fun startErezeptFlow(protocol: ErezeptProtocol) {
+        runBlocking {
+            setBusy(true)
+            try {
+                val result = protocol.requestReceipts(
+                    RequestPrescriptionList(
+                        messageId = "df094bd9-4669-458a-b47f-8330e8254306",
+                        iccsns = listOf(byteArrayOf(0))
+                    )
+                )
+
+                var sb = StringBuilder()
+                sb.append("Available receipts: \n")
+                result.availablePrescriptionLists.forEach { list ->
+                    list.medicationSummaryList.forEach { summary ->
+                        when (summary.medication) {
+                            is MedicationPzn -> {
+                                val name = (summary.medication as MedicationPzn).handelsname
+                                sb.append("- ")
+                                sb.append(name)
+                                sb.append("\n")
+                            }
+                        }
+                    }
+                }
+                setBusy(false)
+                showInfo(sb.toString())
+                enableRedeem(protocol, result)
+
+            } catch (e: Exception) {
+                LOG.debug(e) { "Error in request" }
+            }
+        }
+    }
+
+    private fun enableRedeem(protocol: ErezeptProtocol, lsts: AvailablePrescriptionLists) {
+        LOG.debug { "Enable action for Redeeming" }
+        val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
+        btn_ereceipts.setText("REDEEM RECEIPTS")
+
+        btn_ereceipts.setOnClickListener {
+            redeemReceipts(protocol, lsts)
+        }
+    }
+
+    private fun disableEreceiptFunction() {
+        LOG.debug { "Enable action for Redeeming" }
+        val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
+        btn_ereceipts.visibility = INVISIBLE
+    }
+
+    private fun redeemReceipts(protocol: ErezeptProtocol, lsts: AvailablePrescriptionLists) {
+        var selection = SelectedPrescriptionList(
+            messageId = "df094bd9-4669-458a-b47f-8330e8254306",
+            iccsn = "",
+            medicationIndexList = listOf(0),
+            supplyOptionsType = SupplyOptionsType.DELIVERY
+        )
+        runBlocking {
+            setBusy(true)
+            try {
+                val result = protocol.selectReceipts(selection)
+                if (result.correlationId == selection.messageId) {
+                    showInfo("SUCCESS")
+                } else {
+                    showInfo("Confirmation wrong")
+                }
+                setBusy(false)
+                disableEreceiptFunction()
+            } catch (e: Exception) {
+                showInfo("Sth. went wrong")
+                LOG.debug(e) { "Error in request" }
             }
         }
     }
