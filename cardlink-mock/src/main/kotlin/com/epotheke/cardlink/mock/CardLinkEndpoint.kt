@@ -22,7 +22,8 @@
 
 package com.epotheke.cardlink.mock
 
-import com.epotheke.cardlink.mock.encoding.JsonEncoder
+import com.epotheke.cardlink.mock.encoding.GematikMessageEncoder
+import com.epotheke.cardlink.mock.encoding.PrescriptionMessageEncoder
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.netty.handler.codec.http.QueryStringDecoder
@@ -38,7 +39,7 @@ import kotlin.random.Random
 private val logger = KotlinLogging.logger {}
 
 @ApplicationScoped
-@ServerEndpoint("/cardlink", subprotocols = ["cardlink"], encoders = [ JsonEncoder::class ])
+@ServerEndpoint("/cardlink", subprotocols = ["cardlink"], encoders = [ GematikMessageEncoder::class, PrescriptionMessageEncoder::class])
 class CardLinkEndpoint {
 
     @Inject
@@ -96,9 +97,7 @@ class CardLinkEndpoint {
                 else -> logger.error { "Unsupported Gematik message: ${gematikMessage::class.java}" }
             }
         } catch (ex: IllegalArgumentException) {
-            val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(data)
-
-            when (eRezeptMessage) {
+            when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(data)) {
                 is RequestPrescriptionList -> sendPrescriptionList(eRezeptMessage, session)
                 is SelectedPrescriptionList -> sendConfirmSelectedPrescriptionList(eRezeptMessage, session)
             }
