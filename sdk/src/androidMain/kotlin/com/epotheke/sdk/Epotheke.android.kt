@@ -23,6 +23,7 @@
 package com.epotheke.sdk
 
 import CardLinkProtocol
+import ChannelDispatcher
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -30,6 +31,7 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Bundle
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.openecard.android.activation.AndroidContextManager
 import org.openecard.android.activation.OpeneCard
@@ -39,8 +41,12 @@ import org.openecard.mobile.activation.*
 
 private val logger = KotlinLogging.logger {}
 
-class WebsocketListener(private val protos: Set<CardLinkProtocol>):
+
+
+class WebsocketListener(): ChannelDispatcher,
     org.openecard.mobile.activation.WebsocketListener {
+
+    private val channels: MutableList<Channel<String>> = ArrayList<Channel<String>>()
 
     override fun onOpen(p0: Websocket) {
     }
@@ -53,11 +59,16 @@ class WebsocketListener(private val protos: Set<CardLinkProtocol>):
     }
 
     override fun onText(p0: Websocket, p1: String) {
+        logger.debug { "Message from established link: $p1" }
         runBlocking {
-            protos.map { protocol ->
-                protocol.getInputChannel()?.send(p1)
+            channels.map { c ->
+                c.send(p1)
             }
         }
+    }
+
+    override fun addProtocolChannel(channel: Channel<String>) {
+        channels.add(channel)
     }
 }
 
@@ -108,8 +119,8 @@ abstract class EpothekeActivity : Activity() {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
                 val websocket = WebsocketAndroid(getCardlinkUrl())
-                val protocols = buildProtocols(websocket)
-                val wsListener = WebsocketListener(protocols)
+                val wsListener = WebsocketListener()
+                val protocols = buildProtocols(websocket, wsListener)
                 actSource.cardLinkFactory().create(websocket, overridingControllerCallback(protocols), overridingCardlinkIteraction(), wsListener)
             }
             override fun onFailure(ex: ServiceErrorResponse) {
@@ -119,10 +130,14 @@ abstract class EpothekeActivity : Activity() {
         })
     }
 
-    private fun buildProtocols(websocket: WebsocketAndroid): Set<CardLinkProtocol> {
-        return HashSet<CardLinkProtocol>().apply {
-            add(ErezeptProtocolImp(websocket))
+    private fun buildProtocols(websocket: WebsocketAndroid, wsListener: WebsocketListener): Set<CardLinkProtocol> {
+        val res = setOf(
+            ErezeptProtocolImp(websocket)
+        )
+        res.forEach { p ->
+            p.registerListener(wsListener);
         }
+        return res
     }
 
     protected fun cleanupOecInstances() {

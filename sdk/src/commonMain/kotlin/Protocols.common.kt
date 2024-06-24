@@ -1,7 +1,6 @@
-import com.epotheke.erezept.model.AvailablePrescriptionList
-import com.epotheke.erezept.model.RequestPrescriptionList
-import com.epotheke.erezept.model.SelectedPrescriptionList
+import com.epotheke.erezept.model.*
 import kotlinx.coroutines.channels.Channel
+import kotlin.jvm.Throws
 
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
@@ -25,12 +24,20 @@ import kotlinx.coroutines.channels.Channel
  *
  ***************************************************************************/
 
+
+class ErezeptProtocolException(val msg: GenericErrorMessage): Exception() {}
+
+interface ChannelDispatcher{
+    fun addProtocolChannel(channel: Channel<String>)
+}
+
 sealed interface CardLinkProtocol{
-    fun getInputChannel(): Channel<String>?
+    fun registerListener(channelDispatcher: ChannelDispatcher)
 }
 
 interface ErezeptProtocol: CardLinkProtocol {
     //use classes from model
-    suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionList?
+    @Throws(ErezeptProtocolException::class)
+    suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists
     suspend fun selectReceipts(selection: SelectedPrescriptionList)
 }

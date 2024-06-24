@@ -1,6 +1,8 @@
 package com.epotheke.sdk
 
+import ChannelDispatcher
 import ErezeptProtocol
+import ErezeptProtocolException
 import com.epotheke.erezept.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.Channel
@@ -11,26 +13,31 @@ class ErezeptProtocolImp(
     private val ws: WebsocketAndroid,
 ) : ErezeptProtocol {
 
-    private var inputChannel: Channel<String>? = null
+    private val inputChannel = Channel<String>()
 
-    override suspend fun requestReceipts(req: RequestPrescriptionList) : AvailablePrescriptionList? {
+    override suspend fun requestReceipts(req: RequestPrescriptionList) : AvailablePrescriptionLists {
         logger.debug { "Sending data to request ecreipts." }
+        ws.send(req.toString())
 
-        if (inputChannel == null){
-            inputChannel = Channel<String>()
+        while (true) {
+            try{
+                val response = inputChannel.receive()
+                val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(response)
+
+                when (eRezeptMessage) {
+                    is AvailablePrescriptionLists -> {
+                        if(eRezeptMessage.correlationId == req.messageId){
+                            return eRezeptMessage
+                        }
+                    }
+                    is GenericErrorMessage -> {
+                        ErezeptProtocolException(eRezeptMessage)
+                    }
+                }
+            }catch (e: Exception){
+                logger.error(e) { "Exceptino during receive"}
+            }
         }
-
-        ws.send(RequestPrescriptionList(
-            "type" ,
-            messageId = "messageId"
-        ).toString())
-
-        val response = inputChannel?.receive()
-        //parse rsponse and look for correct answer
-
-        //return response
-        return null
-
     }
 
     override suspend fun selectReceipts(lst: SelectedPrescriptionList) {
@@ -38,8 +45,8 @@ class ErezeptProtocolImp(
         ws.send(lst.toString())
     }
 
-    override fun getInputChannel(): Channel<String>? {
-        return inputChannel
+    override fun registerListener(channelDispatcher: ChannelDispatcher) {
+        channelDispatcher.addProtocolChannel(inputChannel)
     }
 
 }

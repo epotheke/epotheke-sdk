@@ -29,11 +29,13 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.transition.Visibility
+import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.EpothekeActivity
 import com.epotheke.sdk.ErezeptProtocol
 import com.epotheke.sdk.ErezeptProtocolImp
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.openecard.mobile.activation.*
 import java.util.*
 import kotlin.collections.HashSet
@@ -245,19 +247,27 @@ class EpothekeActivityImp : EpothekeActivity() {
                 showInfo(sb.toString())
 
                 LOG.debug {"Start action for Erezeptprotocol"}
+                //refactor to function the whole process
+                val protocol = cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first()
+
+                //activate protocol use case ->
                 val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
                 btn_ereceipts.visibility = VISIBLE
                 btn_ereceipts.isEnabled = true
 
-                val protocol = cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first()
 
                 btn_ereceipts.setOnClickListener {
-                    val result = runBlocking { protocol.requestReceipts(RequestPrescriptionList(
-                            type="",
-                            messageId=""
-                        )
+                    val result = runBlocking {
+                        try{
+                            protocol.requestReceipts(RequestPrescriptionList(
+                                type="",
+                                messageId=""
+                            )
+                            LOG.debug { "recieved result: $result" }
+                        } catch  {
+
+                        }
                     )}
-                    LOG.debug { "recieved result: $result" }
                 }
 
                 val btn_cancel = findViewById<Button>(R.id.btn_cancel)
