@@ -105,13 +105,11 @@ abstract class EpothekeActivity : Activity() {
     }
 
     private fun buildProtocols(websocket: WebsocketAndroid, wsListener: WebsocketListener): Set<CardLinkProtocol> {
-        val res = setOf(
+        return setOf(
             ErezeptProtocolImp(websocket)
-        )
-        res.forEach { p ->
+        ).onEach { p ->
             p.registerListener(wsListener);
         }
-        return res
     }
 
     protected fun cleanupOecInstances() {
