@@ -282,7 +282,6 @@ class EpothekeActivityImp : EpothekeActivity() {
             try {
                 val result = protocol.requestReceipts(
                     RequestPrescriptionList(
-                        messageId = "df094bd9-4669-458a-b47f-8330e8254306",
                         iccsns = listOf(byteArrayOf(0))
                     )
                 )
@@ -323,7 +322,6 @@ class EpothekeActivityImp : EpothekeActivity() {
 
     private fun redeemReceipts(protocol: ErezeptProtocol, lsts: AvailablePrescriptionLists) {
         var selection = SelectedPrescriptionList(
-            messageId = UUID.randomUUID().toString(),
             iccsn = "",
             medicationIndexList = listOf(0),
             supplyOptionsType = SupplyOptionsType.DELIVERY

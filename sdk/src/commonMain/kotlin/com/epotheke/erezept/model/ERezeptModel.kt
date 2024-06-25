@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import java.util.UUID
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -38,14 +39,14 @@ interface ERezeptMessage
 data class RequestPrescriptionList(
     @SerialName("ICCSNs")
     val iccsns: List<ByteArrayAsBase64>? = null,
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
 ) : ERezeptMessage
 
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LISTS)
 data class AvailablePrescriptionLists(
     val availablePrescriptionLists: List<AvailablePrescriptionList>,
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String,
 ) : ERezeptMessage
 
@@ -60,7 +61,7 @@ data class SelectedPrescriptionList(
     val address: List<String>? = null,
     val hint: String? = null,
     val phone: String? = null,
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
 ) : ERezeptMessage
 
 @Serializable
@@ -68,14 +69,14 @@ data class SelectedPrescriptionList(
 data class GenericErrorMessage(
     val errorCode: GenericErrorResultType,
     val errorMessage: String,
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String? = null,
 ) : ERezeptMessage
 
 @Serializable
 @SerialName(CONFIRM_PRESCRIPTION_LIST)
 data class ConfirmPrescriptionList(
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String,
 ) : ERezeptMessage
 
