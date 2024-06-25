@@ -30,7 +30,6 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.epotheke.erezept.model.AvailablePrescriptionLists
-import com.epotheke.erezept.model.Medication
 import com.epotheke.erezept.model.MedicationPzn
 import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
@@ -237,42 +236,47 @@ class EpothekeActivityImp : EpothekeActivity() {
             LOG.debug { (activationResult.toString()) }
             runOnUiThread {
                 setBusy(false)
-                val sb = StringBuilder()
-                sb.append(if (activationResult?.resultCode == ActivationResultCode.OK) "SUCCESS" else "FAIL")
-                sb.append("\n")
-                if (activationResult?.resultCode == ActivationResultCode.OK) {
-                    for (key in activationResult.resultParameterKeys) {
-                        sb.append(key)
-                        sb.append(": ")
-                        sb.append(activationResult.getResultParameter(key))
-                        sb.append("\n")
+                val resultMsg = StringBuilder().apply {
+                    append(if (activationResult?.resultCode == ActivationResultCode.OK) "SUCCESS" else "FAIL")
+                    append("\n")
+                    if (activationResult?.resultCode == ActivationResultCode.OK) {
+                        for (key in activationResult.resultParameterKeys) {
+                            append(key)
+                            append(": ")
+                            append(activationResult.getResultParameter(key))
+                            append("\n")
+                        }
+                    } else {
+                        append(activationResult?.errorMessage)
                     }
-                } else {
-                    sb.append(activationResult?.errorMessage)
+                }.toString()
+
+                showInfo(resultMsg)
+
+                cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first().also { protocol ->
+                    enableErezeptProtocol(protocol)
                 }
-                showInfo(sb.toString())
 
-                val protocol = cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first()
-                enableErezeptProtocol(protocol)
-
-                val btn_cancel = findViewById<Button>(R.id.btn_cancel)
-                btn_cancel.text = "FINISH"
+                findViewById<Button>(R.id.btn_cancel).apply {
+                    text = "FINISH"
+                }
             }
         }
     }
 
     private fun enableErezeptProtocol(protocol: ErezeptProtocol) {
-        LOG.debug { "Start action for Erezeptprotocol" }
-        val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
-        btn_ereceipts.visibility = VISIBLE
-        btn_ereceipts.isEnabled = true
+        findViewById<Button>(R.id.btn_getReceipts).apply {
+            visibility = VISIBLE
+            isEnabled = true
 
-        btn_ereceipts.setOnClickListener {
-            startErezeptFlow(protocol)
+            setOnClickListener {
+                startErezeptFlow(protocol)
+            }
         }
     }
 
     private fun startErezeptFlow(protocol: ErezeptProtocol) {
+        LOG.debug { "Start action for Erezeptprotocol" }
         runBlocking {
             setBusy(true)
             try {
@@ -309,23 +313,17 @@ class EpothekeActivityImp : EpothekeActivity() {
 
     private fun enableRedeem(protocol: ErezeptProtocol, lsts: AvailablePrescriptionLists) {
         LOG.debug { "Enable action for Redeeming" }
-        val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
-        btn_ereceipts.setText("REDEEM RECEIPTS")
-
-        btn_ereceipts.setOnClickListener {
-            redeemReceipts(protocol, lsts)
+        findViewById<Button>(R.id.btn_getReceipts).apply {
+            text = "REDEEM RECEIPTS"
+            setOnClickListener {
+                redeemReceipts(protocol, lsts)
+            }
         }
-    }
-
-    private fun disableEreceiptFunction() {
-        LOG.debug { "Enable action for Redeeming" }
-        val btn_ereceipts = findViewById<Button>(R.id.btn_getReceipts)
-        btn_ereceipts.visibility = INVISIBLE
     }
 
     private fun redeemReceipts(protocol: ErezeptProtocol, lsts: AvailablePrescriptionLists) {
         var selection = SelectedPrescriptionList(
-            messageId = "df094bd9-4669-458a-b47f-8330e8254306",
+            messageId = UUID.randomUUID().toString(),
             iccsn = "",
             medicationIndexList = listOf(0),
             supplyOptionsType = SupplyOptionsType.DELIVERY
@@ -333,14 +331,10 @@ class EpothekeActivityImp : EpothekeActivity() {
         runBlocking {
             setBusy(true)
             try {
-                val result = protocol.selectReceipts(selection)
-                if (result.correlationId == selection.messageId) {
-                    showInfo("SUCCESS")
-                } else {
-                    showInfo("Confirmation wrong")
-                }
-                setBusy(false)
+                protocol.selectReceipts(selection)
+                showInfo("SUCCESS")
                 disableEreceiptFunction()
+                setBusy(false)
             } catch (e: Exception) {
                 showInfo("Sth. went wrong")
                 LOG.debug(e) { "Error in request" }
@@ -348,11 +342,11 @@ class EpothekeActivityImp : EpothekeActivity() {
         }
     }
 
-    /**
-     * Functional interface to be able to bind sdk-callbacks to button taps
-     */
-    private fun interface ButtonAction {
-        fun act(value: String)
+    private fun disableEreceiptFunction() {
+        LOG.debug { "Enable action for Redeeming" }
+        findViewById<Button>(R.id.btn_getReceipts).apply {
+            visibility = INVISIBLE
+        }
     }
 
     /**
@@ -362,8 +356,9 @@ class EpothekeActivityImp : EpothekeActivity() {
      */
     fun showInfo(text: String?) {
         runOnUiThread {
-            val t = findViewById<TextView>(R.id.statusText)
-            t.text = text
+            findViewById<TextView>(R.id.statusText).apply {
+                this.text = text
+            }
         }
     }
 
@@ -374,16 +369,18 @@ class EpothekeActivityImp : EpothekeActivity() {
      * @param defaultValue
      * @param action
      */
-    private fun getValueFromUser(infoText: String, defaultValue: String, action: ButtonAction) {
+    private fun getValueFromUser(infoText: String, defaultValue: String, btnAction: (value: String) -> Unit) {
         runOnUiThread {
             showInfo(infoText)
+
             val inputField = findViewById<TextView>(R.id.input)
             inputField.text = defaultValue
-            val btn_ok = findViewById<Button>(R.id.btn_ok)
-            btn_ok.setOnClickListener { _: View? ->
-                setInputActive(false)
-                val input = findViewById<TextView>(R.id.input)
-                action.act(input.text.toString())
+
+            findViewById<Button>(R.id.btn_ok).apply {
+                setOnClickListener {
+                    setInputActive(false)
+                    btnAction(inputField.text.toString())
+                }
             }
             setInputActive(true)
         }
@@ -396,10 +393,12 @@ class EpothekeActivityImp : EpothekeActivity() {
      */
     private fun setInputActive(active: Boolean) {
         runOnUiThread {
-            val inputField = findViewById<TextView>(R.id.input)
-            inputField.visibility = if (active) View.VISIBLE else View.INVISIBLE
-            val btn_ok = findViewById<Button>(R.id.btn_ok)
-            btn_ok.visibility = if (active) View.VISIBLE else View.INVISIBLE
+            findViewById<TextView>(R.id.input).apply {
+                visibility = if (active) View.VISIBLE else View.INVISIBLE
+            }
+            findViewById<Button>(R.id.btn_ok).apply {
+                visibility = if (active) View.VISIBLE else View.INVISIBLE
+            }
             setBusy(!active)
         }
     }
@@ -410,22 +409,27 @@ class EpothekeActivityImp : EpothekeActivity() {
      * @param busy
      */
     private fun setBusy(busy: Boolean) {
-        val p = findViewById<ProgressBar>(R.id.busy)
-        p.visibility = if (busy) View.VISIBLE else View.INVISIBLE
+        findViewById<ProgressBar>(R.id.busy).apply {
+            visibility = if (busy) View.VISIBLE else View.INVISIBLE
+        }
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.epo_layout)
-        val serviceLabel = findViewById<TextView>(R.id.service)
-        serviceLabel.text = """
-            ${serviceLabel.text}
-            $mockServiceUrl
-            """.trimIndent()
-        val inputField = findViewById<TextView>(R.id.input)
-        inputField.isEnabled = true
+        findViewById<TextView>(R.id.service).apply {
+            text = """
+                ${this.text}
+                $mockServiceUrl
+                """.trimIndent()
+        }
+
+        findViewById<TextView>(R.id.input).apply {
+            isEnabled = true
+        }
         setInputActive(false)
-        val cancelButton = findViewById<Button>(R.id.btn_cancel)
-        cancelButton.setOnClickListener { _: View? -> finish() }
+        findViewById<Button>(R.id.btn_cancel).apply {
+            setOnClickListener { finish() }
+        }
         super.onCreate(savedInstanceState)
     }
 
