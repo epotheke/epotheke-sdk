@@ -30,6 +30,8 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.epotheke.erezept.model.AvailablePrescriptionLists
+import com.epotheke.erezept.model.MedicationFreeText
+import com.epotheke.erezept.model.MedicationIngredient
 import com.epotheke.erezept.model.MedicationPzn
 import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
@@ -297,6 +299,19 @@ class EpothekeActivityImp : EpothekeActivity() {
                                 sb.append(name)
                                 sb.append("\n")
                             }
+                            is MedicationIngredient -> {
+                                val parts = (summary.medication as MedicationIngredient).listeBestandteilWirkstoffverordnung
+                                val wirkstoffe = parts.map { e -> e.wirkstoffname }.joinToString(",")
+                                sb.append("- ")
+                                sb.append(wirkstoffe)
+                                sb.append("\n")
+                            }
+                            is MedicationFreeText -> {
+                                val txt = (summary.medication as MedicationFreeText).freitextverordnung
+                                sb.append("- ")
+                                sb.append(txt)
+                                sb.append("\n")
+                            }
                         }
                     }
                 }
@@ -310,20 +325,20 @@ class EpothekeActivityImp : EpothekeActivity() {
         }
     }
 
-    private fun enableRedeem(protocol: ErezeptProtocol, lsts: AvailablePrescriptionLists) {
+    private fun enableRedeem(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         LOG.debug { "Enable action for Redeeming" }
         findViewById<Button>(R.id.btn_getReceipts).apply {
             text = "REDEEM RECEIPTS"
             setOnClickListener {
-                redeemReceipts(protocol, lsts)
+                redeemReceipts(protocol, available)
             }
         }
     }
 
-    private fun redeemReceipts(protocol: ErezeptProtocol, lsts: AvailablePrescriptionLists) {
+    private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         var selection = SelectedPrescriptionList(
             iccsn = "",
-            medicationIndexList = listOf(0),
+            medicationIndexList = listOf(0, 1, 2),
             supplyOptionsType = SupplyOptionsType.DELIVERY
         )
         runBlocking {
