@@ -37,6 +37,7 @@ import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
+import com.epotheke.sdk.CardlinkControllerCallback
 import com.epotheke.sdk.EpothekeActivity
 import com.epotheke.sdk.ErezeptProtocol
 import io.github.oshai.kotlinlogging.KotlinLogging
