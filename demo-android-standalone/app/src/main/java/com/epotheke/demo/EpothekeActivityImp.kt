@@ -307,33 +307,22 @@ class EpothekeActivityImp : EpothekeActivity() {
                  *
                  * For the showcase we simply build a string containing names of these elements from the first outer list.
                  */
-                var sb = StringBuilder()
-                sb.append("Available receipts: \n")
-                result.availablePrescriptionLists.first().medicationSummaryList.onEach { summary ->
-                    when (summary.medication) {
-                        is MedicationPzn -> {
-                            val name = (summary.medication as MedicationPzn).handelsname
-                            sb.append("- ")
-                            sb.append(name)
-                            sb.append("\n")
-                        }
-                        is MedicationIngredient -> {
-                            val parts = (summary.medication as MedicationIngredient).listeBestandteilWirkstoffverordnung
-                            val wirkstoffe = parts.map { e -> e.wirkstoffname }.joinToString(",")
-                            sb.append("- ")
-                            sb.append(wirkstoffe)
-                            sb.append("\n")
-                        }
-                        is MedicationFreeText -> {
-                            val txt = (summary.medication as MedicationFreeText).freitextverordnung
-                            sb.append("- ")
-                            sb.append(txt)
-                            sb.append("\n")
+                val text =
+                    result.availablePrescriptionLists.first().medicationSummaryList.joinToString("\n -") { summary ->
+                        when (val medication = summary.medication) {
+                            is MedicationPzn -> medication.handelsname
+                            is MedicationIngredient -> {
+                                medication.listeBestandteilWirkstoffverordnung
+                                    .joinToString(",") { e -> e.wirkstoffname }
+                            }
+
+                            is MedicationFreeText -> medication.freitextverordnung
+                            else -> ""
                         }
                     }
-                }
+
                 setBusy(false)
-                showInfo(sb.toString())
+                showInfo("Available receipts: \n$text")
                 enableRedeem(protocol, result)
 
             } catch (e: Exception) {
