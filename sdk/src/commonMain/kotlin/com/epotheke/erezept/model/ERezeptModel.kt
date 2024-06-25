@@ -32,7 +32,7 @@ const val MEDICATION_SUMMARY = "medicationSummary"
 const val CONFIRM_PRESCRIPTION_LIST = "confirmPrescriptionListMessage"
 
 
-interface ERezeptMessage
+sealed interface ERezeptMessage
 
 @Serializable
 @SerialName(REQUEST_PRESCRIPTION_LIST)

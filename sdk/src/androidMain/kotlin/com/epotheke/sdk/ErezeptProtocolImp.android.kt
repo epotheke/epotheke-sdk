@@ -29,10 +29,10 @@ class ErezeptProtocolImp(
                             return eRezeptMessage
                         }
                     }
-
                     is GenericErrorMessage -> {
                         throw ErezeptProtocolException(eRezeptMessage)
                     }
+                    else -> continue
                 }
             } catch (e: Exception) {
                 logger.error(e) { "Exceptino during receive" }
@@ -55,10 +55,10 @@ class ErezeptProtocolImp(
                             return eRezeptMessage
                         }
                     }
-
                     is GenericErrorMessage -> {
                         throw ErezeptProtocolException(eRezeptMessage)
                     }
+                    else -> continue
                 }
             } catch (e: Exception) {
                 logger.error(e) { "Exception during receive" }
