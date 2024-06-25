@@ -92,7 +92,7 @@ abstract class EpothekeActivity : Activity() {
                 actSource.cardLinkFactory().create(
                     websocket,
                     overridingControllerCallback(protocols),
-                    overridingCardlinkIteraction(),
+                    OverridingCardlinkInteraction(this@EpothekeActivity, getCardLinkInteraction()),
                     wsListener
                 )
             }
@@ -130,30 +130,16 @@ abstract class EpothekeActivity : Activity() {
         }
     }
 
-    // TODO: maybe use delegate here see: https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
-    private fun overridingCardlinkIteraction(): CardLinkInteraction {
-        val appImplementation = getCardLinkInteraction()
-        return object : CardLinkInteraction {
-            override fun requestCardInsertion() {
-                nfcIntentHelper?.enableNFCDispatch()
-                needNfc = true
-                appImplementation.requestCardInsertion()
-            }
-
-            override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) =
-                appImplementation.requestCardInsertion(p0)
-
-            override fun onCardInteractionComplete() {
-                nfcIntentHelper?.disableNFCDispatch()
-                needNfc = false
-                appImplementation.onCardInteractionComplete()
-            }
-
-            override fun onCardRecognized() = appImplementation.onCardRecognized()
-            override fun onCardRemoved() = appImplementation.onCardRemoved()
-            override fun onCanRequest(p0: ConfirmPasswordOperation?) = appImplementation.onCanRequest(p0)
-            override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) = appImplementation.onPhoneNumberRequest(p0)
-            override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) = appImplementation.onSmsCodeRequest(p0)
+    private class OverridingCardlinkInteraction(val ctx: EpothekeActivity, val delegate: CardLinkInteraction): CardLinkInteraction by delegate {
+        override fun requestCardInsertion() {
+            ctx.nfcIntentHelper?.enableNFCDispatch()
+            ctx.needNfc = true
+            delegate.requestCardInsertion()
+        }
+        override fun onCardInteractionComplete() {
+            ctx.nfcIntentHelper?.disableNFCDispatch()
+            ctx.needNfc = false
+            delegate.onCardInteractionComplete()
         }
     }
 
