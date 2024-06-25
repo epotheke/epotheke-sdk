@@ -183,7 +183,6 @@ val eRezeptModule = SerializersModule {
         subclass(AvailablePrescriptionLists::class)
         subclass(SelectedPrescriptionList::class)
         subclass(ConfirmPrescriptionList::class)
-        subclass(ConfirmPrescriptionList::class)
         subclass(GenericErrorMessage::class)
     }
     polymorphic(Medication::class) {
