@@ -266,6 +266,9 @@ class EpothekeActivityImp : EpothekeActivity() {
         }
     }
 
+    /**
+     * Enable and show button to start ereceipt protocol flow.
+     */
     private fun enableErezeptProtocol(protocol: ErezeptProtocol) {
         findViewById<Button>(R.id.btn_getReceipts).apply {
             visibility = VISIBLE
@@ -277,18 +280,36 @@ class EpothekeActivityImp : EpothekeActivity() {
         }
     }
 
+    /**
+     * Start the ereceipt flow
+     * The functions of the protocol are kotlin suspend functions and therefore have to be run in
+     * a couroutine scope, which enables us to perform the asynchronous communications in the background of the app.
+     * To keep it simple we here just use runBlocking.
+     */
     private fun startErezeptFlow(protocol: ErezeptProtocol) {
         LOG.debug { "Start action for Erezeptprotocol" }
+
         runBlocking {
             setBusy(true)
             try {
+                /*
+                * Send request for available receipts via the ErezeptProtocol object
+                * We can use the default values of the constructor to get everything available.
+                */
                 val result = protocol.requestReceipts(
                     RequestPrescriptionList()
                 )
 
+                /*
+                 * The answer message contains a list of lists.
+                 * Each outer list is associated with a card and contains available receipts for it.
+                 * The inner lists contains types describing receipts.
+                 *
+                 * For the showcase we simply build a string containing names of these elements from the first outer list.
+                 */
                 var sb = StringBuilder()
                 sb.append("Available receipts: \n")
-                result.availablePrescriptionLists[0].medicationSummaryList.onEach { summary ->
+                result.availablePrescriptionLists.first().medicationSummaryList.onEach { summary ->
                     when (summary.medication) {
                         is MedicationPzn -> {
                             val name = (summary.medication as MedicationPzn).handelsname
@@ -321,6 +342,9 @@ class EpothekeActivityImp : EpothekeActivity() {
         }
     }
 
+    /**
+     * This method switches the functionality of the button to go on with a redemption.
+     */
     private fun enableRedeem(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         LOG.debug { "Enable action for Redeeming" }
         findViewById<Button>(R.id.btn_getReceipts).apply {
@@ -331,12 +355,24 @@ class EpothekeActivityImp : EpothekeActivity() {
         }
     }
 
+    /**
+     * This function uses the given protocol and the list of available prescriptions to
+     * redeem them.
+     */
     private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+        /*
+         * For the example we build a SelectPrescriptionList containing all elements (indices) of the first outer list
+         * from the previous answer and set the supplyOptionsType to DELIVERY
+         */
         var selection = SelectedPrescriptionList(
-            iccsn = available.availablePrescriptionLists[0].iccsn,
-            medicationIndexList = available.availablePrescriptionLists[0].medicationSummaryList.map { l -> l.index },
+            iccsn = available.availablePrescriptionLists.first().iccsn,
+            medicationIndexList = available.availablePrescriptionLists.first().medicationSummaryList.map { l -> l.index },
             supplyOptionsType = SupplyOptionsType.DELIVERY
         )
+
+        /*
+         * We send the request via the protocol instance to the service and wait for a confirmation message.
+         */
         runBlocking {
             setBusy(true)
             try {
@@ -351,6 +387,9 @@ class EpothekeActivityImp : EpothekeActivity() {
         }
     }
 
+    /**
+     * Deactivates the button for ereceipt functionality
+     */
     private fun disableEreceiptFunction() {
         LOG.debug { "Enable action for Redeeming" }
         findViewById<Button>(R.id.btn_getReceipts).apply {
