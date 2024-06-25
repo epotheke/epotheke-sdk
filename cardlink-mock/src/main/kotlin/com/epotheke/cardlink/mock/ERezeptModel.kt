@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import java.util.*
 
 
 const val REQUEST_PRESCRIPTION_LIST = "requestPrescriptionList"
@@ -23,21 +24,22 @@ const val MEDICATION_SUMMARY = "medicationSummary"
 const val CONFIRM_PRESCRIPTION_LIST = "confirmPrescriptionListMessage"
 
 
-interface ERezeptMessage
+
+sealed interface ERezeptMessage
 
 @Serializable
 @SerialName(REQUEST_PRESCRIPTION_LIST)
 data class RequestPrescriptionList(
     @SerialName("ICCSNs")
-    val iccsns: List<ByteArrayAsBase64>? = null,
-    val messageId: String,
+    val iccsns: List<ByteArrayAsBase64> = emptyList(),
+    val messageId: String = UUID.randomUUID().toString(),
 ) : ERezeptMessage
 
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LISTS)
 data class AvailablePrescriptionLists(
     val availablePrescriptionLists: List<AvailablePrescriptionList>,
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String,
 ) : ERezeptMessage
 
@@ -45,14 +47,14 @@ data class AvailablePrescriptionLists(
 @SerialName(SELECTED_PRESCRIPTION_LIST)
 data class SelectedPrescriptionList(
     @SerialName("ICCSN")
-    val iccsn: String,
+    val iccsn: ByteArrayAsBase64,
     val medicationIndexList: List<Int>,
     val supplyOptionsType: SupplyOptionsType,
     val name: String? = null,
     val address: List<String>? = null,
     val hint: String? = null,
     val phone: String? = null,
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
 ) : ERezeptMessage
 
 @Serializable
@@ -60,14 +62,14 @@ data class SelectedPrescriptionList(
 data class GenericErrorMessage(
     val errorCode: GenericErrorResultType,
     val errorMessage: String,
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String? = null,
 ) : ERezeptMessage
 
 @Serializable
 @SerialName(CONFIRM_PRESCRIPTION_LIST)
 data class ConfirmPrescriptionList(
-    val messageId: String,
+    val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String,
 ) : ERezeptMessage
 
@@ -100,7 +102,7 @@ enum class GenericErrorResultType(val value: String) {
     UNKNOWN_ERROR("UNKNOWN_ERROR");
 }
 
-interface Medication
+sealed interface Medication
 
 @Serializable
 @SerialName(MEDICATION_COMPOUNDING)
@@ -173,7 +175,6 @@ val eRezeptModule = SerializersModule {
         subclass(RequestPrescriptionList::class)
         subclass(AvailablePrescriptionLists::class)
         subclass(SelectedPrescriptionList::class)
-        subclass(ConfirmPrescriptionList::class)
         subclass(ConfirmPrescriptionList::class)
         subclass(GenericErrorMessage::class)
     }
