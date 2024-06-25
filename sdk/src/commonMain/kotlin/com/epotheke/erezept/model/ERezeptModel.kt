@@ -54,7 +54,7 @@ data class AvailablePrescriptionLists(
 @SerialName(SELECTED_PRESCRIPTION_LIST)
 data class SelectedPrescriptionList(
     @SerialName("ICCSN")
-    val iccsn: String,
+    val iccsn: ByteArrayAsBase64,
     val medicationIndexList: List<Int>,
     val supplyOptionsType: SupplyOptionsType,
     val name: String? = null,
