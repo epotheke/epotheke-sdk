@@ -36,38 +36,7 @@ import org.openecard.android.activation.OpeneCard
 import org.openecard.android.utils.NfcIntentHelper
 import org.openecard.mobile.activation.*
 
-
 private val logger = KotlinLogging.logger {}
-
-
-class WebsocketListener() : ChannelDispatcher,
-    org.openecard.mobile.activation.WebsocketListener {
-
-    private val channels: MutableList<Channel<String>> = ArrayList<Channel<String>>()
-
-    override fun onOpen(p0: Websocket) {
-    }
-
-    override fun onClose(p0: Websocket, p1: Int, p2: String?) {
-    }
-
-    override fun onError(p0: Websocket, p1: String) {
-//        protos.map { p-> p.getErrorHandler()(p1) }
-    }
-
-    override fun onText(p0: Websocket, p1: String) {
-        logger.debug { "Message from established link: $p1" }
-        runBlocking {
-            channels.map { c ->
-                c.send(p1)
-            }
-        }
-    }
-
-    override fun addProtocolChannel(channel: Channel<String>) {
-        channels.add(channel)
-    }
-}
 
 abstract class EpothekeActivity : Activity() {
     var oec: OpeneCard? = null
