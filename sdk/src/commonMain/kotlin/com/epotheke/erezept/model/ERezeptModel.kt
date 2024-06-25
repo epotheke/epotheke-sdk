@@ -38,7 +38,7 @@ interface ERezeptMessage
 @SerialName(REQUEST_PRESCRIPTION_LIST)
 data class RequestPrescriptionList(
     @SerialName("ICCSNs")
-    val iccsns: List<ByteArrayAsBase64>? = null,
+    val iccsns: List<ByteArrayAsBase64> = emptyList(),
     val messageId: String = UUID.randomUUID().toString(),
 ) : ERezeptMessage
 
