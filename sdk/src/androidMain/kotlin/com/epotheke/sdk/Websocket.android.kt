@@ -52,6 +52,7 @@ class WebsocketAndroid(
 
     override fun setListener(wsListener: WebsocketListener) =
         commonWS.setListener(WiredWSListenerImplementation(this, wsListener))
+
     override fun removeListener() = commonWS.removeListener()
     override fun getUrl(): String = commonWS.getUrl()
     override fun setUrl(url: String) = commonWS.setUrl(url)

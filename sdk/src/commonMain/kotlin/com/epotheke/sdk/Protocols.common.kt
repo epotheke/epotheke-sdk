@@ -36,9 +36,10 @@ interface CardLinkProtocol {
     fun registerListener(channelDispatcher: ChannelDispatcher)
 }
 
-interface ErezeptProtocol: CardLinkProtocol {
+interface ErezeptProtocol : CardLinkProtocol {
     @Throws(ErezeptProtocolException::class)
     suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists
+
     @Throws(ErezeptProtocolException::class)
     suspend fun selectReceipts(selection: SelectedPrescriptionList): ConfirmPrescriptionList
 }

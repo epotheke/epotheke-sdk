@@ -36,13 +36,14 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toKotlinDuration
 
 private val logger = KotlinLogging.logger {}
-private val ReceiveTimeoutSeconds = 30L
+private const val ReceiveTimeoutSeconds = 30L
 
 class ErezeptProtocolImp(
     private val ws: WebsocketAndroid,
 ) : ErezeptProtocol {
 
     private val inputChannel = Channel<String>()
+
     @TargetApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists {
@@ -58,7 +59,7 @@ class ErezeptProtocolImp(
             try {
                 val response = withTimeout(
                     timeout = duration
-                ){
+                ) {
                     inputChannel.receive()
                 }
                 when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(response)) {
@@ -67,9 +68,11 @@ class ErezeptProtocolImp(
                             return eRezeptMessage
                         }
                     }
+
                     is GenericErrorMessage -> {
                         throw ErezeptProtocolException(eRezeptMessage)
                     }
+
                     else -> {
                         duration = java.time.Duration.between(now(), lastTimestampUntilTimeout).toKotlinDuration()
                     }
@@ -78,11 +81,13 @@ class ErezeptProtocolImp(
                 when (e) {
                     is TimeoutException -> {
                         logger.error { "Timeout during receive" }
-                        throw ErezeptProtocolException(GenericErrorMessage(
-                            errorCode = GenericErrorResultType.UNKNOWN_ERROR,
-                            errorMessage = "Timeout",
-                            correlationId = req.messageId
-                        ))
+                        throw ErezeptProtocolException(
+                            GenericErrorMessage(
+                                errorCode = GenericErrorResultType.UNKNOWN_ERROR,
+                                errorMessage = "Timeout",
+                                correlationId = req.messageId
+                            )
+                        )
                     }
                 }
                 logger.error(e) { "Exceptino during receive" }
@@ -106,7 +111,7 @@ class ErezeptProtocolImp(
             try {
                 val response = withTimeout(
                     timeout = duration
-                ){
+                ) {
                     inputChannel.receive()
                 }
                 when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(response)) {
@@ -115,9 +120,11 @@ class ErezeptProtocolImp(
                             return eRezeptMessage
                         }
                     }
+
                     is GenericErrorMessage -> {
                         throw ErezeptProtocolException(eRezeptMessage)
                     }
+
                     else -> {
                         duration = java.time.Duration.between(now(), lastTimestampUntilTimeout).toKotlinDuration()
                     }
@@ -126,11 +133,13 @@ class ErezeptProtocolImp(
                 when (e) {
                     is TimeoutException -> {
                         logger.error { "Timeout during receive" }
-                        throw ErezeptProtocolException(GenericErrorMessage(
-                            errorCode = GenericErrorResultType.UNKNOWN_ERROR,
-                            errorMessage = "Timeout",
-                            correlationId = lst.messageId
-                        ))
+                        throw ErezeptProtocolException(
+                            GenericErrorMessage(
+                                errorCode = GenericErrorResultType.UNKNOWN_ERROR,
+                                errorMessage = "Timeout",
+                                correlationId = lst.messageId
+                            )
+                        )
                     }
                 }
                 logger.error(e) { "Exception during receive" }
