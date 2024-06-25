@@ -283,35 +283,31 @@ class EpothekeActivityImp : EpothekeActivity() {
             setBusy(true)
             try {
                 val result = protocol.requestReceipts(
-                    RequestPrescriptionList(
-                        iccsns = listOf(byteArrayOf(0))
-                    )
+                    RequestPrescriptionList()
                 )
 
                 var sb = StringBuilder()
                 sb.append("Available receipts: \n")
-                result.availablePrescriptionLists.forEach { list ->
-                    list.medicationSummaryList.forEach { summary ->
-                        when (summary.medication) {
-                            is MedicationPzn -> {
-                                val name = (summary.medication as MedicationPzn).handelsname
-                                sb.append("- ")
-                                sb.append(name)
-                                sb.append("\n")
-                            }
-                            is MedicationIngredient -> {
-                                val parts = (summary.medication as MedicationIngredient).listeBestandteilWirkstoffverordnung
-                                val wirkstoffe = parts.map { e -> e.wirkstoffname }.joinToString(",")
-                                sb.append("- ")
-                                sb.append(wirkstoffe)
-                                sb.append("\n")
-                            }
-                            is MedicationFreeText -> {
-                                val txt = (summary.medication as MedicationFreeText).freitextverordnung
-                                sb.append("- ")
-                                sb.append(txt)
-                                sb.append("\n")
-                            }
+                result.availablePrescriptionLists[0].medicationSummaryList.onEach { summary ->
+                    when (summary.medication) {
+                        is MedicationPzn -> {
+                            val name = (summary.medication as MedicationPzn).handelsname
+                            sb.append("- ")
+                            sb.append(name)
+                            sb.append("\n")
+                        }
+                        is MedicationIngredient -> {
+                            val parts = (summary.medication as MedicationIngredient).listeBestandteilWirkstoffverordnung
+                            val wirkstoffe = parts.map { e -> e.wirkstoffname }.joinToString(",")
+                            sb.append("- ")
+                            sb.append(wirkstoffe)
+                            sb.append("\n")
+                        }
+                        is MedicationFreeText -> {
+                            val txt = (summary.medication as MedicationFreeText).freitextverordnung
+                            sb.append("- ")
+                            sb.append(txt)
+                            sb.append("\n")
                         }
                     }
                 }
@@ -337,8 +333,8 @@ class EpothekeActivityImp : EpothekeActivity() {
 
     private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         var selection = SelectedPrescriptionList(
-            iccsn = "",
-            medicationIndexList = listOf(0, 1, 2),
+            iccsn = available.availablePrescriptionLists[0].iccsn,
+            medicationIndexList = available.availablePrescriptionLists[0].medicationSummaryList.map { l -> l.index },
             supplyOptionsType = SupplyOptionsType.DELIVERY
         )
         runBlocking {
