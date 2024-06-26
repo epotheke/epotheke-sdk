@@ -24,12 +24,25 @@ package com.epotheke.demo
 
 import android.os.Bundle
 import android.view.View
+import android.view.View.INVISIBLE
+import android.view.View.VISIBLE
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.epotheke.erezept.model.AvailablePrescriptionLists
+import com.epotheke.erezept.model.MedicationFreeText
+import com.epotheke.erezept.model.MedicationIngredient
+import com.epotheke.erezept.model.MedicationPzn
+import com.epotheke.erezept.model.RequestPrescriptionList
+import com.epotheke.erezept.model.SelectedPrescriptionList
+import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
+import com.epotheke.sdk.CardlinkControllerCallback
 import com.epotheke.sdk.EpothekeActivity
+import com.epotheke.sdk.ErezeptProtocol
+import com.epotheke.sdk.SdkErrorHandler
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.openecard.mobile.activation.*
 import java.util.*
 
@@ -82,20 +95,32 @@ class EpothekeActivityImp : EpothekeActivity() {
      *
      * @return ControllerCallback
      */
-    override fun getControllerCallback(): ControllerCallback {
+    override fun getControllerCallback(): CardlinkControllerCallback {
         return ControllerCallbackImp()
     }
 
     /**
-     * This method has to return protocols which contain implementations for processes after
-     * a link is established.
+     * This method has to return the SdkErrorHandler which will be used by the sdk to inform about
+     * errors of the sdk itself like missing requirements for the functionality etc.
      *
-     * This is currently not used.
-     *
-     * @return Set<CardLinkProtocol>
-    </CardLinkProtocol> */
-    override fun getProtocols(): Set<CardLinkProtocol> {
-        return HashSet()
+     * @return ControllerCallback
+     */
+    override fun getSdkErrorHandler(): SdkErrorHandler {
+        return object : SdkErrorHandler {
+            override fun onError(error: ServiceErrorResponse) {
+                setBusy(false)
+                when (error.statusCode) {
+                    ServiceErrorCode.NFC_NOT_AVAILABLE,
+                    ServiceErrorCode.NFC_NOT_ENABLED -> {
+                        showInfo("NFC not available or switched off. Please check the settings in android")
+                    }
+
+                    else -> {
+                        showInfo(error.errorMessage)
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -214,7 +239,7 @@ class EpothekeActivityImp : EpothekeActivity() {
     /**
      * The ControllerCallback informs about the start of the CardLink process and returns its results.
      */
-    private inner class ControllerCallbackImp : ControllerCallback {
+    private inner class ControllerCallbackImp : CardlinkControllerCallback {
         /**
          * Called when the process starts.
          * The app may inform the user.
@@ -226,40 +251,169 @@ class EpothekeActivityImp : EpothekeActivity() {
 
         /**
          * Called when the connection establishment finishes.
-         * The Result contains values for further usage in Protocols when the connection was
+         * The result contains values for further usage in protocols when the connection was
          * successfully established.
-         * If something went wrong the Result will contain an error.
+         * If something went wrong the result will contain an error.
          */
-        override fun onAuthenticationCompletion(activationResult: ActivationResult) {
+
+        override fun onAuthenticationCompletion(
+            activationResult: ActivationResult?,
+            cardlinkProtocols: Set<CardLinkProtocol>
+        ) {
             LOG.debug { "EpothekeImplementation onAuthenticationCompletion" }
             LOG.debug { (activationResult.toString()) }
             runOnUiThread {
                 setBusy(false)
-                val sb = StringBuilder()
-                sb.append(if (activationResult.resultCode == ActivationResultCode.OK) "SUCCESS" else "FAIL")
-                sb.append("\n")
-                if (activationResult.resultCode == ActivationResultCode.OK) {
-                    for (key in activationResult.resultParameterKeys) {
-                        sb.append(key)
-                        sb.append(": ")
-                        sb.append(activationResult.getResultParameter(key))
-                        sb.append("\n")
+                val resultMsg = StringBuilder().apply {
+                    append(if (activationResult?.resultCode == ActivationResultCode.OK) "SUCCESS" else "FAIL")
+                    append("\n")
+                    if (activationResult?.resultCode == ActivationResultCode.OK) {
+                        for (key in activationResult.resultParameterKeys) {
+                            append(key)
+                            append(": ")
+                            append(activationResult.getResultParameter(key))
+                            append("\n")
+                        }
+                    } else {
+                        append(activationResult?.errorMessage)
                     }
-                } else {
-                    sb.append(activationResult.errorMessage)
+                }.toString()
+
+                showInfo(resultMsg)
+
+                //based on the provided protocol implementations we can enable further use cases.
+                cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first().also { protocol ->
+                    enableErezeptProtocol(protocol)
                 }
-                showInfo(sb.toString())
-                val btn_cancel = findViewById<Button>(R.id.btn_cancel)
-                btn_cancel.text = "FINISH"
+
+                findViewById<Button>(R.id.btn_cancel).apply {
+                    text = "FINISH"
+                }
             }
         }
     }
 
     /**
-     * Functional interface to be able to bind sdk-callbacks to button taps
+     * Enable and show button to start ereceipt protocol flow.
      */
-    private fun interface ButtonAction {
-        fun act(value: String)
+    private fun enableErezeptProtocol(protocol: ErezeptProtocol) {
+        findViewById<Button>(R.id.btn_getReceipts).apply {
+            visibility = VISIBLE
+            isEnabled = true
+
+            setOnClickListener {
+                startErezeptFlow(protocol)
+            }
+        }
+    }
+
+    /**
+     * Start the ereceipt flow
+     * The functions of the protocol are kotlin suspend functions and therefore have to be run in
+     * a couroutine scope, which enables us to perform the asynchronous communications in the background of the app.
+     * To keep it simple we here just use runBlocking
+     */
+    private fun startErezeptFlow(protocol: ErezeptProtocol) {
+        LOG.debug { "Start action for Erezeptprotocol" }
+
+        runBlocking {
+            setBusy(true)
+            try {
+                /*
+                * Send request for available receipts via the ErezeptProtocol object
+                * We can use the default values of the constructor to get everything available.
+                */
+                val result = protocol.requestReceipts(
+                    RequestPrescriptionList()
+                )
+
+                /*
+                 * The answer message contains a list of lists.
+                 * Each outer list is associated with a card and contains available receipts for it.
+                 * The inner lists contains types describing receipts.
+                 *
+                 * For the showcase we simply build a string containing names of these elements from the first list.
+                 */
+                val text =
+                    result.availablePrescriptionLists.first().medicationSummaryList.joinToString(
+                        separator = "\n -",
+                        limit = 5,
+                    ) { summary ->
+                        when (val medication = summary.medication) {
+                            is MedicationPzn -> medication.handelsname
+                            is MedicationIngredient -> {
+                                medication.listeBestandteilWirkstoffverordnung
+                                    .joinToString(",") { e -> e.wirkstoffname }
+                            }
+
+                            is MedicationFreeText -> medication.freitextverordnung
+                            else -> ""
+                        }
+                    }
+
+                setBusy(false)
+                showInfo("Available receipts: \n$text")
+                enableRedeem(protocol, result)
+
+            } catch (e: Exception) {
+                LOG.debug(e) { "Error in request" }
+            }
+        }
+    }
+
+    /**
+     * This method switches the functionality of the button to go on with a redemption.
+     */
+    private fun enableRedeem(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+        LOG.debug { "Enable action for Redeeming" }
+        findViewById<Button>(R.id.btn_getReceipts).apply {
+            text = "REDEEM RECEIPTS"
+            setOnClickListener {
+                redeemReceipts(protocol, available)
+            }
+        }
+    }
+
+    /**
+     * This function uses the given protocol and the list of available prescriptions to
+     * redeem them.
+     */
+    private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+        /*
+         * For this example we build a SelectPrescriptionList object requesting all elements ( by indices) of the first list
+         * from the previous answer and set the supplyOptionsType to DELIVERY
+         */
+        var selection = SelectedPrescriptionList(
+            iccsn = available.availablePrescriptionLists.first().iccsn,
+            medicationIndexList = available.availablePrescriptionLists.first().medicationSummaryList.map { l -> l.index },
+            supplyOptionsType = SupplyOptionsType.DELIVERY
+        )
+
+        /*
+         * We send the request via the protocol instance to the service and wait for a confirmation message.
+         */
+        runBlocking {
+            setBusy(true)
+            try {
+                protocol.selectReceipts(selection)
+                showInfo("SUCCESS")
+                disableEreceiptFunction()
+                setBusy(false)
+            } catch (e: Exception) {
+                showInfo("Sth. went wrong")
+                LOG.debug(e) { "Error in request" }
+            }
+        }
+    }
+
+    /**
+     * Deactivates the button for ereceipt functionality
+     */
+    private fun disableEreceiptFunction() {
+        LOG.debug { "Enable action for Redeeming" }
+        findViewById<Button>(R.id.btn_getReceipts).apply {
+            visibility = INVISIBLE
+        }
     }
 
     /**
@@ -269,8 +423,9 @@ class EpothekeActivityImp : EpothekeActivity() {
      */
     fun showInfo(text: String?) {
         runOnUiThread {
-            val t = findViewById<TextView>(R.id.statusText)
-            t.text = text
+            findViewById<TextView>(R.id.statusText).apply {
+                this.text = text
+            }
         }
     }
 
@@ -281,16 +436,18 @@ class EpothekeActivityImp : EpothekeActivity() {
      * @param defaultValue
      * @param action
      */
-    private fun getValueFromUser(infoText: String, defaultValue: String, action: ButtonAction) {
+    private fun getValueFromUser(infoText: String, defaultValue: String, btnAction: (value: String) -> Unit) {
         runOnUiThread {
             showInfo(infoText)
+
             val inputField = findViewById<TextView>(R.id.input)
             inputField.text = defaultValue
-            val btn_ok = findViewById<Button>(R.id.btn_ok)
-            btn_ok.setOnClickListener { _: View? ->
-                setInputActive(false)
-                val input = findViewById<TextView>(R.id.input)
-                action.act(input.text.toString())
+
+            findViewById<Button>(R.id.btn_ok).apply {
+                setOnClickListener {
+                    setInputActive(false)
+                    btnAction(inputField.text.toString())
+                }
             }
             setInputActive(true)
         }
@@ -303,10 +460,12 @@ class EpothekeActivityImp : EpothekeActivity() {
      */
     private fun setInputActive(active: Boolean) {
         runOnUiThread {
-            val inputField = findViewById<TextView>(R.id.input)
-            inputField.visibility = if (active) View.VISIBLE else View.INVISIBLE
-            val btn_ok = findViewById<Button>(R.id.btn_ok)
-            btn_ok.visibility = if (active) View.VISIBLE else View.INVISIBLE
+            findViewById<TextView>(R.id.input).apply {
+                visibility = if (active) View.VISIBLE else View.INVISIBLE
+            }
+            findViewById<Button>(R.id.btn_ok).apply {
+                visibility = if (active) View.VISIBLE else View.INVISIBLE
+            }
             setBusy(!active)
         }
     }
@@ -317,22 +476,27 @@ class EpothekeActivityImp : EpothekeActivity() {
      * @param busy
      */
     private fun setBusy(busy: Boolean) {
-        val p = findViewById<ProgressBar>(R.id.busy)
-        p.visibility = if (busy) View.VISIBLE else View.INVISIBLE
+        findViewById<ProgressBar>(R.id.busy).apply {
+            visibility = if (busy) View.VISIBLE else View.INVISIBLE
+        }
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.epo_layout)
-        val serviceLabel = findViewById<TextView>(R.id.service)
-        serviceLabel.text = """
-            ${serviceLabel.text}
-            $mockServiceUrl
-            """.trimIndent()
-        val inputField = findViewById<TextView>(R.id.input)
-        inputField.isEnabled = true
+        findViewById<TextView>(R.id.service).apply {
+            text = """
+                ${this.text}
+                $mockServiceUrl
+                """.trimIndent()
+        }
+
+        findViewById<TextView>(R.id.input).apply {
+            isEnabled = true
+        }
         setInputActive(false)
-        val cancelButton = findViewById<Button>(R.id.btn_cancel)
-        cancelButton.setOnClickListener { _: View? -> finish() }
+        findViewById<Button>(R.id.btn_cancel).apply {
+            setOnClickListener { finish() }
+        }
         super.onCreate(savedInstanceState)
     }
 

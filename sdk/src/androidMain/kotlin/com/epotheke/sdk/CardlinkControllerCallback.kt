@@ -20,26 +20,11 @@
  *
  ***************************************************************************/
 
-package com.epotheke.cardlink.mock.encoding
+package com.epotheke.sdk
 
-import com.epotheke.cardlink.mock.ERezeptMessage
-import com.epotheke.cardlink.mock.GematikEnvelope
-import com.epotheke.cardlink.mock.cardLinkJsonFormatter
-import com.epotheke.cardlink.mock.eRezeptJsonFormatter
-import jakarta.websocket.Encoder
-import kotlinx.serialization.encodeToString
+import org.openecard.mobile.activation.ActivationResult
 
-
-class GematikMessageEncoder : Encoder.Text<GematikEnvelope> {
-
-    override fun encode(data: GematikEnvelope): String {
-        return cardLinkJsonFormatter.encodeToString(data)
-    }
-}
-
-class PrescriptionMessageEncoder : Encoder.Text<ERezeptMessage> {
-
-    override fun encode(data: ERezeptMessage): String {
-        return eRezeptJsonFormatter.encodeToString(data)
-    }
+interface CardlinkControllerCallback {
+    fun onStarted()
+    fun onAuthenticationCompletion(p0: ActivationResult?, cardlinkProtocols: Set<CardLinkProtocol>)
 }

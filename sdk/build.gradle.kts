@@ -5,6 +5,7 @@ plugins {
     id("epotheke.lib-android-conventions")
     //id("epotheke.lib-ios-conventions")
     id("epotheke.publish-conventions")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -16,6 +17,7 @@ kotlin {
                 implementation(libs.ktor.client.cio)
                 implementation(libs.ktor.client.websocket)
                 implementation(libs.kotlin.coroutines.core)
+                implementation(libs.kotlin.serialization.json)
             }
         }
         val commonTest by getting {

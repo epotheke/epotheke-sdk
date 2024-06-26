@@ -24,10 +24,14 @@ package com.epotheke.sdk
 
 import WebsocketCommon
 import WiredWSListener
+import android.util.Log
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import org.openecard.mobile.activation.Websocket
 import org.openecard.mobile.activation.WebsocketException
 import org.openecard.mobile.activation.WebsocketListener
+
+private val logger = KotlinLogging.logger {}
 
 private class WiredWSListenerImplementation(
     private val ws: WebsocketAndroid,
@@ -48,6 +52,7 @@ class WebsocketAndroid(
 
     override fun setListener(wsListener: WebsocketListener) =
         commonWS.setListener(WiredWSListenerImplementation(this, wsListener))
+
     override fun removeListener() = commonWS.removeListener()
     override fun getUrl(): String = commonWS.getUrl()
     override fun setUrl(url: String) = commonWS.setUrl(url)
@@ -76,6 +81,7 @@ class WebsocketAndroid(
 
     @Throws(WebsocketException::class)
     override fun send(data: String) {
+        logger.debug { "sending via socket: $data" }
         try {
             commonWS.send(data)
         } catch (e: Exception) {

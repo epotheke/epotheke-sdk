@@ -66,8 +66,8 @@ class WebsocketCommon(
                         wsListener?.onText(msg.readText())
                     }
 
-                   is Frame.Close -> {
-                       // only used when websocket raw is used
+                    is Frame.Close -> {
+                        // only used when websocket raw is used
                         val reason: CloseReason? = msg.readReason()
                         val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
                         val reasonMsg = reason?.message ?: "No reason"
@@ -86,7 +86,7 @@ class WebsocketCommon(
             val reasonMsg = e.message
             val code = CloseReason.Codes.NORMAL
             wsListener?.onClose(code.code.toInt(), reasonMsg)
-        } catch (e: Exception){
+        } catch (e: Exception) {
             log.debug(e) { "Exception during websocket receive." }
         }
     }
@@ -110,6 +110,7 @@ class WebsocketCommon(
     fun getUrl(): String {
         return this.url
     }
+
     fun setUrl(url: String) {
         this.url = url
     }
