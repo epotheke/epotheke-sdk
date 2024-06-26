@@ -38,6 +38,7 @@ import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardlinkControllerCallback
+import com.epotheke.sdk.Epotheke
 import com.epotheke.sdk.EpothekeActivity
 import com.epotheke.sdk.ErezeptProtocol
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -309,7 +310,10 @@ class EpothekeActivityImp : EpothekeActivity() {
                  * For the showcase we simply build a string containing names of these elements from the first outer list.
                  */
                 val text =
-                    result.availablePrescriptionLists.first().medicationSummaryList.joinToString("\n -") { summary ->
+                    result.availablePrescriptionLists.first().medicationSummaryList.joinToString(
+                        separator = "\n -",
+                        limit = 5,
+                    ) { summary ->
                         when (val medication = summary.medication) {
                             is MedicationPzn -> medication.handelsname
                             is MedicationIngredient -> {
