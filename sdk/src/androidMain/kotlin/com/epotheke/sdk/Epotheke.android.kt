@@ -124,12 +124,14 @@ class Epotheke(
         }
     }
 
-    private class OverridingCardlinkInteraction(val ctx: Epotheke, val delegate: CardLinkInteraction): CardLinkInteraction by delegate {
+    private class OverridingCardlinkInteraction(val ctx: Epotheke, val delegate: CardLinkInteraction) :
+        CardLinkInteraction by delegate {
         override fun requestCardInsertion() {
             ctx.nfcIntentHelper?.enableNFCDispatch()
             ctx.needNfc = true
             delegate.requestCardInsertion()
         }
+
         override fun onCardInteractionComplete() {
             ctx.nfcIntentHelper?.disableNFCDispatch()
             ctx.needNfc = false

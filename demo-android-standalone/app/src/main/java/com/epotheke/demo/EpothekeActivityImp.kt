@@ -99,22 +99,30 @@ class EpothekeActivityImp : EpothekeActivity() {
         return ControllerCallbackImp()
     }
 
-    override fun getSdkErrorHandler(): SdkErrorHandler{
+    /**
+     * This method has to return the SdkErrorHandler which will be used by the sdk to inform about
+     * errors of the sdk itself like missing requirements for the functionality etc.
+     *
+     * @return ControllerCallback
+     */
+    override fun getSdkErrorHandler(): SdkErrorHandler {
         return object : SdkErrorHandler {
             override fun onError(error: ServiceErrorResponse) {
                 setBusy(false)
                 when (error.statusCode) {
                     ServiceErrorCode.NFC_NOT_AVAILABLE,
-                    ServiceErrorCode.NFC_NOT_ENABLED ->  {
+                    ServiceErrorCode.NFC_NOT_ENABLED -> {
                         showInfo("NFC not available or switched off. Please check the settings in android")
                     }
+
                     else -> {
                         showInfo(error.errorMessage)
                     }
-               }
+                }
             }
         }
     }
+
     /**
      * Implementation of the CardLinkInteraction
      * The different methods get called during the interaction with the card and may require
@@ -243,9 +251,9 @@ class EpothekeActivityImp : EpothekeActivity() {
 
         /**
          * Called when the connection establishment finishes.
-         * The Result contains values for further usage in Protocols when the connection was
+         * The result contains values for further usage in protocols when the connection was
          * successfully established.
-         * If something went wrong the Result will contain an error.
+         * If something went wrong the result will contain an error.
          */
 
         override fun onAuthenticationCompletion(
@@ -273,6 +281,7 @@ class EpothekeActivityImp : EpothekeActivity() {
 
                 showInfo(resultMsg)
 
+                //based on the provided protocol implementations we can enable further use cases.
                 cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first().also { protocol ->
                     enableErezeptProtocol(protocol)
                 }
@@ -302,7 +311,7 @@ class EpothekeActivityImp : EpothekeActivity() {
      * Start the ereceipt flow
      * The functions of the protocol are kotlin suspend functions and therefore have to be run in
      * a couroutine scope, which enables us to perform the asynchronous communications in the background of the app.
-     * To keep it simple we here just use runBlocking.
+     * To keep it simple we here just use runBlocking
      */
     private fun startErezeptFlow(protocol: ErezeptProtocol) {
         LOG.debug { "Start action for Erezeptprotocol" }
@@ -323,7 +332,7 @@ class EpothekeActivityImp : EpothekeActivity() {
                  * Each outer list is associated with a card and contains available receipts for it.
                  * The inner lists contains types describing receipts.
                  *
-                 * For the showcase we simply build a string containing names of these elements from the first outer list.
+                 * For the showcase we simply build a string containing names of these elements from the first list.
                  */
                 val text =
                     result.availablePrescriptionLists.first().medicationSummaryList.joinToString(
@@ -371,7 +380,7 @@ class EpothekeActivityImp : EpothekeActivity() {
      */
     private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         /*
-         * For the example we build a SelectPrescriptionList containing all elements (indices) of the first outer list
+         * For this example we build a SelectPrescriptionList object requesting all elements ( by indices) of the first list
          * from the previous answer and set the supplyOptionsType to DELIVERY
          */
         var selection = SelectedPrescriptionList(
