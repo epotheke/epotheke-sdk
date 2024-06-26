@@ -45,6 +45,7 @@ abstract class EpothekeActivity : Activity() {
             getCardlinkUrl(),
             getControllerCallback(),
             getCardLinkInteraction(),
+            getSdkErrorHandler(),
         ).apply {
             initOecContext()
         }
@@ -75,8 +76,9 @@ abstract class EpothekeActivity : Activity() {
         }
     }
 
-    abstract fun getCardlinkUrl(): String;
-    abstract fun getControllerCallback(): CardlinkControllerCallback;
-    abstract fun getCardLinkInteraction(): CardLinkInteraction;
+    abstract fun getCardlinkUrl(): String
+    abstract fun getControllerCallback(): CardlinkControllerCallback
+    abstract fun getCardLinkInteraction(): CardLinkInteraction
+    abstract fun getSdkErrorHandler(): SdkErrorHandler
 
 }

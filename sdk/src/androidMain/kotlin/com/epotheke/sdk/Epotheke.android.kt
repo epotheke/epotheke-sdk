@@ -39,7 +39,8 @@ class Epotheke(
     private val ctx: Activity,
     private val cardlinkUrl: String,
     private val cardlinkControllerCallback: CardlinkControllerCallback,
-    private val cardLinkInteraction: CardLinkInteraction
+    private val cardLinkInteraction: CardLinkInteraction,
+    private val sdkErrorHandler: SdkErrorHandler
 ) {
 
     var oec: OpeneCard? = null
@@ -80,6 +81,7 @@ class Epotheke(
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
                 cleanupOecInstances()
+                sdkErrorHandler.onError(ex)
             }
         })
     }
@@ -95,6 +97,7 @@ class Epotheke(
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to stop Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
                 cleanupOecInstances()
+                sdkErrorHandler.onError(ex)
             }
         })
     }

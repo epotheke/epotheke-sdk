@@ -38,9 +38,9 @@ import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardlinkControllerCallback
-import com.epotheke.sdk.Epotheke
 import com.epotheke.sdk.EpothekeActivity
 import com.epotheke.sdk.ErezeptProtocol
+import com.epotheke.sdk.SdkErrorHandler
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.openecard.mobile.activation.*
@@ -99,6 +99,22 @@ class EpothekeActivityImp : EpothekeActivity() {
         return ControllerCallbackImp()
     }
 
+    override fun getSdkErrorHandler(): SdkErrorHandler{
+        return object : SdkErrorHandler {
+            override fun onError(error: ServiceErrorResponse) {
+                setBusy(false)
+                when (error.statusCode) {
+                    ServiceErrorCode.NFC_NOT_AVAILABLE,
+                    ServiceErrorCode.NFC_NOT_ENABLED ->  {
+                        showInfo("NFC not available or switched off. Please check the settings in android")
+                    }
+                    else -> {
+                        showInfo(error.errorMessage)
+                    }
+               }
+            }
+        }
+    }
     /**
      * Implementation of the CardLinkInteraction
      * The different methods get called during the interaction with the card and may require
