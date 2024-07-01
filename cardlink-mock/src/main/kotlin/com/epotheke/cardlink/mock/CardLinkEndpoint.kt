@@ -462,6 +462,7 @@ class CardLinkEndpoint {
     }
 
     private fun getWebSocketId(session: Session) : String? {
+        if (session.queryString == null) return null
         val queryString = if (session.queryString.startsWith("?")) session.queryString else "?${session.queryString}"
         val parameters = QueryStringDecoder(queryString).parameters()
         return parameters["token"]?.firstOrNull()
