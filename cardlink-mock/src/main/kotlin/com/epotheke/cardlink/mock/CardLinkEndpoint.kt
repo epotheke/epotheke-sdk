@@ -100,6 +100,7 @@ class CardLinkEndpoint {
             when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(data)) {
                 is RequestPrescriptionList -> sendPrescriptionList(eRezeptMessage, session)
                 is SelectedPrescriptionList -> sendConfirmSelectedPrescriptionList(eRezeptMessage, session)
+                else -> throw IllegalStateException("Received not supported message.")
             }
         }
     }
@@ -159,7 +160,7 @@ class CardLinkEndpoint {
                             medication = medicationFreeText
                         )
                     ),
-                    iccsn = eRezeptMessage.iccsns?.get(0) ?: throw IllegalArgumentException("No ICCSN provided.")
+                    iccsn = "<ICCSN>".toByteArray()
                 )
             )
         )
@@ -461,6 +462,7 @@ class CardLinkEndpoint {
     }
 
     private fun getWebSocketId(session: Session) : String? {
+        if (session.queryString == null) return null
         val queryString = if (session.queryString.startsWith("?")) session.queryString else "?${session.queryString}"
         val parameters = QueryStringDecoder(queryString).parameters()
         return parameters["token"]?.firstOrNull()

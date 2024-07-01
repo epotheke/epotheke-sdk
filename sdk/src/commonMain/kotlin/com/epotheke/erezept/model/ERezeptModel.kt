@@ -131,7 +131,7 @@ enum class GenericErrorResultType(val value: String) {
     UNKNOWN_ERROR("UNKNOWN_ERROR");
 }
 
-interface Medication
+sealed interface Medication
 
 @Serializable
 @SerialName(MEDICATION_COMPOUNDING)
