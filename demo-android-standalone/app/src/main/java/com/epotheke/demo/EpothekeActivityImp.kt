@@ -357,6 +357,10 @@ class EpothekeActivityImp : EpothekeActivity() {
 
             } catch (e: Exception) {
                 LOG.debug(e) { "Error in request" }
+                runOnUiThread() {
+                    setBusy(false)
+                    showInfo("Error in request ${e.message}")
+                }
             }
         }
     }
@@ -400,8 +404,11 @@ class EpothekeActivityImp : EpothekeActivity() {
                 disableEreceiptFunction()
                 setBusy(false)
             } catch (e: Exception) {
-                showInfo("Sth. went wrong")
                 LOG.debug(e) { "Error in request" }
+                runOnUiThread {
+                    setBusy(false)
+                    showInfo("Sth. went wrong")
+                }
             }
         }
     }
