@@ -30,9 +30,12 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.epotheke.erezept.model.AvailablePrescriptionLists
+import com.epotheke.erezept.model.MedicationCompounding
 import com.epotheke.erezept.model.MedicationFreeText
 import com.epotheke.erezept.model.MedicationIngredient
+import com.epotheke.erezept.model.MedicationItem
 import com.epotheke.erezept.model.MedicationPzn
+import com.epotheke.erezept.model.PrescriptionBundle
 import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SupplyOptionsType
@@ -335,19 +338,18 @@ class EpothekeActivityImp : EpothekeActivity() {
                  * For the showcase we simply build a string containing names of these elements from the first list.
                  */
                 val text =
-                    result.availablePrescriptionLists.first().medicationSummaryList.joinToString(
+                    result.availablePrescriptionLists.first().prescriptionBundleList.joinToString(
                         separator = "\n -",
                         limit = 5,
-                    ) { summary ->
-                        when (val medication = summary.medication) {
-                            is MedicationPzn -> medication.handelsname
-                            is MedicationIngredient -> {
-                                medication.listeBestandteilWirkstoffverordnung
-                                    .joinToString(",") { e -> e.wirkstoffname }
+                    ) { bundle: PrescriptionBundle ->
+                        val medication = bundle.arzneimittel
+                        medication.medicationItem.joinToString { item ->
+                            when (item) {
+                                is MedicationCompounding -> item.rezepturname
+                                is MedicationFreeText -> item.freitextverordnung
+                                is MedicationIngredient -> item.listeBestandteilWirkstoffverordnung.joinToString(limit = 3) { i -> i.wirkstoffname }
+                                is MedicationPzn -> item.handelsname
                             }
-
-                            is MedicationFreeText -> medication.freitextverordnung
-                            else -> ""
                         }
                     }
 
@@ -384,12 +386,13 @@ class EpothekeActivityImp : EpothekeActivity() {
      */
     private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         /*
-         * For this example we build a SelectPrescriptionList object requesting all elements ( by indices) of the first list
+         * For this example we build a SelectPrescriptionList object requesting all elements (by prescriptionids) of the first list
          * from the previous answer and set the supplyOptionsType to DELIVERY
          */
         var selection = SelectedPrescriptionList(
             iccsn = available.availablePrescriptionLists.first().iccsn,
-            medicationIndexList = available.availablePrescriptionLists.first().medicationSummaryList.map { l -> l.index },
+            prescriptionIndexList = available.availablePrescriptionLists.first()
+                .prescriptionBundleList.map {bundle: PrescriptionBundle -> bundle.prescriptionId},
             supplyOptionsType = SupplyOptionsType.DELIVERY
         )
 

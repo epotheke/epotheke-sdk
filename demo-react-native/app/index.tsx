@@ -85,12 +85,13 @@ export default function Index() {
 
         /*
           Wiring of the controllerCallbacks
-          These are not rewired, since they will only be called once.
         */
         //this callback informs about the start of the cardlink establishment
-        EpothekeModule.set_controllerCallbackCB_onStarted(() => {
+        let controllerCallback = () => {
           console.log(`onStarted`)
-        })
+          EpothekeModule.set_controllerCallbackCB_onStarted(controllerCallback)
+        }
+        EpothekeModule.set_controllerCallbackCB_onStarted(controllerCallback)
 
         /*
           This callback is called when the cardlink establishment is finished.
@@ -100,35 +101,39 @@ export default function Index() {
             EpothekeModule.selectReceipts()
           become functional and can be called.
         */
-        EpothekeModule.set_controllerCallbackCB_onAuthenticationCompletion(async (err: any, msg: any) => {
-          console.log(`onAuthenticationCompletion error: ${err}`)
-          console.log(`onAuthenticationCompletion protos: ${msg}`)
+        let onAuthenticationCallback = async (err: any, msg: any) => {
+            console.log(`onAuthenticationCompletion error: ${err}`)
+            console.log(`onAuthenticationCompletion protos: ${msg}`)
 
-          try {
-            //get available receipts
-            let availReceipts = await EpothekeModule.getReceipts();
-            console.log(`receipts: ${availReceipts}`)
+            try {
+              //get available receipts
+              let availReceipts = await EpothekeModule.getReceipts();
+              console.log(`receipts: ${availReceipts}`)
 
-            //example for a selection
-            //which has to be done via a jsonstring containing the selectedPrescriptionList
-            let confirmation = await EpothekeModule.selectReceipts(` {
-              "type": "selectedPrescriptionList",
-              "ICCSN": "PElDQ1NOPg",
-              "medicationIndexList": [
-                0,
-                1,
-                2
-              ],
-              "supplyOptionsType": "delivery",
-              "messageId": "6f3b1c6b-334d-4378-aa4e-0bd61acaca08"
-            }`);
-            console.log(`selection confirmation: ${confirmation}`)
+              //example for a selection
+              //which has to be done via a jsonstring containing the selectedPrescriptionList
+              let confirmation = await EpothekeModule.selectReceipts(`{
+                "type": "selectedPrescriptionList",
+                "ICCSN": "MTIzNDU2Nzg5",
+                "prescriptionIndexList": [
+                  "160.000.764.737.300.50",
+                  "160.100.000.000.012.06",
+                  "160.100.000.000.004.30",
+                  "160.100.000.000.014.97",
+                  "160.100.000.000.006.24"
+                ],
+                "supplyOptionsType": "delivery",
+                "messageId": "bad828ad-75fa-4eea-aea5-a3587d95ce4a"
+              }`);
+              console.log(`selection confirmation: ${confirmation}`)
 
-          } catch (e) {
-            console.log(`error : ${e}`)
-          }
+            } catch (e) {
+              console.log(`error : ${e}`)
+            }
 
-        })
+            EpothekeModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
+        }
+        EpothekeModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
 
 
         //start the cardlink establishment
