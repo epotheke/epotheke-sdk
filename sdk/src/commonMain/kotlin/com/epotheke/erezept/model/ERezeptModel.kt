@@ -111,7 +111,6 @@ data class GenericErrorMessage(
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST_RESPONSE)
 data class SelectedPrescriptionListResponse(
-    val type: String,
     val version: String? = null,
     val supplyOptionsType: SupplyOptionsType? = null,
     val infoText: String? = null,
