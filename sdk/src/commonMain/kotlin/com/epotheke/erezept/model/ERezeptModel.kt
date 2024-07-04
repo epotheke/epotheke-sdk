@@ -62,6 +62,7 @@ const val POB_ADDRESS = "pobAddress"
 const val PRACTICE_SUPPLY = "practiceSupply"
 const val PRACTITIONER = "practitioner"
 const val PRESCRIPTION = "prescription"
+const val COVERAGE = "coverage"
 
 
 sealed interface ERezeptMessage
@@ -132,17 +133,32 @@ data class AvailablePrescriptionList(
 @Serializable
 @SerialName(PRESCRIPTION_BUNDLE)
 data class PrescriptionBundle(
-    val prescriptionid: String,
+    val prescriptionId: String,
     val erstellungszeitpunkt: String,
     val status: String,
+    val krankenversicherung: Coverage,
     val pkvTarif: String? = null,
     val patient: Patient,
     val arzt: Practitioner,
     val pruefnummer: String? = null,
     val organisation: Organization,
-    val verordnung: PrescriptionInterface,
     val asvTn: String? = null,
+    val verordnung: PrescriptionInterface,
     val arzneimittel: Medication,
+)
+
+@Serializable
+@SerialName(COVERAGE)
+data class Coverage(
+    val kostentraegertyp: String,
+    val ikKrankenkasse: String,
+    val ikKostentraeger: String? = null,
+    val kostentraeger: String? = null,
+    val wop: String? = null,
+    val versichertenstatus: String? = null,
+    val besonderePersonengruppe: String? = null,
+    val dmpKz: String? = null,
+    val versicherungsschutzEnde: String? = null,
 )
 
 @Serializable
@@ -312,6 +328,7 @@ data class Prescription(
     val bvg: Boolean? = null,
     val zuzahlungsstatus: String? = null,
     val autidem: Boolean? = null,
+    val abgabehinweis: String? = null,
     val anzahl: Int? = null,
     val dosierung: Boolean? = null,
     val dosieranweisung: String? = null,
