@@ -97,7 +97,7 @@ class ErezeptProtocolImp(
     }
 
     @TargetApi(Build.VERSION_CODES.O)
-    override suspend fun selectReceipts(lst: SelectedPrescriptionList): ConfirmPrescriptionList {
+    override suspend fun selectReceipts(lst: SelectedPrescriptionList): SelectedPrescriptionListResponse {
         logger.debug { "Sending data to select ecreipts." }
         ws.send(
             eRezeptJsonFormatter.encodeToString(lst)
@@ -115,7 +115,7 @@ class ErezeptProtocolImp(
                     inputChannel.receive()
                 }
                 when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(response)) {
-                    is ConfirmPrescriptionList -> {
+                    is SelectedPrescriptionListResponse -> {
                         if (eRezeptMessage.correlationId == lst.messageId) {
                             return eRezeptMessage
                         }

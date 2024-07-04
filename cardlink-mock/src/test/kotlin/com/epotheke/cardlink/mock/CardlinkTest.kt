@@ -98,7 +98,7 @@ class CardlinkTest {
 
     private fun expectPrescriptionConfirmMessage() {
         PRESCRIPTION_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
-        Assertions.assertEquals(CONFIRM_PRESCRIPTION_LIST, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+        Assertions.assertEquals(SELECTED_PRESCRIPTION_LIST_RESPONSE, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
     }
 
     private fun exceptSessionInformationMessage(session: Session) {

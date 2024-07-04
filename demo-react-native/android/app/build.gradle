@@ -158,7 +158,7 @@ android {
     }
 }
 
-def EpothekeSdkVersion = "1.1.0-rc.1"
+def EpothekeSdkVersion = "1.1.0-SNAPSHOT"
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin

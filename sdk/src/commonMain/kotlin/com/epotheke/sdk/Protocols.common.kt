@@ -41,5 +41,5 @@ interface ErezeptProtocol : CardLinkProtocol {
     suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists
 
     @Throws(ErezeptProtocolException::class)
-    suspend fun selectReceipts(selection: SelectedPrescriptionList): ConfirmPrescriptionList
+    suspend fun selectReceipts(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
 }
