@@ -244,10 +244,10 @@ class CardlinkTest {
             {
                 "type": "selectedPrescriptionList",
                 "ICCSN": "MTIzNDU2Nzg5",
-                "medicationIndexList": [
-                    0,
-                    1,
-                    2
+                "prescriptionIndexList": [
+                    "0",
+                    "1",
+                    "2"
                 ],
                 "supplyOptionsType": "delivery",
                 "name": "Nachbar: Heinz Müller (2. OG)",
