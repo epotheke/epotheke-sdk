@@ -143,7 +143,7 @@ data class BestandteilWirkstoffverordnung(
 @Serializable
 @SerialName(BESTANDTEIL_REZEPTUR_VERORDNUNG)
 data class BestandteilRezepturverordnung(
-    val darreichungsform: String,
+    val darreichungsform: String? = null,
     val name: String,
     val pzn: String? = null,
     val menge: String? = null,
@@ -172,7 +172,7 @@ data class MedicationCompounding(
     val herstellungsanweisung: String,
     val verpackung: String? = null,
     val rezepturname: String,
-    val darreichungsform: String,
+    val darreichungsform: String? = null,
     val gesamtmenge: String,
     val einheit: String? = null,
     val listeBestandteilRezepturverordnung: List<BestandteilRezepturverordnung>,
@@ -184,7 +184,7 @@ data class MedicationFreeText(
     val kategorie: String,
     val impfstoff: Boolean,
     val freitextverordnung: String,
-    val darreichungsform: String,
+    val darreichungsform: String? = null,
 ) : MedicationItem
 
 @Serializable
@@ -193,7 +193,7 @@ data class MedicationIngredient(
     val kategorie: String,
     val impfstoff: Boolean,
     val normgroesse: String? = null,
-    val darreichungsform: String,
+    val darreichungsform: String? = null,
     val packungsgroesseNachMenge: String? = null,
     val einheit: String? = null,
     val packungsgroesseNachNBezeichnung: String? = null,
@@ -208,7 +208,7 @@ data class MedicationPzn(
     val normgroesse: String? = null,
     val pzn: String,
     val handelsname: String,
-    val darreichungsform: String,
+    val darreichungsform: String? = null,
     val packungsgroesseNachMenge: String? = null,
     val einheit: String? = null,
     val packungsgroesseNachNBezeichnung: String? = null,
