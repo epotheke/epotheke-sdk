@@ -2,6 +2,8 @@ package com.epotheke.cardlink.mock
 
 val availablePrescriptionListsJsonExample = """
     {
+      "messageId": "%s",
+      "correlationId": "%s",
       "type": "availablePrescriptionLists",
       "availablePrescriptionLists": [
         {
@@ -14,12 +16,12 @@ val availablePrescriptionListsJsonExample = """
               "status": "final",
               "krankenversicherung": {
                 "kostentraegertyp": "GKV",
-                "ikKrankenkasse": 104212059,
+                "ikKrankenkasse": "104212059",
                 "kostentraeger": "AOK Baden-Württemberg",
-                "wop": 52,
-                "versichertenstatus": 1,
-                "besonderePersonengruppe": 0,
-                "dmpKz": 0
+                "wop": "52",
+                "versichertenstatus": "1",
+                "besonderePersonengruppe": "0",
+                "dmpKz": "0"
               },
               "patient": {
                 "gkvVersichertenId": "X234567891",
@@ -29,16 +31,17 @@ val availablePrescriptionListsJsonExample = """
                 },
                 "geburtsdatum": "1985-05-05T00:00:00.000Z",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 42
+                  "hausnummer": "42"
                 }
               },
               "arzt": {
-                "typ": 0,
+                "typ": "0",
                 "berufsbezeichnung": "Hausarzt",
-                "arztnummer": 838382202,
+                "arztnummer": "838382202",
                 "person": {
                   "vorname": "Hans",
                   "nachname": "Gesundmacher",
@@ -47,23 +50,25 @@ val availablePrescriptionListsJsonExample = """
               },
               "pruefnummer": "Y/400/1910/36/346",
               "organisation": {
-                "bsnr": 31234567,
+                "bsnr": "31234567",
                 "name": "Hausarztpraxis Dr. Gesundmacher",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 200
+                  "hausnummer": "200"
                 },
                 "telefon": "+49 711 1234567",
                 "fax": "+49 711 1234599",
                 "eMail": "hans@praxis-gesundmacher.de"
               },
               "verordnung": {
+                "type": "prescription",
                 "ausstellungsdatum": "2024-06-30T00:00:00.000Z",
                 "noctu": false,
                 "bvg": false,
-                "zuzahlungsstatus": 0,
+                "zuzahlungsstatus": "0",
                 "autidem": true,
                 "abgabehinweis": "Vor Zugriff durch Kinder schützen.",
                 "anzahl": 1,
@@ -71,15 +76,19 @@ val availablePrescriptionListsJsonExample = """
                 "dosieranweisung": "1-0-1"
               },
               "arzneimittel": {
-                "type": "medicationPZN",
-                "kategorie": 0,
-                "impfstoff": false,
-                "normgroesse": "N3",
-                "pzn": 38706,
-                "handelsname": "Amoxicillin Al 1000",
-                "darreichungsform": "TAB",
-                "packungsgroesseNachMenge": 30,
-                "einheit": "TAB"
+                "medicationItem": [
+                  {
+                      "type": "medicationPZN",
+                      "kategorie": "0",
+                      "impfstoff": false,
+                      "normgroesse": "N3",
+                      "pzn": "38706",
+                      "handelsname": "Amoxicillin Al 1000",
+                      "darreichungsform": "TAB",
+                      "packungsgroesseNachMenge": "30",
+                      "einheit": "TAB"
+                  }
+                ]
               }
             },
             {
@@ -88,12 +97,12 @@ val availablePrescriptionListsJsonExample = """
               "status": "final",
               "krankenversicherung": {
                 "kostentraegertyp": "GKV",
-                "ikKrankenkasse": 104212059,
+                "ikKrankenkasse": "104212059",
                 "kostentraeger": "AOK Baden-Württemberg",
-                "wop": 52,
-                "versichertenstatus": 1,
-                "besonderePersonengruppe": 0,
-                "dmpKz": 0
+                "wop": "52",
+                "versichertenstatus": "1",
+                "besonderePersonengruppe": "0",
+                "dmpKz": "0"
               },
               "patient": {
                 "gkvVersichertenId": "X234567891",
@@ -103,16 +112,17 @@ val availablePrescriptionListsJsonExample = """
                 },
                 "geburtsdatum": "1985-05-05T00:00:00.000Z",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 42
+                  "hausnummer": "42"
                 }
               },
               "arzt": {
-                "typ": 0,
+                "typ": "0",
                 "berufsbezeichnung": "Hausarzt",
-                "arztnummer": 838382202,
+                "arztnummer": "838382202",
                 "person": {
                   "vorname": "Hans",
                   "nachname": "Gesundmacher",
@@ -121,23 +131,25 @@ val availablePrescriptionListsJsonExample = """
               },
               "pruefnummer": "Y/400/1910/36/346",
               "organisation": {
-                "bsnr": 31234567,
+                "bsnr": "31234567",
                 "name": "Hausarztpraxis Dr. Gesundmacher",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 200
+                  "hausnummer": "200"
                 },
                 "telefon": "+49 711 1234567",
                 "fax": "+49 711 1234599",
                 "eMail": "hans@praxis-gesundmacher.de"
               },
               "verordnung": {
+                "type": "prescription",
                 "ausstellungsdatum": "2024-06-30T00:00:00.000Z",
                 "noctu": false,
                 "bvg": false,
-                "zuzahlungsstatus": 0,
+                "zuzahlungsstatus": "0",
                 "autidem": true,
                 "abgabehinweis": "Vor Zugriff durch Kinder schützen.",
                 "anzahl": 1,
@@ -145,15 +157,19 @@ val availablePrescriptionListsJsonExample = """
                 "dosieranweisung": "1-0-1"
               },
               "arzneimittel": {
-                "type": "medicationPZN",
-                "kategorie": 0,
-                "impfstoff": false,
-                "normgroesse": "N3",
-                "pzn": 232199,
-                "handelsname": "Simva Basics 10mg",
-                "darreichungsform": "TAB",
-                "packungsgroesseNachMenge": 100,
-                "einheit": "TAB"
+                "medicationItem": [
+                    {
+                        "type": "medicationPZN",
+                        "kategorie": "0",
+                        "impfstoff": false,
+                        "normgroesse": "N3",
+                        "pzn": "232199",
+                        "handelsname": "Simva Basics 10mg",
+                        "darreichungsform": "TAB",
+                        "packungsgroesseNachMenge": "100",
+                        "einheit": "TAB"
+                    }
+                ]
               }
             },
             {
@@ -162,12 +178,12 @@ val availablePrescriptionListsJsonExample = """
               "status": "final",
               "krankenversicherung": {
                 "kostentraegertyp": "GKV",
-                "ikKrankenkasse": 104212059,
+                "ikKrankenkasse": "104212059",
                 "kostentraeger": "AOK Baden-Württemberg",
-                "wop": 52,
-                "versichertenstatus": 1,
-                "besonderePersonengruppe": 0,
-                "dmpKz": 0
+                "wop": "52",
+                "versichertenstatus": "1",
+                "besonderePersonengruppe": "0",
+                "dmpKz": "0"
               },
               "patient": {
                 "gkvVersichertenId": "X234567891",
@@ -177,16 +193,17 @@ val availablePrescriptionListsJsonExample = """
                 },
                 "geburtsdatum": "1985-05-05T00:00:00.000Z",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 42
+                  "hausnummer": "42"
                 }
               },
               "arzt": {
-                "typ": 0,
+                "typ": "0",
                 "berufsbezeichnung": "Hausarzt",
-                "arztnummer": 838382202,
+                "arztnummer": "838382202",
                 "person": {
                   "vorname": "Hans",
                   "nachname": "Gesundmacher",
@@ -195,23 +212,25 @@ val availablePrescriptionListsJsonExample = """
               },
               "pruefnummer": "Y/400/1910/36/346",
               "organisation": {
-                "bsnr": 31234567,
+                "bsnr": "31234567",
                 "name": "Hausarztpraxis Dr. Gesundmacher",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 200
+                  "hausnummer": "200"
                 },
                 "telefon": "+49 711 1234567",
                 "fax": "+49 711 1234599",
                 "eMail": "hans@praxis-gesundmacher.de"
               },
               "verordnung": {
+                "type": "prescription",
                 "ausstellungsdatum": "2024-06-30T00:00:00.000Z",
                 "noctu": false,
                 "bvg": false,
-                "zuzahlungsstatus": 0,
+                "zuzahlungsstatus": "0",
                 "autidem": true,
                 "abgabehinweis": "Vor Zugriff durch Kinder schützen.",
                 "anzahl": 1,
@@ -219,21 +238,25 @@ val availablePrescriptionListsJsonExample = """
                 "dosieranweisung": "1-0-0"
               },
               "arzneimittel": {
-                "type": "medicationIngredient",
-                "kategorie": 0,
-                "impfstoff": false,
-                "normgroesse": "N3",
-                "darreichungsform": "Tabletten",
-                "packungsgroesseNachMenge": 100,
-                "einheit": "Stück",
-                "listeBestandteilWirkstoffverordnung": [
-                  {
-                    "type": "bestandteilWirkstoffverordnung",
-                    "wirkstoffnummer": 22686,
-                    "wirkstoffname": "Ramipril",
-                    "wirkstaerke": 5,
-                    "wirkstaerkeneinheit": "mg"
-                  }
+                "medicationItem": [
+                    {
+                        "type": "medicationIngredient",
+                        "kategorie": "0",
+                        "impfstoff": false,
+                        "normgroesse": "N3",
+                        "darreichungsform": "Tabletten",
+                        "packungsgroesseNachMenge": "100",
+                        "einheit": "Stück",
+                        "listeBestandteilWirkstoffverordnung": [
+                          {
+                            "type": "bestandteilWirkstoffverordnung",
+                            "wirkstoffnummer": "22686",
+                            "wirkstoffname": "Ramipril",
+                            "wirkstaerke": "5",
+                            "wirkstaerkeneinheit": "mg"
+                          }
+                        ]                
+                    }
                 ]
               }
             },
@@ -243,12 +266,12 @@ val availablePrescriptionListsJsonExample = """
               "status": "final",
               "krankenversicherung": {
                 "kostentraegertyp": "GKV",
-                "ikKrankenkasse": 104212059,
+                "ikKrankenkasse": "104212059",
                 "kostentraeger": "AOK Baden-Württemberg",
-                "wop": 52,
-                "versichertenstatus": 1,
-                "besonderePersonengruppe": 0,
-                "dmpKz": 0
+                "wop": "52",
+                "versichertenstatus": "1",
+                "besonderePersonengruppe": "0",
+                "dmpKz": "0"
               },
               "patient": {
                 "gkvVersichertenId": "X234567891",
@@ -258,16 +281,17 @@ val availablePrescriptionListsJsonExample = """
                 },
                 "geburtsdatum": "1985-05-05T00:00:00.000Z",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 42
+                  "hausnummer": "42"
                 }
               },
               "arzt": {
-                "typ": 0,
+                "typ": "0",
                 "berufsbezeichnung": "Hausarzt",
-                "arztnummer": 838382202,
+                "arztnummer": "838382202",
                 "person": {
                   "vorname": "Hans",
                   "nachname": "Gesundmacher",
@@ -276,48 +300,54 @@ val availablePrescriptionListsJsonExample = """
               },
               "pruefnummer": "Y/400/1910/36/346",
               "organisation": {
-                "bsnr": 31234567,
+                "bsnr": "31234567",
                 "name": "Hausarztpraxis Dr. Gesundmacher",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 200
+                  "hausnummer": "200"
                 },
                 "telefon": "+49 711 1234567",
                 "fax": "+49 711 1234599",
                 "eMail": "hans@praxis-gesundmacher.de"
               },
               "verordnung": {
+                "type": "prescription",
                 "ausstellungsdatum": "2024-06-30T00:00:00.000Z",
                 "noctu": false,
                 "bvg": false,
-                "zuzahlungsstatus": 0,
+                "zuzahlungsstatus": "0",
                 "autidem": true,
                 "abgabehinweis": "Vor Zugriff durch Kinder schützen.",
                 "anzahl": 1
               },
               "arzneimittel": {
-                "type": "medicationCompounding",
-                "kategorie": 0,
-                "impfstoff": false,
-                "herstellungsanweisung": "Lösung",
-                "verpackung": null,
-                "rezepturname": null,
-                "darreichungsform": null,
-                "gesamtmenge": 100,
-                "einheit": "ml",
-                "listeBestandteilRezepturverordnung": [
-                  {
-                    "type": "bestandteilRezepturverordnung",
-                    "name": "Salicylsäure",
-                    "menge": 5,
-                    "einheit": "g"
-                  },
-                  {
-                    "name": "2-propanol 70 %",
-                    "mengeUndEinheit": "Ad 100 g"
-                  }
+                "medicationItem": [
+                    {
+                        "type": "medicationCompounding",
+                        "kategorie": "0",
+                        "impfstoff": false,
+                        "herstellungsanweisung": "Lösung",
+                        "verpackung": null,
+                        "rezepturname": "Lösung",
+                        "darreichungsform": null,
+                        "gesamtmenge": "100",
+                        "einheit": "ml",
+                        "listeBestandteilRezepturverordnung": [
+                          {
+                            "type": "bestandteilRezepturverordnung",
+                            "name": "Salicylsäure",
+                            "menge": "5",
+                            "einheit": "g"
+                          },
+                          {
+                            "name": "2-propanol 70",
+                            "mengeUndEinheit": "Ad 100 g"
+                          }
+                        ]
+                    }
                 ]
               }
             },
@@ -327,12 +357,12 @@ val availablePrescriptionListsJsonExample = """
               "status": "final",
               "krankenversicherung": {
                 "kostentraegertyp": "GKV",
-                "ikKrankenkasse": 104212059,
+                "ikKrankenkasse": "104212059",
                 "kostentraeger": "AOK Baden-Württemberg",
-                "wop": 52,
-                "versichertenstatus": 1,
-                "besonderePersonengruppe": 0,
-                "dmpKz": 0
+                "wop": "52",
+                "versichertenstatus": "1",
+                "besonderePersonengruppe": "0",
+                "dmpKz": "0"
               },
               "patient": {
                 "gkvVersichertenId": "X234567891",
@@ -342,16 +372,17 @@ val availablePrescriptionListsJsonExample = """
                 },
                 "geburtsdatum": "1985-05-05T00:00:00.000Z",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 42
+                  "hausnummer": "42"
                 }
               },
               "arzt": {
-                "typ": 0,
+                "typ": "0",
                 "berufsbezeichnung": "Hausarzt",
-                "arztnummer": 838382202,
+                "arztnummer": "838382202",
                 "person": {
                   "vorname": "Hans",
                   "nachname": "Gesundmacher",
@@ -360,42 +391,47 @@ val availablePrescriptionListsJsonExample = """
               },
               "pruefnummer": "Y/400/1910/36/346",
               "organisation": {
-                "bsnr": 31234567,
+                "bsnr": "31234567",
                 "name": "Hausarztpraxis Dr. Gesundmacher",
                 "adresse": {
-                  "plz": 70372,
+                  "type": "streetAddress",
+                  "plz": "70372",
                   "ort": "Stuttgart",
                   "strasse": "Musterstrasse",
-                  "hausnummer": 200
+                  "hausnummer": "200"
                 },
                 "telefon": "+49 711 1234567",
                 "fax": "+49 711 1234599",
                 "eMail": "hans@praxis-gesundmacher.de"
               },
               "verordnung": {
+                "type": "prescription",
                 "ausstellungsdatum": "2024-06-30T00:00:00.000Z",
                 "noctu": false,
                 "bvg": false,
-                "zuzahlungsstatus": 0,
+                "zuzahlungsstatus": "0",
                 "autidem": true,
                 "abgabehinweis": "Vor Zugriff durch Kinder schützen.",
                 "anzahl": 1
               },
               "arzneimittel": {
-                "type": "medicationFreeText",
-                "kategorie": 0,
-                "impfstoff": false,
-                "freitextverordnung": "Metformin 850mg Tabletten N3"
+                "medicationItem": [
+                    {
+                        "type": "medicationFreeText",
+                        "kategorie": "0",
+                        "impfstoff": false,
+                        "freitextverordnung": "Metformin 850mg Tabletten N3"
+                    }
+                ]
               }
             }
-          ],
-          "messageId": "e9a148b9-e70a-498e-af0e-358c8226cae8",
-          "correlationId": "df094bd9-4669-458a-b47f-8330e8254306"
+          ]
         }
       ]
     }
 """.trimIndent()
 
-fun getAvailablePrescriptionListsExample(): AvailablePrescriptionLists {
-    return eRezeptJsonFormatter.decodeFromString(availablePrescriptionListsJsonExample)
+fun getAvailablePrescriptionListsExample(messageId: String, correlationId: String): AvailablePrescriptionLists {
+    val prescriptionListExample = java.lang.String.format(availablePrescriptionListsJsonExample, messageId, correlationId)
+    return eRezeptJsonFormatter.decodeFromString(prescriptionListExample)
 }

@@ -107,7 +107,10 @@ class CardLinkEndpoint {
 
     private fun sendPrescriptionList(eRezeptMessage: RequestPrescriptionList, session: Session) {
 
-        val availablePrescriptionLists = getAvailablePrescriptionListsExample()
+        val availablePrescriptionLists = getAvailablePrescriptionListsExample(
+            UUID.randomUUID().toString(),
+            eRezeptMessage.messageId
+        )
 
         session.asyncRemote.sendObject(availablePrescriptionLists) {
             if (it.exception != null) {
