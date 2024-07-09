@@ -1,79 +1,86 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Welcome to the expo based demo for epotheke sdk integration (currently only android)
 
-# Getting Started
+## Start the app 
+1. npm install
+2. npm run android
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Steps to follow for other apps
+To make the sdk available for a custom app follow these steps:  
 
-## Step 1: Start the Metro Server
+### Repositories in ./android/app/build.gradle: 
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+```groovy 
+repositories {
+    google()
+    mavenCentral()
 
-To start Metro, run the following command from the _root_ of your React Native project:
-
-```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+    mavenLocal()
+    maven {
+        url = uri("https://mvn.ecsec.de/repository/openecard-public")
+    }
+    maven {
+        url = uri("https://mvn.ecsec.de/repository/openecard-snapshot")
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
+}
 ```
 
-## Step 2: Start your Application
+### Dependencies in ./android/app/build.gradle: 
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+```groovy 
 
-### For Android
+def EpothekeSdkVersion = "1.1.0-rc.1"
 
-```bash
-# using npm
-npm run android
+dependencies {
+     ... 
+    implementation("com.epotheke:sdk:${EpothekeSdkVersion}")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.+")
+    
+    // logging library, use whatever you like to output the slf4j log statements
+    implementation("io.github.oshai:kotlin-logging:6.0.9")
+    implementation("com.github.tony19:logback-android:3.0.0")
+}
 
-# OR using Yarn
-yarn android
 ```
 
-### For iOS
+### Packaging options in ./android/app/build.gradle:
+You might need to add within the packaging options:
+```groovy
 
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+        resources {
+            excludes += "/META-INF/{LICENSE.md,NOTICE.md,AL2.0,LGPL2.1}"
+        }
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+### Permissions in ./android/app/src/main/AndroidManifest.xml:
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+Add the following permissions
+```xml
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.NFC" />
+```
 
-## Step 3: Modifying your App
+### Logging
+Copy the `./android/app/src/main/assetes/logback.xml` to the respective location in your app to enable logs in logcat.
 
-Now that you have successfully run the app, let's modify it.
+### Adding Native Module
+Copy the following files to the respective folder in your app: 
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+```
+./android/app/src/main/java/de/ecsec/rn/epotheke/EpothekeModule.kt
+./android/app/src/main/java/de/ecsec/rn/epotheke/EpothekePackage.kt
+```
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+Alter the `getPackages()` function in your `MainApplication.kt` to add the EpothekePackage like shown below:
 
-## Congratulations! :tada:
+```kotlin
+return PackageList(this).packages.apply{
+    add(EpothekePackage())
+}
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+### Usage in react native
 
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Please refer to the example code in `/app/index.tsx` on how to use the native module in react native.
