@@ -1,7 +1,21 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+repositories {
+    google()
+    mavenCentral()
 
+    mavenLocal()
+    maven {
+        url = uri("https://mvn.ecsec.de/repository/openecard-public")
+    }
+    maven {
+        url = uri("https://mvn.ecsec.de/repository/openecard-snapshot")
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
+}
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -102,7 +116,14 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
-}
+    packagingOptions {
+        resources {
+            excludes += "/META-INF/{LICENSE.md,NOTICE.md,AL2.0,LGPL2.1}"
+        }
+    }
+} 
+
+def EpothekeSdkVersion = "1.1.0-SNAPSHOT"
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
@@ -113,6 +134,15 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+
+    implementation("com.epotheke:sdk:${EpothekeSdkVersion}")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.+")
+
+    // logging library, use whatever you like to output the slf4j log statements
+    implementation("io.github.oshai:kotlin-logging:6.0.9")
+    implementation("com.github.tony19:logback-android:3.0.0")
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
