@@ -1,10 +1,26 @@
-# Welcome to the expo based demo for epotheke sdk integration (currently only android)
+# Welcome to the demo for epotheke sdk integration (currently only android)
 
-## Start the app 
+This app demonstrates how to integrate the epotheke-SDK in an app and can perform a happy path interaction with the epotheke service.
+
+## Some notes
+- The app uses NFC which is not possible to test in emulators, hence make sure to use a real device with NFC switched on
+- You will need a eGk to run through the prepared process
+- You will have to adjust App.tsx to provide the fitting CAN for this very card to the SDK
+- You won't have any UI except for the button to start the showcase
+- Everything else is in the console.log
+
+- When the log `requestCardInsertion` appears it is time to bring the eGK near the device. 
+- In the end there should be a log containing testdata
+
+- The test-service this app uses does not send sms but accepts any TAN so (123456) is valid
+- The phonenumber is not needed, too but must have a format of a valid german mobile number
+ 
+## Start the app  
 1. npm install
-2. npm run android
+2. npm start
+3. type a when up 
 
-## Steps to follow for other apps
+## Steps to follow for building apps
 To make the sdk available for a custom app follow these steps:  
 
 ### Repositories in ./android/app/build.gradle: 
@@ -83,4 +99,4 @@ return PackageList(this).packages.apply{
 
 ### Usage in react native
 
-Please refer to the example code in `/app/index.tsx` on how to use the native module in react native.
+Please refer to the example code in `App.tsx` on how to use the native module in react native.
