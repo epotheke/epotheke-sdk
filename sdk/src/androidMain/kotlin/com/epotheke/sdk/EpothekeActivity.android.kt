@@ -42,7 +42,7 @@ abstract class EpothekeActivity : Activity() {
 
         epotheke = Epotheke(
             this,
-            getCardlinkUrl(),
+            getCardLinkUrl(),
             getControllerCallback(),
             getCardLinkInteraction(),
             getSdkErrorHandler(),
@@ -76,8 +76,8 @@ abstract class EpothekeActivity : Activity() {
         }
     }
 
-    abstract fun getCardlinkUrl(): String
-    abstract fun getControllerCallback(): CardlinkControllerCallback
+    abstract fun getCardLinkUrl(): String
+    abstract fun getControllerCallback(): CardLinkControllerCallback
     abstract fun getCardLinkInteraction(): CardLinkInteraction
     abstract fun getSdkErrorHandler(): SdkErrorHandler
 

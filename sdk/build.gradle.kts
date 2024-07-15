@@ -41,7 +41,7 @@ kotlin {
 //    cocoapods {
 //        name = "epotheke-sdk"
 //        homepage = "https://www.epotheke.com"
-//        summary = "Framework for using cardlink protocol."
+//        summary = "Framework for using the CardLink protocol."
 //        authors = "ecsec GmbH"
 //        license = "GPLv3"
 //        framework {

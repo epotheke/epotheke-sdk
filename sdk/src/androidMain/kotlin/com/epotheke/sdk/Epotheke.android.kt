@@ -37,8 +37,8 @@ private val logger = KotlinLogging.logger {}
 
 class Epotheke(
     private val ctx: Activity,
-    private val cardlinkUrl: String,
-    private val cardlinkControllerCallback: CardlinkControllerCallback,
+    private val cardLinkUrl: String,
+    private val cardLinkControllerCallback: CardLinkControllerCallback,
     private val cardLinkInteraction: CardLinkInteraction,
     private val sdkErrorHandler: SdkErrorHandler
 ) {
@@ -67,13 +67,13 @@ class Epotheke(
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
-                val websocket = WebsocketAndroid(cardlinkUrl)
+                val websocket = WebsocketAndroid(cardLinkUrl)
                 val wsListener = WebsocketListener()
                 val protocols = buildProtocols(websocket, wsListener)
                 actSource.cardLinkFactory().create(
                     websocket,
                     overridingControllerCallback(protocols),
-                    OverridingCardlinkInteraction(this@Epotheke, cardLinkInteraction),
+                    OverridingCardLinkInteraction(this@Epotheke, cardLinkInteraction),
                     wsListener
                 )
             }
@@ -124,7 +124,7 @@ class Epotheke(
         }
     }
 
-    private class OverridingCardlinkInteraction(val ctx: Epotheke, val delegate: CardLinkInteraction) :
+    private class OverridingCardLinkInteraction(val ctx: Epotheke, val delegate: CardLinkInteraction) :
         CardLinkInteraction by delegate {
         override fun requestCardInsertion() {
             ctx.nfcIntentHelper?.enableNFCDispatch()
@@ -141,11 +141,11 @@ class Epotheke(
 
     private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>): ControllerCallback {
         return object : ControllerCallback {
-            override fun onStarted() = cardlinkControllerCallback.onStarted()
+            override fun onStarted() = cardLinkControllerCallback.onStarted()
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
                 nfcIntentHelper?.disableNFCDispatch()
                 needNfc = false
-                cardlinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
             }
         }
     }

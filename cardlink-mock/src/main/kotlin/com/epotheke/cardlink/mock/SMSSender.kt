@@ -84,8 +84,8 @@ class SpryngsmsSender : SMSSender {
         if (isEnabled) {
             logger.debug { "Preparing sending SMS out..." }
             val createMessage = SpryngsmsCreateMessage(
-                body = "Your SMS-Code for Cardlink: ${msg.smsCode}",
-                originator = "Cardlink",
+                body = "Your SMS-Code for CardLink: ${msg.smsCode}",
+                originator = "CardLink",
                 recipients = listOf(msg.recipient)
             )
             spryngsmsClient.createMessage("Bearer $apiKey", createMessage)

@@ -39,7 +39,7 @@ import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
-import com.epotheke.sdk.CardlinkControllerCallback
+import com.epotheke.sdk.CardLinkControllerCallback
 import com.epotheke.sdk.EpothekeActivity
 import com.epotheke.sdk.ErezeptProtocol
 import com.epotheke.sdk.SdkErrorHandler
@@ -60,8 +60,8 @@ private const val mockServiceUrl = "https://epotheke.mock.ecsec.services/cardlin
 /**
  * To use the Epotheke SDK within an app, the easiest way is to extend the abstract EpothekeActivity
  * provided by the SDK.
- * The EpothekeActivity will instantiate the framework and start a cardlink connection process in its onCreate() method.
- * The controlflow during the connection establishment via Cardlink is encapsulated within the SDK.
+ * The EpothekeActivity will instantiate the framework and start a CardLink connection process in its onCreate() method.
+ * The controlflow during the connection establishment via CardLink is encapsulated within the SDK.
  * The interaction with the app and the user is handled via CallbackHandler interfaces, which have to be
  * implemented within the app and handed to the SDK via the implementation of abstract getter methods
  * of the EpothekeActivity.
@@ -77,7 +77,7 @@ class EpothekeActivityImp : EpothekeActivity() {
      *
      * @return
      */
-    override fun getCardlinkUrl(): String {
+    override fun getCardLinkUrl(): String {
         return mockServiceUrl + "?token=" + UUID.randomUUID()
     }
 
@@ -97,7 +97,7 @@ class EpothekeActivityImp : EpothekeActivity() {
      *
      * @return ControllerCallback
      */
-    override fun getControllerCallback(): CardlinkControllerCallback {
+    override fun getControllerCallback(): CardLinkControllerCallback {
         return ControllerCallbackImp()
     }
 
@@ -241,7 +241,7 @@ class EpothekeActivityImp : EpothekeActivity() {
     /**
      * The ControllerCallback informs about the start of the CardLink process and returns its results.
      */
-    private inner class ControllerCallbackImp : CardlinkControllerCallback {
+    private inner class ControllerCallbackImp : CardLinkControllerCallback {
         /**
          * Called when the process starts.
          * The app may inform the user.
@@ -260,7 +260,7 @@ class EpothekeActivityImp : EpothekeActivity() {
 
         override fun onAuthenticationCompletion(
             activationResult: ActivationResult?,
-            cardlinkProtocols: Set<CardLinkProtocol>
+            cardLinkProtocols: Set<CardLinkProtocol>
         ) {
             LOG.debug { "EpothekeImplementation onAuthenticationCompletion" }
             LOG.debug { (activationResult.toString()) }
@@ -284,7 +284,7 @@ class EpothekeActivityImp : EpothekeActivity() {
                 showInfo(resultMsg)
 
                 //based on the provided protocol implementations we can enable further use cases.
-                cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first().also { protocol ->
+                cardLinkProtocols.filterIsInstance<ErezeptProtocol>().first().also { protocol ->
                     enableErezeptProtocol(protocol)
                 }
 

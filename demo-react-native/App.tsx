@@ -87,8 +87,8 @@ function App(): React.JSX.Element {
               console.log(`btn epotheke pressed`)
 
               /*
-                Register callbacks for cardlink interaction.
-                These are called by the framework during cardlink establishment, to inform app and user about the current state of the process and
+                Register callbacks for CardLink interaction.
+                These are called by the framework during CardLink establishment, to inform app and user about the current state of the process and
                 get information like tan, can etc.
       
                 Callbacks in react native can only be called once.
@@ -157,7 +157,7 @@ function App(): React.JSX.Element {
               /*
                 Wiring of the controllerCallbacks
               */
-              //this callback informs about the start of the cardlink establishment
+              //this callback informs about the start of the CardLink establishment
               let controllerCallback = () => {
                 console.log(`onStarted`)
                 EpothekeModule.set_controllerCallbackCB_onStarted(controllerCallback)
@@ -165,7 +165,7 @@ function App(): React.JSX.Element {
               EpothekeModule.set_controllerCallbackCB_onStarted(controllerCallback)
       
               /*
-                This callback is called when the cardlink establishment is finished.
+                This callback is called when the CardLink establishment is finished.
       
                 If successfull the methods
                   EpothekeModule.getPrescriptions()
@@ -207,8 +207,8 @@ function App(): React.JSX.Element {
               EpothekeModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
       
       
-              //start the cardlink establishment
-              EpothekeModule.startCardlink(`https://epotheke.mock.ecsec.services/cardlink?token=RANDOMTOKEN`)
+              // start the CardLink establishment
+              EpothekeModule.startCardLink(`https://epotheke.mock.ecsec.services/cardlink?token=RANDOMTOKEN`)
 
             }} />
         </View>

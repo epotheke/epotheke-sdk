@@ -7,7 +7,7 @@ import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.eRezeptJsonFormatter
 import com.epotheke.sdk.CardLinkProtocol
-import com.epotheke.sdk.CardlinkControllerCallback
+import com.epotheke.sdk.CardLinkControllerCallback
 import com.epotheke.sdk.Epotheke
 import com.epotheke.sdk.ErezeptProtocol
 import com.epotheke.sdk.SdkErrorHandler
@@ -86,23 +86,23 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
     private suspend fun callErezeptProtocolNullChecked(p: Promise, call: suspend ErezeptProtocol.() -> Unit){
         when (val proto = erezeptProtocol) {
             null -> {
-                p.reject("Protocol not available, is cardlink established?")
+                p.reject("Protocol not available, is CardLink established?")
             }
             else -> proto.call()
         }
     }
 
-    private val cardlinkControllerCallback = object : CardlinkControllerCallback {
+    private val cardLinkControllerCallback = object : CardLinkControllerCallback {
         override fun onAuthenticationCompletion(
             p0: ActivationResult?,
-            cardlinkProtocols: Set<CardLinkProtocol>
+            cardLinkProtocols: Set<CardLinkProtocol>
         ) {
             logger.debug { "onAuthenticationCompletion ${p0?.errorMessage}" }
 
-            erezeptProtocol = cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first()
+            erezeptProtocol = cardLinkProtocols.filterIsInstance<ErezeptProtocol>().first()
 
             val availableProtocols =
-                cardlinkProtocols.joinToString(prefix = "protocols: ") { p -> p.javaClass.name }
+                cardLinkProtocols.joinToString(prefix = "protocols: ") { p -> p.javaClass.name }
             onAuthenticationCompletionCB?.invoke(p0?.errorMessage, availableProtocols)
 
         }
@@ -247,8 +247,8 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
 
     var epothekeInstance : Epotheke? = null
     @ReactMethod
-    fun startCardlink(cardlinkUrl: String) {
-        logger.debug { "EpothekeModule called with url : $cardlinkUrl" }
+    fun startCardLink(cardLinkUrl: String) {
+        logger.debug { "EpothekeModule called with url : $cardLinkUrl" }
 
         epothekeInstance?.let {
             it.destroyOecContext()
@@ -257,7 +257,7 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
         currentActivity?.let { activity ->
             val epotheke = Epotheke(
                 activity,
-                cardlinkUrl,
+                cardLinkUrl,
                 cardlinkControllerCallback,
                 cardLinkInteraction,
                 errorHandler,
