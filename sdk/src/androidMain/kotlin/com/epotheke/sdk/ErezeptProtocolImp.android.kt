@@ -38,11 +38,19 @@ import kotlin.time.toKotlinDuration
 private val logger = KotlinLogging.logger {}
 private const val ReceiveTimeoutSeconds = 30L
 
-class ErezeptProtocolImp(
-    private val ws: WebsocketAndroid,
-) : ErezeptProtocol {
+open class CardLinkProtocolBase(
+    protected val ws: WebsocketAndroid,
+) : CardLinkProtocol {
+    protected val inputChannel = Channel<String>()
 
-    private val inputChannel = Channel<String>()
+    fun registerListener(channelDispatcher: ChannelDispatcher) {
+        channelDispatcher.addProtocolChannel(inputChannel)
+    }
+}
+
+class ErezeptProtocolImp(
+    ws: WebsocketAndroid
+) : CardLinkProtocolBase(ws), ErezeptProtocol {
 
     @TargetApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -148,8 +156,5 @@ class ErezeptProtocolImp(
         }
     }
 
-    override fun registerListener(channelDispatcher: ChannelDispatcher) {
-        channelDispatcher.addProtocolChannel(inputChannel)
-    }
 }
 

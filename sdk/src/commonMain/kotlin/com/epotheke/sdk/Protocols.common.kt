@@ -32,14 +32,12 @@ interface ChannelDispatcher {
     fun addProtocolChannel(channel: Channel<String>)
 }
 
-interface CardLinkProtocol {
-    fun registerListener(channelDispatcher: ChannelDispatcher)
-}
+interface CardLinkProtocol
 
 interface ErezeptProtocol : CardLinkProtocol {
     @Throws(ErezeptProtocolException::class)
-    suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists
+    suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
 
     @Throws(ErezeptProtocolException::class)
-    suspend fun selectReceipts(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
+    suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
 }
