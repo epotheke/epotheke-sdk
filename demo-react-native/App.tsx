@@ -168,8 +168,8 @@ function App(): React.JSX.Element {
                 This callback is called when the cardlink establishment is finished.
       
                 If successfull the methods
-                  EpothekeModule.getReceipts()
-                  EpothekeModule.selectReceipts()
+                  EpothekeModule.getPrescriptions()
+                  EpothekeModule.selectPrescriptions()
                 become functional and can be called.
               */
               let onAuthenticationCallback = async (err: any, msg: any) => {
@@ -177,13 +177,13 @@ function App(): React.JSX.Element {
                   console.log(`onAuthenticationCompletion protos: ${msg}`)
       
                   try {
-                    //get available receipts
-                    let availReceipts = await EpothekeModule.getReceipts();
-                    console.log(`receipts: ${availReceipts}`)
+                    //get available prescriptions
+                    let availPrescriptions = await EpothekeModule.getPrescriptions();
+                    console.log(`prescriptions: ${availPrescriptions}`)
       
                     //example for a selection
                     //which has to be done via a jsonstring containing the selectedPrescriptionList
-                    let confirmation = await EpothekeModule.selectReceipts(`{
+                    let confirmation = await EpothekeModule.selectPrescriptions(`{
                       "type": "selectedPrescriptionList",
                       "ICCSN": "MTIzNDU2Nzg5",
                       "prescriptionIndexList": [

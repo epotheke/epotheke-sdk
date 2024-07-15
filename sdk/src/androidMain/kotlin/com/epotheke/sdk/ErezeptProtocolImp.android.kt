@@ -54,7 +54,7 @@ class ErezeptProtocolImp(
 
     @TargetApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists {
+    override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
         logger.debug { "Sending data to request ecreipts." }
 
         ws.send(
@@ -105,7 +105,7 @@ class ErezeptProtocolImp(
     }
 
     @TargetApi(Build.VERSION_CODES.O)
-    override suspend fun selectReceipts(lst: SelectedPrescriptionList): SelectedPrescriptionListResponse {
+    override suspend fun selectPrescriptions(lst: SelectedPrescriptionList): SelectedPrescriptionListResponse {
         logger.debug { "Sending data to select ecreipts." }
         ws.send(
             eRezeptJsonFormatter.encodeToString(lst)

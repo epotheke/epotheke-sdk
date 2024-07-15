@@ -86,22 +86,22 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="Cancel"
-            app:layout_constraintEnd_toEndOf="@+id/btn_getReceipts"
-            app:layout_constraintStart_toStartOf="@+id/btn_getReceipts"
-            app:layout_constraintTop_toBottomOf="@+id/btn_getReceipts" />
+            app:layout_constraintEnd_toEndOf="@+id/btn_getPrescriptions"
+            app:layout_constraintStart_toStartOf="@+id/btn_getPrescriptions"
+            app:layout_constraintTop_toBottomOf="@+id/btn_getPrescriptions" />
 
         <Button
-            android:id="@+id/btn_getReceipts"
+            android:id="@+id/btn_getPrescriptions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:enabled="false"
-            android:text="Get receipts"
+            android:text="Get prescriptions"
             android:visibility="invisible"
             app:layout_constraintEnd_toEndOf="@+id/btn_ok"
             app:layout_constraintHorizontal_bias="0.4"
             app:layout_constraintStart_toStartOf="@+id/btn_ok"
-            app:layout_constraintTop_toBottomOf="@+id/btn_ok" />
+            app:layout_constraintTop_toBottomOf="@+id/btn_ok"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -51,14 +51,14 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
     private var erezeptProtocol: ErezeptProtocol? = null
 
     @ReactMethod
-    fun getReceipts(p: Promise) {
+    fun getPrescriptions(p: Promise) {
         runBlocking {
             callErezeptProtocolNullChecked(p) {
                 try {
-                    val availableReceipts: AvailablePrescriptionLists =
-                        requestReceipts(RequestPrescriptionList())
+                    val availablePrescriptions: AvailablePrescriptionLists =
+                        requestPrescriptions(RequestPrescriptionList())
                     p.resolve(
-                        eRezeptJsonFormatter.encodeToString(availableReceipts)
+                        eRezeptJsonFormatter.encodeToString(availablePrescriptions)
                     )
                 } catch (e: Exception){
                     p.reject(e)
@@ -68,11 +68,11 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun selectReceipts(selection: String, p: Promise) {
+    fun selectPrescriptions(selection: String, p: Promise) {
         runBlocking {
             callErezeptProtocolNullChecked(p) {
                 try {
-                    val confirmation = selectReceipts(eRezeptJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
+                    val confirmation = selectPrescriptions(eRezeptJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
                     p.resolve(
                         eRezeptJsonFormatter.encodeToString(confirmation)
                     )

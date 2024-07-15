@@ -33,7 +33,6 @@ import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.MedicationCompounding
 import com.epotheke.erezept.model.MedicationFreeText
 import com.epotheke.erezept.model.MedicationIngredient
-import com.epotheke.erezept.model.MedicationItem
 import com.epotheke.erezept.model.MedicationPzn
 import com.epotheke.erezept.model.PrescriptionBundle
 import com.epotheke.erezept.model.RequestPrescriptionList
@@ -297,10 +296,10 @@ class EpothekeActivityImp : EpothekeActivity() {
     }
 
     /**
-     * Enable and show button to start ereceipt protocol flow.
+     * Enable and show button to start ePrescription protocol flow.
      */
     private fun enableErezeptProtocol(protocol: ErezeptProtocol) {
-        findViewById<Button>(R.id.btn_getReceipts).apply {
+        findViewById<Button>(R.id.btn_getPrescriptions).apply {
             visibility = VISIBLE
             isEnabled = true
 
@@ -311,7 +310,7 @@ class EpothekeActivityImp : EpothekeActivity() {
     }
 
     /**
-     * Start the ereceipt flow
+     * Start the ePrescription flow
      * The functions of the protocol are kotlin suspend functions and therefore have to be run in
      * a couroutine scope, which enables us to perform the asynchronous communications in the background of the app.
      * To keep it simple we here just use runBlocking
@@ -323,17 +322,17 @@ class EpothekeActivityImp : EpothekeActivity() {
             setBusy(true)
             try {
                 /*
-                * Send request for available receipts via the ErezeptProtocol object
+                * Send request for available prescriptions via the ErezeptProtocol object
                 * We can use the default values of the constructor to get everything available.
                 */
-                val result = protocol.requestReceipts(
+                val result = protocol.requestPrescriptions(
                     RequestPrescriptionList()
                 )
 
                 /*
                  * The answer message contains a list of lists.
-                 * Each outer list is associated with a card and contains available receipts for it.
-                 * The inner lists contains types describing receipts.
+                 * Each outer list is associated with a card and contains available prescriptions for it.
+                 * The inner lists contains types describing prescriptions.
                  *
                  * For the showcase we simply build a string containing names of these elements from the first list.
                  */
@@ -354,7 +353,7 @@ class EpothekeActivityImp : EpothekeActivity() {
                     }
 
                 setBusy(false)
-                showInfo("Available receipts: \n$text")
+                showInfo("Available prescriptions: \n$text")
                 enableRedeem(protocol, result)
 
             } catch (e: Exception) {
@@ -372,10 +371,10 @@ class EpothekeActivityImp : EpothekeActivity() {
      */
     private fun enableRedeem(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         LOG.debug { "Enable action for Redeeming" }
-        findViewById<Button>(R.id.btn_getReceipts).apply {
-            text = "REDEEM RECEIPTS"
+        findViewById<Button>(R.id.btn_getPrescriptions).apply {
+            text = "REDEEM PRESCRIPTIONS"
             setOnClickListener {
-                redeemReceipts(protocol, available)
+                redeemPrescriptions(protocol, available)
             }
         }
     }
@@ -384,9 +383,9 @@ class EpothekeActivityImp : EpothekeActivity() {
      * This function uses the given protocol and the list of available prescriptions to
      * redeem them.
      */
-    private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+    private fun redeemPrescriptions(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
         /*
-         * For this example we build a SelectPrescriptionList object requesting all elements (by prescriptionids) of the first list
+         * For this example we build a SelectPrescriptionList object requesting all elements (by prescription IDs) of the first list
          * from the previous answer and set the supplyOptionsType to DELIVERY
          */
         var selection = SelectedPrescriptionList(
@@ -402,9 +401,9 @@ class EpothekeActivityImp : EpothekeActivity() {
         runBlocking {
             setBusy(true)
             try {
-                protocol.selectReceipts(selection)
+                protocol.selectPrescriptions(selection)
                 showInfo("SUCCESS")
-                disableEreceiptFunction()
+                disableEprescriptionFunction()
                 setBusy(false)
             } catch (e: Exception) {
                 LOG.debug(e) { "Error in request" }
@@ -417,11 +416,11 @@ class EpothekeActivityImp : EpothekeActivity() {
     }
 
     /**
-     * Deactivates the button for ereceipt functionality
+     * Deactivates the button for ePrescription functionality
      */
-    private fun disableEreceiptFunction() {
+    private fun disableEprescriptionFunction() {
         LOG.debug { "Enable action for Redeeming" }
-        findViewById<Button>(R.id.btn_getReceipts).apply {
+        findViewById<Button>(R.id.btn_getPrescriptions).apply {
             visibility = INVISIBLE
         }
     }
