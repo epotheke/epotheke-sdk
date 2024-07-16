@@ -1,4 +1,6 @@
 = epotheke-SDK Manual
+Tobias Wich; Florian Otto
+:imagesdir: img
 
 include::introduction.adoc[]
 include::project_setup.adoc[]

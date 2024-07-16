@@ -1,0 +1,11 @@
+The epotheke SDK provides an API which can be integrated directly using the `SdkCore` class.
+To eliminate the need to write platform specific glue code, there are platform specific classes, which can be used instead.
+On Android, the `SdkActivity` can be extended, so only the App specific interaction handlers need to be implemented.
+
+The epotheke SDK contains three handlers, that need to be implemented:
+
+`SdkErrorHandler`:: for handling errors related to the SDK initialisation
+`CardLinkInteraction`:: for exchanging data between the user and the CardLink service
+`CardLinkControllerCallback`:: for providing the CardLink result and protocols for subsequent processes (e.i. Prescription retrieval/selection)
+
+image::SDK_interfaces.svg[title="epotheke SDK Interfaces", width=900, align=center]
