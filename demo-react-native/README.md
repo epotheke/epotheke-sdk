@@ -47,11 +47,11 @@ repositories {
 
 ```groovy 
 
-def EpothekeSdkVersion = "1.1.0-rc.1"
+def epothekeSdkVersion = "1.1.0-rc.1"
 
 dependencies {
      ... 
-    implementation("com.epotheke:sdk:${EpothekeSdkVersion}")
+    implementation("com.epotheke:sdk:${epothekeSdkVersion}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.+")
     
     // logging library, use whatever you like to output the slf4j log statements
@@ -85,15 +85,15 @@ Copy the `./android/app/src/main/assetes/logback.xml` to the respective location
 Copy the following files to the respective folder in your app: 
 
 ```
-./android/app/src/main/java/de/ecsec/rn/epotheke/EpothekeModule.kt
-./android/app/src/main/java/de/ecsec/rn/epotheke/EpothekePackage.kt
+./android/app/src/main/java/de/ecsec/rn/epotheke/SdkModule.kt
+./android/app/src/main/java/de/ecsec/rn/epotheke/SdkPackage.kt
 ```
 
-Alter the `getPackages()` function in your `MainApplication.kt` to add the EpothekePackage like shown below:
+Alter the `getPackages()` function in your `MainApplication.kt` to add the SdkPackage like shown below:
 
 ```kotlin
 return PackageList(this).packages.apply{
-    add(EpothekePackage())
+    add(SdkPackage())
 }
 ```
 

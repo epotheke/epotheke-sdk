@@ -43,7 +43,7 @@ class MainActivity : FragmentActivity() {
         val btn_epothekeActivity = findViewById<Button>(R.id.epo)
         btn_epothekeActivity?.setOnClickListener { _: View ->
             val i = Intent(Intent.ACTION_VIEW)
-            i.setClass(this@MainActivity, EpothekeActivityImp::class.java)
+            i.setClass(this@MainActivity, SdkActivityImp::class.java)
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(i)
         }

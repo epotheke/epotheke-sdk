@@ -33,14 +33,14 @@ import org.openecard.mobile.activation.CardLinkInteraction
 
 private val logger = KotlinLogging.logger {}
 
-abstract class EpothekeActivity : Activity() {
+abstract class SdkActivity : Activity() {
 
-    var epotheke: Epotheke? = null
+    var epotheke: SdkCore? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        epotheke = Epotheke(
+        epotheke = SdkCore(
             this,
             getCardLinkUrl(),
             getControllerCallback(),

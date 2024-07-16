@@ -7,7 +7,7 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Epotheke Demo"
+        android:label="epotheke Demo"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -22,7 +22,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.epotheke.demo.EpothekeActivityImp"
+            android:name="com.epotheke.demo.SdkActivityImp"
             android:clearTaskOnLaunch="true"
             android:configChanges="orientation|screenSize" />
     </application>

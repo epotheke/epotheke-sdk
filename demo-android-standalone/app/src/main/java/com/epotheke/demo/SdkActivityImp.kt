@@ -40,7 +40,7 @@ import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardLinkControllerCallback
-import com.epotheke.sdk.EpothekeActivity
+import com.epotheke.sdk.SdkActivity
 import com.epotheke.sdk.ErezeptProtocol
 import com.epotheke.sdk.SdkErrorHandler
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -58,22 +58,22 @@ private const val mockServiceUrl = "https://epotheke.mock.ecsec.services/cardlin
 
 
 /**
- * To use the Epotheke SDK within an app, the easiest way is to extend the abstract EpothekeActivity
+ * To use the epotheke SDK within an app, the easiest way is to extend the abstract SdkActivity
  * provided by the SDK.
- * The EpothekeActivity will instantiate the framework and start a CardLink connection process in its onCreate() method.
- * The controlflow during the connection establishment via CardLink is encapsulated within the SDK.
+ * The SdkActivity will instantiate the framework and start a CardLink connection process in its onCreate() method.
+ * The control flow during the connection establishment via CardLink is encapsulated within the SDK.
  * The interaction with the app and the user is handled via CallbackHandler interfaces, which have to be
  * implemented within the app and handed to the SDK via the implementation of abstract getter methods
- * of the EpothekeActivity.
+ * of the SdkActivity.
  *
- * EpothekeActivity will also terminate and cleanup the SDK if the Activity gets destroyed.
+ * SdkActivity will also terminate and cleanup the SDK if the Activity gets destroyed.
  * In also handles the switching of androids nfc foreground dispatch for nfc usage in onPause and onResume events.
  * @author Florian Otto
  */
-class EpothekeActivityImp : EpothekeActivity() {
+class SdkActivityImp : SdkActivity() {
     /**
      * This method has to return the url of the epotheke service, and will be called in
-     * EpothekeActivity during startup.
+     * SdkActivity during startup.
      *
      * @return
      */
@@ -140,7 +140,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param confirmPasswordOperation
         </CANVALUE> */
         override fun onCanRequest(confirmPasswordOperation: ConfirmPasswordOperation) {
-            LOG.debug { "EpothekeImplementation onCanRequest" }
+            LOG.debug { "epotheke implementation onCanRequest" }
             getValueFromUser("Please provide CAN of card", "000000") { value ->
                 confirmPasswordOperation.confirmPassword(value)
             }
@@ -158,7 +158,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param confirmTextOperation
         </NUMBER> */
         override fun onPhoneNumberRequest(confirmTextOperation: ConfirmTextOperation) {
-            LOG.debug { "EpothekeImplementation onPhoneNumberRequest" }
+            LOG.debug { "epotheke implementation onPhoneNumberRequest" }
             getValueFromUser(
                 "Please provide valid german phone number (mock won't send sms)",
                 "+4915123456789"
@@ -177,7 +177,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param confirmPasswordOperation
         </TANVALUE> */
         override fun onSmsCodeRequest(confirmPasswordOperation: ConfirmPasswordOperation) {
-            LOG.debug { "EpothekeImplementation onSmsCodeRequest" }
+            LOG.debug { "epotheke implementation onSmsCodeRequest" }
             getValueFromUser(
                 "Please provide TAN from sms (mock accepts all)",
                 "123456"
@@ -192,7 +192,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * the devices nfc sensor.
          */
         override fun requestCardInsertion() {
-            LOG.debug { "EpothekeImplementation requestCardInsertion" }
+            LOG.debug { "epotheke implementation requestCardInsertion" }
             runOnUiThread {
                 setBusy(false)
                 showInfo("Please provide card")
@@ -205,7 +205,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param nfcOverlayMessageHandler
          */
         override fun requestCardInsertion(nfcOverlayMessageHandler: NFCOverlayMessageHandler) {
-            LOG.debug { "EpothekeImplementation requestCardInsertion with nfcOverlayMessageHandler" }
+            LOG.debug { "epotheke implementation requestCardInsertion with nfcOverlayMessageHandler" }
         }
 
         /**
@@ -213,7 +213,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * The app may inform the user that the card is no longer needed.
          */
         override fun onCardInteractionComplete() {
-            LOG.debug { "EpothekeImplementation onCardInteractionComplete" }
+            LOG.debug { "epotheke implementation onCardInteractionComplete" }
         }
 
         /**
@@ -221,7 +221,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * The app may inform the user, that the card was detected.
          */
         override fun onCardRecognized() {
-            LOG.debug { "EpothekeImplementation onCardRecognized" }
+            LOG.debug { "epotheke implementation onCardRecognized" }
             runOnUiThread {
                 setBusy(true)
                 showInfo("Found card - please don't move card and device")
@@ -233,7 +233,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * The app may inform the user, that the app was removed.
          */
         override fun onCardRemoved() {
-            LOG.debug { "EpothekeImplementation onCardRemoved" }
+            LOG.debug { "epotheke implementation onCardRemoved" }
         }
     }
 
@@ -247,7 +247,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * The app may inform the user.
          */
         override fun onStarted() {
-            LOG.debug { "EpothekeImplementation onStarted" }
+            LOG.debug { "epotheke implementation onStarted" }
             showInfo("Process started...")
         }
 
@@ -262,7 +262,7 @@ class EpothekeActivityImp : EpothekeActivity() {
             activationResult: ActivationResult?,
             cardLinkProtocols: Set<CardLinkProtocol>
         ) {
-            LOG.debug { "EpothekeImplementation onAuthenticationCompletion" }
+            LOG.debug { "epotheke implementation onAuthenticationCompletion" }
             LOG.debug { (activationResult.toString()) }
             runOnUiThread {
                 setBusy(false)

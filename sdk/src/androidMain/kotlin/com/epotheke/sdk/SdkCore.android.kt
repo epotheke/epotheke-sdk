@@ -35,7 +35,7 @@ import org.openecard.mobile.activation.*
 
 private val logger = KotlinLogging.logger {}
 
-class Epotheke(
+class SdkCore(
     private val ctx: Activity,
     private val cardLinkUrl: String,
     private val cardLinkControllerCallback: CardLinkControllerCallback,
@@ -73,7 +73,7 @@ class Epotheke(
                 actSource.cardLinkFactory().create(
                     websocket,
                     overridingControllerCallback(protocols),
-                    OverridingCardLinkInteraction(this@Epotheke, cardLinkInteraction),
+                    OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
                     wsListener
                 )
             }
@@ -124,7 +124,7 @@ class Epotheke(
         }
     }
 
-    private class OverridingCardLinkInteraction(val ctx: Epotheke, val delegate: CardLinkInteraction) :
+    private class OverridingCardLinkInteraction(val ctx: SdkCore, val delegate: CardLinkInteraction) :
         CardLinkInteraction by delegate {
         override fun requestCardInsertion() {
             ctx.nfcIntentHelper?.enableNFCDispatch()

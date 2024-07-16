@@ -8,7 +8,7 @@ import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.eRezeptJsonFormatter
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardLinkControllerCallback
-import com.epotheke.sdk.Epotheke
+import com.epotheke.sdk.SdkCore
 import com.epotheke.sdk.ErezeptProtocol
 import com.epotheke.sdk.SdkErrorHandler
 import com.facebook.react.bridge.ActivityEventListener
@@ -30,9 +30,9 @@ import org.openecard.mobile.activation.ServiceErrorResponse
 
 private val logger = KotlinLogging.logger {}
 
-class EpothekeModule(private val reactContext: ReactApplicationContext) :
+class SdkModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
-    override fun getName() = "EpothekeModule"
+    override fun getName() = "SdkModule"
 
     var onStartedCB: Callback? = null
 
@@ -232,7 +232,7 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
 
     private val errorHandler = object : SdkErrorHandler {
         override fun onError(error: ServiceErrorResponse) {
-            logger.debug { "EpothekeModule onError will call registered RN callback with: ${error.errorMessage}" }
+            logger.debug { "SdkModule onError will call registered RN callback with: ${error.errorMessage}" }
             onErrorCB?.invoke(null, error.errorMessage)
         }
     }
@@ -245,17 +245,17 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
         userInputDispatch.invoke(input)
     }
 
-    var epothekeInstance : Epotheke? = null
+    var epothekeInstance : SdkCore? = null
     @ReactMethod
     fun startCardLink(cardLinkUrl: String) {
-        logger.debug { "EpothekeModule called with url : $cardLinkUrl" }
+        logger.debug { "SdkModule called with url : $cardLinkUrl" }
 
         epothekeInstance?.let {
             it.destroyOecContext()
         }
 
         currentActivity?.let { activity ->
-            val epotheke = Epotheke(
+            val epotheke = SdkCore(
                 activity,
                 cardLinkUrl,
                 cardlinkControllerCallback,
