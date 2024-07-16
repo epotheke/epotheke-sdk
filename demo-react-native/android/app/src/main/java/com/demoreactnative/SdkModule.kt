@@ -258,7 +258,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             val epotheke = SdkCore(
                 activity,
                 cardLinkUrl,
-                cardlinkControllerCallback,
+                cardLinkControllerCallback,
                 cardLinkInteraction,
                 errorHandler,
             )
