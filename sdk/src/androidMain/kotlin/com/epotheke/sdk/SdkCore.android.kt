@@ -110,7 +110,7 @@ class SdkCore(
 
     private fun buildProtocols(websocket: WebsocketAndroid, wsListener: WebsocketListener): Set<CardLinkProtocol> {
         return setOf(
-            ErezeptProtocolImp(websocket)
+            PrescriptionProtocolImp(websocket)
         ).onEach { p ->
             p.registerListener(wsListener);
         }

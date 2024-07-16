@@ -26,7 +26,7 @@ import kotlinx.coroutines.channels.Channel
  ***************************************************************************/
 
 
-class ErezeptProtocolException(val msg: GenericErrorMessage) : Exception()
+class PrescriptionProtocolException(val msg: GenericErrorMessage) : Exception()
 
 interface ChannelDispatcher {
     fun addProtocolChannel(channel: Channel<String>)
@@ -34,10 +34,10 @@ interface ChannelDispatcher {
 
 interface CardLinkProtocol
 
-interface ErezeptProtocol : CardLinkProtocol {
-    @Throws(ErezeptProtocolException::class)
+interface PrescriptionProtocol : CardLinkProtocol {
+    @Throws(PrescriptionProtocolException::class)
     suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
 
-    @Throws(ErezeptProtocolException::class)
+    @Throws(PrescriptionProtocolException::class)
     suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
 }

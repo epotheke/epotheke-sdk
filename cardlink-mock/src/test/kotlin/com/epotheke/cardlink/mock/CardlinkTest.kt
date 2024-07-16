@@ -171,10 +171,10 @@ class CardlinkTest {
                     EGK_ENVELOPE_MESSAGES.add(gematikMessage)
                 }
             } catch (ex: IllegalArgumentException) {
-                val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(data)
-                logger.debug { "Received eRezept message at client: $data" }
-                eRezeptMessage::class.java.getAnnotation(SerialName::class.java)?.value?.let { MESSAGES_TYPES.add(it) }
-                PRESCRIPTION_ENVELOPE_MESSAGES.add(eRezeptMessage)
+                val prescriptionMessage = prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(data)
+                logger.debug { "Received prescription message at client: $data" }
+                prescriptionMessage::class.java.getAnnotation(SerialName::class.java)?.value?.let { MESSAGES_TYPES.add(it) }
+                PRESCRIPTION_ENVELOPE_MESSAGES.add(prescriptionMessage)
             }
         }
     }
@@ -184,7 +184,7 @@ class CardlinkTest {
 
         private val MESSAGES_TYPES = LinkedBlockingDeque<String>()
         private val EGK_ENVELOPE_MESSAGES = LinkedBlockingDeque<GematikEnvelope>()
-        private val PRESCRIPTION_ENVELOPE_MESSAGES = LinkedBlockingDeque<ERezeptMessage>()
+        private val PRESCRIPTION_ENVELOPE_MESSAGES = LinkedBlockingDeque<PrescriptionMessage>()
 
         private const val REQUEST_SMS_CODE = """
             [

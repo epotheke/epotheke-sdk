@@ -65,7 +65,7 @@ const val PRESCRIPTION = "prescription"
 const val COVERAGE = "coverage"
 
 
-sealed interface ERezeptMessage
+sealed interface PrescriptionMessage
 
 @Serializable
 @SerialName(REQUEST_PRESCRIPTION_LIST)
@@ -73,7 +73,7 @@ data class RequestPrescriptionList(
     @SerialName("ICCSNs")
     val iccsns: List<ByteArrayAsBase64> = emptyList(),
     val messageId: String = UUID.randomUUID().toString(),
-) : ERezeptMessage
+) : PrescriptionMessage
 
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LISTS)
@@ -81,7 +81,7 @@ data class AvailablePrescriptionLists(
     val availablePrescriptionLists: List<AvailablePrescriptionList>,
     val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String,
-) : ERezeptMessage
+) : PrescriptionMessage
 
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST)
@@ -98,7 +98,7 @@ data class SelectedPrescriptionList(
     val phone: String? = null,
     val mail: String? = null,
     val messageId: String = UUID.randomUUID().toString(),
-) : ERezeptMessage
+) : PrescriptionMessage
 
 @Serializable
 @SerialName(GENERIC_ERROR)
@@ -107,7 +107,7 @@ data class GenericErrorMessage(
     val errorMessage: String,
     val messageId: String = UUID.randomUUID().toString(),
     val correlationId: String? = null,
-) : ERezeptMessage
+) : PrescriptionMessage
 
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST_RESPONSE)
@@ -120,7 +120,7 @@ data class SelectedPrescriptionListResponse(
     val pickUpCodeDmc: String? = null,
     val messageId: String,
     val correlationId: String,
-) : ERezeptMessage
+) : PrescriptionMessage
 
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LIST)
@@ -366,8 +366,8 @@ enum class SupplyOptionsType {
     DELIVERY;
 }
 
-val eRezeptModule = SerializersModule {
-    polymorphic(ERezeptMessage::class) {
+val prescriptionModule = SerializersModule {
+    polymorphic(PrescriptionMessage::class) {
         subclass(RequestPrescriptionList::class)
         subclass(AvailablePrescriptionLists::class)
         subclass(SelectedPrescriptionList::class)
@@ -390,8 +390,8 @@ val eRezeptModule = SerializersModule {
     }
 }
 
-val eRezeptJsonFormatter = Json {
-    serializersModule = eRezeptModule;
+val prescriptionJsonFormatter = Json {
+    serializersModule = prescriptionModule;
     classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS;
     ignoreUnknownKeys = true
 }

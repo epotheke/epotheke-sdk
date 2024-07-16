@@ -97,19 +97,19 @@ class CardLinkEndpoint {
                 else -> logger.error { "Unsupported Gematik message: ${gematikMessage::class.java}" }
             }
         } catch (ex: IllegalArgumentException) {
-            when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(data)) {
-                is RequestPrescriptionList -> sendPrescriptionList(eRezeptMessage, session)
-                is SelectedPrescriptionList -> sendConfirmSelectedPrescriptionList(eRezeptMessage, session)
+            when (val prescriptionMessage = prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(data)) {
+                is RequestPrescriptionList -> sendPrescriptionList(prescriptionMessage, session)
+                is SelectedPrescriptionList -> sendConfirmSelectedPrescriptionList(prescriptionMessage, session)
                 else -> throw IllegalStateException("Received not supported message.")
             }
         }
     }
 
-    private fun sendPrescriptionList(eRezeptMessage: RequestPrescriptionList, session: Session) {
+    private fun sendPrescriptionList(prescriptionMessage: RequestPrescriptionList, session: Session) {
 
         val availablePrescriptionLists = getAvailablePrescriptionListsExample(
             UUID.randomUUID().toString(),
-            eRezeptMessage.messageId
+            prescriptionMessage.messageId
         )
 
         session.asyncRemote.sendObject(availablePrescriptionLists) {
@@ -119,10 +119,10 @@ class CardLinkEndpoint {
         }
     }
 
-    private fun sendConfirmSelectedPrescriptionList(eRezeptMessage: SelectedPrescriptionList, session: Session) {
+    private fun sendConfirmSelectedPrescriptionList(prescriptionMessage: SelectedPrescriptionList, session: Session) {
         val confirmSelectedPrescriptionList = SelectedPrescriptionListResponse(
             messageId = UUID.randomUUID().toString(),
-            correlationId = eRezeptMessage.messageId
+            correlationId = prescriptionMessage.messageId
         )
 
         session.asyncRemote.sendObject(confirmSelectedPrescriptionList) {

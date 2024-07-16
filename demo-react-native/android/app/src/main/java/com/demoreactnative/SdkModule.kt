@@ -5,11 +5,11 @@ import android.content.Intent
 import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
-import com.epotheke.erezept.model.eRezeptJsonFormatter
+import com.epotheke.erezept.model.prescriptionJsonFormatter
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardLinkControllerCallback
 import com.epotheke.sdk.SdkCore
-import com.epotheke.sdk.ErezeptProtocol
+import com.epotheke.sdk.PrescriptionProtocol
 import com.epotheke.sdk.SdkErrorHandler
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Callback
@@ -48,17 +48,17 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         onAuthenticationCompletionCB = cb
     }
 
-    private var erezeptProtocol: ErezeptProtocol? = null
+    private var erezeptProtocol: PrescriptionProtocol? = null
 
     @ReactMethod
     fun getPrescriptions(p: Promise) {
         runBlocking {
-            callErezeptProtocolNullChecked(p) {
+            callPrescriptionProtocolNullChecked(p) {
                 try {
                     val availablePrescriptions: AvailablePrescriptionLists =
                         requestPrescriptions(RequestPrescriptionList())
                     p.resolve(
-                        eRezeptJsonFormatter.encodeToString(availablePrescriptions)
+                        prescriptionJsonFormatter.encodeToString(availablePrescriptions)
                     )
                 } catch (e: Exception){
                     p.reject(e)
@@ -70,11 +70,11 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     @ReactMethod
     fun selectPrescriptions(selection: String, p: Promise) {
         runBlocking {
-            callErezeptProtocolNullChecked(p) {
+            callPrescriptionProtocolNullChecked(p) {
                 try {
-                    val confirmation = selectPrescriptions(eRezeptJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
+                    val confirmation = selectPrescriptions(prescriptionJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
                     p.resolve(
-                        eRezeptJsonFormatter.encodeToString(confirmation)
+                        prescriptionJsonFormatter.encodeToString(confirmation)
                     )
                 } catch (e: Exception){
                     p.reject(e)
@@ -83,7 +83,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
-    private suspend fun callErezeptProtocolNullChecked(p: Promise, call: suspend ErezeptProtocol.() -> Unit){
+    private suspend fun callPrescriptionProtocolNullChecked(p: Promise, call: suspend PrescriptionProtocol.() -> Unit){
         when (val proto = erezeptProtocol) {
             null -> {
                 p.reject("Protocol not available, is CardLink established?")
@@ -99,7 +99,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         ) {
             logger.debug { "onAuthenticationCompletion ${p0?.errorMessage}" }
 
-            erezeptProtocol = cardLinkProtocols.filterIsInstance<ErezeptProtocol>().first()
+            erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
 
             val availableProtocols =
                 cardLinkProtocols.joinToString(prefix = "protocols: ") { p -> p.javaClass.name }

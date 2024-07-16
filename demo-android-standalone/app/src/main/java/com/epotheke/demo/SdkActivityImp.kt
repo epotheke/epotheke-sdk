@@ -41,7 +41,7 @@ import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardLinkControllerCallback
 import com.epotheke.sdk.SdkActivity
-import com.epotheke.sdk.ErezeptProtocol
+import com.epotheke.sdk.PrescriptionProtocol
 import com.epotheke.sdk.SdkErrorHandler
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
@@ -284,8 +284,8 @@ class SdkActivityImp : SdkActivity() {
                 showInfo(resultMsg)
 
                 //based on the provided protocol implementations we can enable further use cases.
-                cardLinkProtocols.filterIsInstance<ErezeptProtocol>().first().also { protocol ->
-                    enableErezeptProtocol(protocol)
+                cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first().also { protocol ->
+                    enablePrescriptionProtocol(protocol)
                 }
 
                 findViewById<Button>(R.id.btn_cancel).apply {
@@ -298,13 +298,13 @@ class SdkActivityImp : SdkActivity() {
     /**
      * Enable and show button to start ePrescription protocol flow.
      */
-    private fun enableErezeptProtocol(protocol: ErezeptProtocol) {
+    private fun enablePrescriptionProtocol(protocol: PrescriptionProtocol) {
         findViewById<Button>(R.id.btn_getPrescriptions).apply {
             visibility = VISIBLE
             isEnabled = true
 
             setOnClickListener {
-                startErezeptFlow(protocol)
+                startPrescriptionFlow(protocol)
             }
         }
     }
@@ -315,14 +315,14 @@ class SdkActivityImp : SdkActivity() {
      * a couroutine scope, which enables us to perform the asynchronous communications in the background of the app.
      * To keep it simple we here just use runBlocking
      */
-    private fun startErezeptFlow(protocol: ErezeptProtocol) {
-        LOG.debug { "Start action for Erezeptprotocol" }
+    private fun startPrescriptionFlow(protocol: PrescriptionProtocol) {
+        LOG.debug { "Start action for PrescriptionProtocol" }
 
         runBlocking {
             setBusy(true)
             try {
                 /*
-                * Send request for available prescriptions via the ErezeptProtocol object
+                * Send request for available prescriptions via the PrescriptionProtocol object
                 * We can use the default values of the constructor to get everything available.
                 */
                 val result = protocol.requestPrescriptions(
@@ -369,7 +369,7 @@ class SdkActivityImp : SdkActivity() {
     /**
      * This method switches the functionality of the button to go on with a redemption.
      */
-    private fun enableRedeem(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+    private fun enableRedeem(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
         LOG.debug { "Enable action for Redeeming" }
         findViewById<Button>(R.id.btn_getPrescriptions).apply {
             text = "REDEEM PRESCRIPTIONS"
@@ -383,7 +383,7 @@ class SdkActivityImp : SdkActivity() {
      * This function uses the given protocol and the list of available prescriptions to
      * redeem them.
      */
-    private fun redeemPrescriptions(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+    private fun redeemPrescriptions(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
         /*
          * For this example we build a SelectPrescriptionList object requesting all elements (by prescription IDs) of the first list
          * from the previous answer and set the supplyOptionsType to DELIVERY

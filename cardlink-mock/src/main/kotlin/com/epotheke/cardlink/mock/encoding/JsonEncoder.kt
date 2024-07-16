@@ -22,10 +22,10 @@
 
 package com.epotheke.cardlink.mock.encoding
 
-import com.epotheke.cardlink.mock.ERezeptMessage
+import com.epotheke.cardlink.mock.PrescriptionMessage
 import com.epotheke.cardlink.mock.GematikEnvelope
 import com.epotheke.cardlink.mock.cardLinkJsonFormatter
-import com.epotheke.cardlink.mock.eRezeptJsonFormatter
+import com.epotheke.cardlink.mock.prescriptionJsonFormatter
 import jakarta.websocket.Encoder
 import kotlinx.serialization.encodeToString
 
@@ -37,9 +37,9 @@ class GematikMessageEncoder : Encoder.Text<GematikEnvelope> {
     }
 }
 
-class PrescriptionMessageEncoder : Encoder.Text<ERezeptMessage> {
+class PrescriptionMessageEncoder : Encoder.Text<PrescriptionMessage> {
 
-    override fun encode(data: ERezeptMessage): String {
-        return eRezeptJsonFormatter.encodeToString(data)
+    override fun encode(data: PrescriptionMessage): String {
+        return prescriptionJsonFormatter.encodeToString(data)
     }
 }
