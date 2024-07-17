@@ -118,7 +118,7 @@ class SdkCore(
 
     @SuppressLint("NewApi")
     fun onNewIntent(intent: Intent) {
-        val t = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        val t = intent.parcelable<Tag>(NfcAdapter.EXTRA_TAG)
         t?.let {
             ctxManager?.onNewIntent(intent)
         }

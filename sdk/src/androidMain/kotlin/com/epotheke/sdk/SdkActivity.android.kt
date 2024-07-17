@@ -27,7 +27,9 @@ import android.app.Activity
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.openecard.mobile.activation.CardLinkInteraction
 
@@ -70,7 +72,7 @@ abstract class SdkActivity : Activity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
-        val t = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        val t = intent.parcelable<Tag>(NfcAdapter.EXTRA_TAG)
         t?.let {
             epotheke?.onNewIntent(intent)
         }
@@ -81,4 +83,9 @@ abstract class SdkActivity : Activity() {
     abstract fun getCardLinkInteraction(): CardLinkInteraction
     abstract fun getSdkErrorHandler(): SdkErrorHandler
 
+}
+
+inline fun <reified T : Parcelable> Intent.parcelable(key: String): T? = when {
+    Build.VERSION.SDK_INT >= 33 -> getParcelableExtra(key, T::class.java)
+    else -> @Suppress("DEPRECATION") getParcelableExtra(key) as? T
 }
