@@ -433,5 +433,5 @@ val availablePrescriptionListsJsonExample = """
 
 fun getAvailablePrescriptionListsExample(messageId: String, correlationId: String): AvailablePrescriptionLists {
     val prescriptionListExample = java.lang.String.format(availablePrescriptionListsJsonExample, messageId, correlationId)
-    return eRezeptJsonFormatter.decodeFromString(prescriptionListExample)
+    return prescriptionJsonFormatter.decodeFromString(prescriptionListExample)
 }

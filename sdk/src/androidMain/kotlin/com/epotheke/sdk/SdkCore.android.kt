@@ -35,10 +35,10 @@ import org.openecard.mobile.activation.*
 
 private val logger = KotlinLogging.logger {}
 
-class Epotheke(
+class SdkCore(
     private val ctx: Activity,
-    private val cardlinkUrl: String,
-    private val cardlinkControllerCallback: CardlinkControllerCallback,
+    private val cardLinkUrl: String,
+    private val cardLinkControllerCallback: CardLinkControllerCallback,
     private val cardLinkInteraction: CardLinkInteraction,
     private val sdkErrorHandler: SdkErrorHandler
 ) {
@@ -67,13 +67,13 @@ class Epotheke(
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
-                val websocket = WebsocketAndroid(cardlinkUrl)
+                val websocket = WebsocketAndroid(cardLinkUrl)
                 val wsListener = WebsocketListener()
                 val protocols = buildProtocols(websocket, wsListener)
                 actSource.cardLinkFactory().create(
                     websocket,
                     overridingControllerCallback(protocols),
-                    OverridingCardlinkInteraction(this@Epotheke, cardLinkInteraction),
+                    OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
                     wsListener
                 )
             }
@@ -110,7 +110,7 @@ class Epotheke(
 
     private fun buildProtocols(websocket: WebsocketAndroid, wsListener: WebsocketListener): Set<CardLinkProtocol> {
         return setOf(
-            ErezeptProtocolImp(websocket)
+            PrescriptionProtocolImp(websocket)
         ).onEach { p ->
             p.registerListener(wsListener);
         }
@@ -118,13 +118,13 @@ class Epotheke(
 
     @SuppressLint("NewApi")
     fun onNewIntent(intent: Intent) {
-        val t = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        val t = intent.parcelable<Tag>(NfcAdapter.EXTRA_TAG)
         t?.let {
             ctxManager?.onNewIntent(intent)
         }
     }
 
-    private class OverridingCardlinkInteraction(val ctx: Epotheke, val delegate: CardLinkInteraction) :
+    private class OverridingCardLinkInteraction(val ctx: SdkCore, val delegate: CardLinkInteraction) :
         CardLinkInteraction by delegate {
         override fun requestCardInsertion() {
             ctx.nfcIntentHelper?.enableNFCDispatch()
@@ -141,11 +141,11 @@ class Epotheke(
 
     private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>): ControllerCallback {
         return object : ControllerCallback {
-            override fun onStarted() = cardlinkControllerCallback.onStarted()
+            override fun onStarted() = cardLinkControllerCallback.onStarted()
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
                 nfcIntentHelper?.disableNFCDispatch()
                 needNfc = false
-                cardlinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
             }
         }
     }

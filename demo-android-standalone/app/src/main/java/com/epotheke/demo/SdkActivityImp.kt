@@ -33,16 +33,15 @@ import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.MedicationCompounding
 import com.epotheke.erezept.model.MedicationFreeText
 import com.epotheke.erezept.model.MedicationIngredient
-import com.epotheke.erezept.model.MedicationItem
 import com.epotheke.erezept.model.MedicationPzn
 import com.epotheke.erezept.model.PrescriptionBundle
 import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SupplyOptionsType
 import com.epotheke.sdk.CardLinkProtocol
-import com.epotheke.sdk.CardlinkControllerCallback
-import com.epotheke.sdk.EpothekeActivity
-import com.epotheke.sdk.ErezeptProtocol
+import com.epotheke.sdk.CardLinkControllerCallback
+import com.epotheke.sdk.SdkActivity
+import com.epotheke.sdk.PrescriptionProtocol
 import com.epotheke.sdk.SdkErrorHandler
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
@@ -59,26 +58,26 @@ private const val mockServiceUrl = "https://epotheke.mock.ecsec.services/cardlin
 
 
 /**
- * To use the Epotheke SDK within an app, the easiest way is to extend the abstract EpothekeActivity
+ * To use the epotheke SDK within an app, the easiest way is to extend the abstract SdkActivity
  * provided by the SDK.
- * The EpothekeActivity will instantiate the framework and start a cardlink connection process in its onCreate() method.
- * The controlflow during the connection establishment via Cardlink is encapsulated within the SDK.
+ * The SdkActivity will instantiate the framework and start a CardLink connection process in its onCreate() method.
+ * The control flow during the connection establishment via CardLink is encapsulated within the SDK.
  * The interaction with the app and the user is handled via CallbackHandler interfaces, which have to be
  * implemented within the app and handed to the SDK via the implementation of abstract getter methods
- * of the EpothekeActivity.
+ * of the SdkActivity.
  *
- * EpothekeActivity will also terminate and cleanup the SDK if the Activity gets destroyed.
+ * SdkActivity will also terminate and cleanup the SDK if the Activity gets destroyed.
  * In also handles the switching of androids nfc foreground dispatch for nfc usage in onPause and onResume events.
  * @author Florian Otto
  */
-class EpothekeActivityImp : EpothekeActivity() {
+class SdkActivityImp : SdkActivity() {
     /**
      * This method has to return the url of the epotheke service, and will be called in
-     * EpothekeActivity during startup.
+     * SdkActivity during startup.
      *
      * @return
      */
-    override fun getCardlinkUrl(): String {
+    override fun getCardLinkUrl(): String {
         return mockServiceUrl + "?token=" + UUID.randomUUID()
     }
 
@@ -98,7 +97,7 @@ class EpothekeActivityImp : EpothekeActivity() {
      *
      * @return ControllerCallback
      */
-    override fun getControllerCallback(): CardlinkControllerCallback {
+    override fun getControllerCallback(): CardLinkControllerCallback {
         return ControllerCallbackImp()
     }
 
@@ -141,7 +140,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param confirmPasswordOperation
         </CANVALUE> */
         override fun onCanRequest(confirmPasswordOperation: ConfirmPasswordOperation) {
-            LOG.debug { "EpothekeImplementation onCanRequest" }
+            LOG.debug { "epotheke implementation onCanRequest" }
             getValueFromUser("Please provide CAN of card", "000000") { value ->
                 confirmPasswordOperation.confirmPassword(value)
             }
@@ -159,7 +158,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param confirmTextOperation
         </NUMBER> */
         override fun onPhoneNumberRequest(confirmTextOperation: ConfirmTextOperation) {
-            LOG.debug { "EpothekeImplementation onPhoneNumberRequest" }
+            LOG.debug { "epotheke implementation onPhoneNumberRequest" }
             getValueFromUser(
                 "Please provide valid german phone number (mock won't send sms)",
                 "+4915123456789"
@@ -178,7 +177,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param confirmPasswordOperation
         </TANVALUE> */
         override fun onSmsCodeRequest(confirmPasswordOperation: ConfirmPasswordOperation) {
-            LOG.debug { "EpothekeImplementation onSmsCodeRequest" }
+            LOG.debug { "epotheke implementation onSmsCodeRequest" }
             getValueFromUser(
                 "Please provide TAN from sms (mock accepts all)",
                 "123456"
@@ -193,7 +192,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * the devices nfc sensor.
          */
         override fun requestCardInsertion() {
-            LOG.debug { "EpothekeImplementation requestCardInsertion" }
+            LOG.debug { "epotheke implementation requestCardInsertion" }
             runOnUiThread {
                 setBusy(false)
                 showInfo("Please provide card")
@@ -206,7 +205,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * @param nfcOverlayMessageHandler
          */
         override fun requestCardInsertion(nfcOverlayMessageHandler: NFCOverlayMessageHandler) {
-            LOG.debug { "EpothekeImplementation requestCardInsertion with nfcOverlayMessageHandler" }
+            LOG.debug { "epotheke implementation requestCardInsertion with nfcOverlayMessageHandler" }
         }
 
         /**
@@ -214,7 +213,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * The app may inform the user that the card is no longer needed.
          */
         override fun onCardInteractionComplete() {
-            LOG.debug { "EpothekeImplementation onCardInteractionComplete" }
+            LOG.debug { "epotheke implementation onCardInteractionComplete" }
         }
 
         /**
@@ -222,7 +221,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * The app may inform the user, that the card was detected.
          */
         override fun onCardRecognized() {
-            LOG.debug { "EpothekeImplementation onCardRecognized" }
+            LOG.debug { "epotheke implementation onCardRecognized" }
             runOnUiThread {
                 setBusy(true)
                 showInfo("Found card - please don't move card and device")
@@ -234,7 +233,7 @@ class EpothekeActivityImp : EpothekeActivity() {
          * The app may inform the user, that the app was removed.
          */
         override fun onCardRemoved() {
-            LOG.debug { "EpothekeImplementation onCardRemoved" }
+            LOG.debug { "epotheke implementation onCardRemoved" }
         }
     }
 
@@ -242,13 +241,13 @@ class EpothekeActivityImp : EpothekeActivity() {
     /**
      * The ControllerCallback informs about the start of the CardLink process and returns its results.
      */
-    private inner class ControllerCallbackImp : CardlinkControllerCallback {
+    private inner class ControllerCallbackImp : CardLinkControllerCallback {
         /**
          * Called when the process starts.
          * The app may inform the user.
          */
         override fun onStarted() {
-            LOG.debug { "EpothekeImplementation onStarted" }
+            LOG.debug { "epotheke implementation onStarted" }
             showInfo("Process started...")
         }
 
@@ -261,9 +260,9 @@ class EpothekeActivityImp : EpothekeActivity() {
 
         override fun onAuthenticationCompletion(
             activationResult: ActivationResult?,
-            cardlinkProtocols: Set<CardLinkProtocol>
+            cardLinkProtocols: Set<CardLinkProtocol>
         ) {
-            LOG.debug { "EpothekeImplementation onAuthenticationCompletion" }
+            LOG.debug { "epotheke implementation onAuthenticationCompletion" }
             LOG.debug { (activationResult.toString()) }
             runOnUiThread {
                 setBusy(false)
@@ -285,8 +284,8 @@ class EpothekeActivityImp : EpothekeActivity() {
                 showInfo(resultMsg)
 
                 //based on the provided protocol implementations we can enable further use cases.
-                cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first().also { protocol ->
-                    enableErezeptProtocol(protocol)
+                cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first().also { protocol ->
+                    enablePrescriptionProtocol(protocol)
                 }
 
                 findViewById<Button>(R.id.btn_cancel).apply {
@@ -297,43 +296,43 @@ class EpothekeActivityImp : EpothekeActivity() {
     }
 
     /**
-     * Enable and show button to start ereceipt protocol flow.
+     * Enable and show button to start ePrescription protocol flow.
      */
-    private fun enableErezeptProtocol(protocol: ErezeptProtocol) {
-        findViewById<Button>(R.id.btn_getReceipts).apply {
+    private fun enablePrescriptionProtocol(protocol: PrescriptionProtocol) {
+        findViewById<Button>(R.id.btn_getPrescriptions).apply {
             visibility = VISIBLE
             isEnabled = true
 
             setOnClickListener {
-                startErezeptFlow(protocol)
+                startPrescriptionFlow(protocol)
             }
         }
     }
 
     /**
-     * Start the ereceipt flow
+     * Start the ePrescription flow
      * The functions of the protocol are kotlin suspend functions and therefore have to be run in
      * a couroutine scope, which enables us to perform the asynchronous communications in the background of the app.
      * To keep it simple we here just use runBlocking
      */
-    private fun startErezeptFlow(protocol: ErezeptProtocol) {
-        LOG.debug { "Start action for Erezeptprotocol" }
+    private fun startPrescriptionFlow(protocol: PrescriptionProtocol) {
+        LOG.debug { "Start action for PrescriptionProtocol" }
 
         runBlocking {
             setBusy(true)
             try {
                 /*
-                * Send request for available receipts via the ErezeptProtocol object
+                * Send request for available prescriptions via the PrescriptionProtocol object
                 * We can use the default values of the constructor to get everything available.
                 */
-                val result = protocol.requestReceipts(
+                val result = protocol.requestPrescriptions(
                     RequestPrescriptionList()
                 )
 
                 /*
                  * The answer message contains a list of lists.
-                 * Each outer list is associated with a card and contains available receipts for it.
-                 * The inner lists contains types describing receipts.
+                 * Each outer list is associated with a card and contains available prescriptions for it.
+                 * The inner lists contains types describing prescriptions.
                  *
                  * For the showcase we simply build a string containing names of these elements from the first list.
                  */
@@ -354,7 +353,7 @@ class EpothekeActivityImp : EpothekeActivity() {
                     }
 
                 setBusy(false)
-                showInfo("Available receipts: \n$text")
+                showInfo("Available prescriptions: \n$text")
                 enableRedeem(protocol, result)
 
             } catch (e: Exception) {
@@ -370,12 +369,12 @@ class EpothekeActivityImp : EpothekeActivity() {
     /**
      * This method switches the functionality of the button to go on with a redemption.
      */
-    private fun enableRedeem(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+    private fun enableRedeem(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
         LOG.debug { "Enable action for Redeeming" }
-        findViewById<Button>(R.id.btn_getReceipts).apply {
-            text = "REDEEM RECEIPTS"
+        findViewById<Button>(R.id.btn_getPrescriptions).apply {
+            text = "REDEEM PRESCRIPTIONS"
             setOnClickListener {
-                redeemReceipts(protocol, available)
+                redeemPrescriptions(protocol, available)
             }
         }
     }
@@ -384,9 +383,9 @@ class EpothekeActivityImp : EpothekeActivity() {
      * This function uses the given protocol and the list of available prescriptions to
      * redeem them.
      */
-    private fun redeemReceipts(protocol: ErezeptProtocol, available: AvailablePrescriptionLists) {
+    private fun redeemPrescriptions(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
         /*
-         * For this example we build a SelectPrescriptionList object requesting all elements (by prescriptionids) of the first list
+         * For this example we build a SelectPrescriptionList object requesting all elements (by prescription IDs) of the first list
          * from the previous answer and set the supplyOptionsType to DELIVERY
          */
         var selection = SelectedPrescriptionList(
@@ -402,9 +401,9 @@ class EpothekeActivityImp : EpothekeActivity() {
         runBlocking {
             setBusy(true)
             try {
-                protocol.selectReceipts(selection)
+                protocol.selectPrescriptions(selection)
                 showInfo("SUCCESS")
-                disableEreceiptFunction()
+                disableEprescriptionFunction()
                 setBusy(false)
             } catch (e: Exception) {
                 LOG.debug(e) { "Error in request" }
@@ -417,11 +416,11 @@ class EpothekeActivityImp : EpothekeActivity() {
     }
 
     /**
-     * Deactivates the button for ereceipt functionality
+     * Deactivates the button for ePrescription functionality
      */
-    private fun disableEreceiptFunction() {
+    private fun disableEprescriptionFunction() {
         LOG.debug { "Enable action for Redeeming" }
-        findViewById<Button>(R.id.btn_getReceipts).apply {
+        findViewById<Button>(R.id.btn_getPrescriptions).apply {
             visibility = INVISIBLE
         }
     }

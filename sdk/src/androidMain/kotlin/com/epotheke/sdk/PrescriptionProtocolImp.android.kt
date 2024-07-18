@@ -38,19 +38,27 @@ import kotlin.time.toKotlinDuration
 private val logger = KotlinLogging.logger {}
 private const val ReceiveTimeoutSeconds = 30L
 
-class ErezeptProtocolImp(
-    private val ws: WebsocketAndroid,
-) : ErezeptProtocol {
+open class CardLinkProtocolBase(
+    protected val ws: WebsocketAndroid,
+) : CardLinkProtocol {
+    protected val inputChannel = Channel<String>()
 
-    private val inputChannel = Channel<String>()
+    fun registerListener(channelDispatcher: ChannelDispatcher) {
+        channelDispatcher.addProtocolChannel(inputChannel)
+    }
+}
+
+class PrescriptionProtocolImp(
+    ws: WebsocketAndroid
+) : CardLinkProtocolBase(ws), PrescriptionProtocol {
 
     @TargetApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun requestReceipts(req: RequestPrescriptionList): AvailablePrescriptionLists {
+    override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
         logger.debug { "Sending data to request ecreipts." }
 
         ws.send(
-            eRezeptJsonFormatter.encodeToString(req)
+            prescriptionJsonFormatter.encodeToString(req)
         )
 
         val lastTimestampUntilTimeout = now().plusSeconds(ReceiveTimeoutSeconds)
@@ -62,15 +70,15 @@ class ErezeptProtocolImp(
                 ) {
                     inputChannel.receive()
                 }
-                when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(response)) {
+                when (val prescriptionMessage = prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(response)) {
                     is AvailablePrescriptionLists -> {
-                        if (eRezeptMessage.correlationId == req.messageId) {
-                            return eRezeptMessage
+                        if (prescriptionMessage.correlationId == req.messageId) {
+                            return prescriptionMessage
                         }
                     }
 
                     is GenericErrorMessage -> {
-                        throw ErezeptProtocolException(eRezeptMessage)
+                        throw PrescriptionProtocolException(prescriptionMessage)
                     }
 
                     else -> {
@@ -81,7 +89,7 @@ class ErezeptProtocolImp(
                 when (e) {
                     is TimeoutException -> {
                         logger.error { "Timeout during receive" }
-                        throw ErezeptProtocolException(
+                        throw PrescriptionProtocolException(
                             GenericErrorMessage(
                                 errorCode = GenericErrorResultType.UNKNOWN_ERROR,
                                 errorMessage = "Timeout",
@@ -97,10 +105,10 @@ class ErezeptProtocolImp(
     }
 
     @TargetApi(Build.VERSION_CODES.O)
-    override suspend fun selectReceipts(lst: SelectedPrescriptionList): SelectedPrescriptionListResponse {
+    override suspend fun selectPrescriptions(lst: SelectedPrescriptionList): SelectedPrescriptionListResponse {
         logger.debug { "Sending data to select ecreipts." }
         ws.send(
-            eRezeptJsonFormatter.encodeToString(lst)
+            prescriptionJsonFormatter.encodeToString(lst)
         )
 
 
@@ -114,15 +122,15 @@ class ErezeptProtocolImp(
                 ) {
                     inputChannel.receive()
                 }
-                when (val eRezeptMessage = eRezeptJsonFormatter.decodeFromString<ERezeptMessage>(response)) {
+                when (val prescriptionMessage = prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(response)) {
                     is SelectedPrescriptionListResponse -> {
-                        if (eRezeptMessage.correlationId == lst.messageId) {
-                            return eRezeptMessage
+                        if (prescriptionMessage.correlationId == lst.messageId) {
+                            return prescriptionMessage
                         }
                     }
 
                     is GenericErrorMessage -> {
-                        throw ErezeptProtocolException(eRezeptMessage)
+                        throw PrescriptionProtocolException(prescriptionMessage)
                     }
 
                     else -> {
@@ -133,7 +141,7 @@ class ErezeptProtocolImp(
                 when (e) {
                     is TimeoutException -> {
                         logger.error { "Timeout during receive" }
-                        throw ErezeptProtocolException(
+                        throw PrescriptionProtocolException(
                             GenericErrorMessage(
                                 errorCode = GenericErrorResultType.UNKNOWN_ERROR,
                                 errorMessage = "Timeout",
@@ -148,8 +156,5 @@ class ErezeptProtocolImp(
         }
     }
 
-    override fun registerListener(channelDispatcher: ChannelDispatcher) {
-        channelDispatcher.addProtocolChannel(inputChannel)
-    }
 }
 

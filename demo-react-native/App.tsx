@@ -31,7 +31,7 @@ type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-const { EpothekeModule } = NativeModules;
+const { SdkModule } = NativeModules;
 
 function Section({children, title}: SectionProps): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -87,8 +87,8 @@ function App(): React.JSX.Element {
               console.log(`btn epotheke pressed`)
 
               /*
-                Register callbacks for cardlink interaction.
-                These are called by the framework during cardlink establishment, to inform app and user about the current state of the process and
+                Register callbacks for CardLink interaction.
+                These are called by the framework during CardLink establishment, to inform app and user about the current state of the process and
                 get information like tan, can etc.
       
                 Callbacks in react native can only be called once.
@@ -99,77 +99,77 @@ function App(): React.JSX.Element {
               let requestCardInsertionCB = () => {
                 console.log(`requestCardInsertion`)
                 //reregister callback
-                EpothekeModule.set_cardlinkInteractionCB_requestCardInsertion(requestCardInsertionCB)
+                SdkModule.set_cardlinkInteractionCB_requestCardInsertion(requestCardInsertionCB)
               }
               //register callback
-              EpothekeModule.set_cardlinkInteractionCB_requestCardInsertion(requestCardInsertionCB)
+              SdkModule.set_cardlinkInteractionCB_requestCardInsertion(requestCardInsertionCB)
       
               let onCardInteractionComplete = () => {
                 console.log(`onCardInteractionComplete`)
-                EpothekeModule.set_cardlinkInteractionCB_onCardInteractionComplete(onCardInteractionComplete)
+                SdkModule.set_cardlinkInteractionCB_onCardInteractionComplete(onCardInteractionComplete)
               }
-              EpothekeModule.set_cardlinkInteractionCB_onCardInteractionComplete(onCardInteractionComplete)
+              SdkModule.set_cardlinkInteractionCB_onCardInteractionComplete(onCardInteractionComplete)
       
               let onCardRecognizedCB = () => {
                 console.log(`onCardRecognized`)
-                EpothekeModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB)
+                SdkModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB)
               }
-              EpothekeModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB)
+              SdkModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB)
       
               let onCardRemovedCB = () => {
                 console.log(`onCardRemoved`)
-                EpothekeModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB)
+                SdkModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB)
               }
-              EpothekeModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB)
+              SdkModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB)
       
               let canRequestCB = () => {
                 console.log(`onCanRequest`)
                 //to give back data alsways use setUserInput
-                EpothekeModule.setUserInput("753031")
-                EpothekeModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB)
+                SdkModule.setUserInput("753031")
+                SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB)
               }
-              EpothekeModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB)
+              SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB)
       
               let onPhoneNumberRequestCB = () => {
                 console.log(`onPhoneNumberRequest`)
-                EpothekeModule.setUserInput("+4915123456789")
-                EpothekeModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB)
+                SdkModule.setUserInput("+4915123456789")
+                SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB)
               }
-              EpothekeModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB)
+              SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB)
       
               let onSmsCodeRequestCB = () => {
                 console.log(`onSmsCodeRequest`)
-                EpothekeModule.setUserInput("123456")
-                EpothekeModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB)
+                SdkModule.setUserInput("123456")
+                SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB)
               }
-              EpothekeModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB)
+              SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB)
       
               /*
                 Called if the sdk runs into an error.
               */
               let sdkErrorCB = (err: any, msg: any) => {
                 console.log(`sdkError: ${msg}`)
-                EpothekeModule.set_sdkErrorCB(sdkErrorCB)
+                SdkModule.set_sdkErrorCB(sdkErrorCB)
               }
-              EpothekeModule.set_sdkErrorCB(sdkErrorCB)
+              SdkModule.set_sdkErrorCB(sdkErrorCB)
       
       
               /*
                 Wiring of the controllerCallbacks
               */
-              //this callback informs about the start of the cardlink establishment
+              //this callback informs about the start of the CardLink establishment
               let controllerCallback = () => {
                 console.log(`onStarted`)
-                EpothekeModule.set_controllerCallbackCB_onStarted(controllerCallback)
+                SdkModule.set_controllerCallbackCB_onStarted(controllerCallback)
               }
-              EpothekeModule.set_controllerCallbackCB_onStarted(controllerCallback)
+              SdkModule.set_controllerCallbackCB_onStarted(controllerCallback)
       
               /*
-                This callback is called when the cardlink establishment is finished.
+                This callback is called when the CardLink establishment is finished.
       
                 If successfull the methods
-                  EpothekeModule.getReceipts()
-                  EpothekeModule.selectReceipts()
+                  SdkModule.getPrescriptions()
+                  SdkModule.selectPrescriptions()
                 become functional and can be called.
               */
               let onAuthenticationCallback = async (err: any, msg: any) => {
@@ -177,13 +177,13 @@ function App(): React.JSX.Element {
                   console.log(`onAuthenticationCompletion protos: ${msg}`)
       
                   try {
-                    //get available receipts
-                    let availReceipts = await EpothekeModule.getReceipts();
-                    console.log(`receipts: ${availReceipts}`)
+                    //get available prescriptions
+                    let availPrescriptions = await SdkModule.getPrescriptions();
+                    console.log(`prescriptions: ${availPrescriptions}`)
       
                     //example for a selection
                     //which has to be done via a jsonstring containing the selectedPrescriptionList
-                    let confirmation = await EpothekeModule.selectReceipts(`{
+                    let confirmation = await SdkModule.selectPrescriptions(`{
                       "type": "selectedPrescriptionList",
                       "ICCSN": "MTIzNDU2Nzg5",
                       "prescriptionIndexList": [
@@ -202,13 +202,13 @@ function App(): React.JSX.Element {
                     console.log(`error : ${e}`)
                   }
       
-                  EpothekeModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
+                  SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
               }
-              EpothekeModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
+              SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
       
       
-              //start the cardlink establishment
-              EpothekeModule.startCardlink(`https://epotheke.mock.ecsec.services/cardlink?token=RANDOMTOKEN`)
+              // start the CardLink establishment
+              SdkModule.startCardLink(`https://epotheke.mock.ecsec.services/cardlink?token=RANDOMTOKEN`)
 
             }} />
         </View>

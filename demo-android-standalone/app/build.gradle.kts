@@ -44,7 +44,7 @@ android {
     }
 }
 
-val EpothekeSdkVersion = "1.1.0-SNAPSHOT"
+val epothekeSdkVersion = "1.1.0-SNAPSHOT"
 
 dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -53,8 +53,8 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // the actual Epotheke library
-    implementation("com.epotheke:sdk:${EpothekeSdkVersion}")
+    // the actual epotheke library
+    implementation("com.epotheke:sdk:${epothekeSdkVersion}")
 
     // logging library, use whatever you like to output the slf4j log statements
     implementation("io.github.oshai:kotlin-logging:6.0.9")

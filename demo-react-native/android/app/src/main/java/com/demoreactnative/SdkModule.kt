@@ -5,11 +5,11 @@ import android.content.Intent
 import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
-import com.epotheke.erezept.model.eRezeptJsonFormatter
+import com.epotheke.erezept.model.prescriptionJsonFormatter
 import com.epotheke.sdk.CardLinkProtocol
-import com.epotheke.sdk.CardlinkControllerCallback
-import com.epotheke.sdk.Epotheke
-import com.epotheke.sdk.ErezeptProtocol
+import com.epotheke.sdk.CardLinkControllerCallback
+import com.epotheke.sdk.SdkCore
+import com.epotheke.sdk.PrescriptionProtocol
 import com.epotheke.sdk.SdkErrorHandler
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Callback
@@ -30,9 +30,9 @@ import org.openecard.mobile.activation.ServiceErrorResponse
 
 private val logger = KotlinLogging.logger {}
 
-class EpothekeModule(private val reactContext: ReactApplicationContext) :
+class SdkModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
-    override fun getName() = "EpothekeModule"
+    override fun getName() = "SdkModule"
 
     var onStartedCB: Callback? = null
 
@@ -48,17 +48,17 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
         onAuthenticationCompletionCB = cb
     }
 
-    private var erezeptProtocol: ErezeptProtocol? = null
+    private var erezeptProtocol: PrescriptionProtocol? = null
 
     @ReactMethod
-    fun getReceipts(p: Promise) {
+    fun getPrescriptions(p: Promise) {
         runBlocking {
-            callErezeptProtocolNullChecked(p) {
+            callPrescriptionProtocolNullChecked(p) {
                 try {
-                    val availableReceipts: AvailablePrescriptionLists =
-                        requestReceipts(RequestPrescriptionList())
+                    val availablePrescriptions: AvailablePrescriptionLists =
+                        requestPrescriptions(RequestPrescriptionList())
                     p.resolve(
-                        eRezeptJsonFormatter.encodeToString(availableReceipts)
+                        prescriptionJsonFormatter.encodeToString(availablePrescriptions)
                     )
                 } catch (e: Exception){
                     p.reject(e)
@@ -68,13 +68,13 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun selectReceipts(selection: String, p: Promise) {
+    fun selectPrescriptions(selection: String, p: Promise) {
         runBlocking {
-            callErezeptProtocolNullChecked(p) {
+            callPrescriptionProtocolNullChecked(p) {
                 try {
-                    val confirmation = selectReceipts(eRezeptJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
+                    val confirmation = selectPrescriptions(prescriptionJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
                     p.resolve(
-                        eRezeptJsonFormatter.encodeToString(confirmation)
+                        prescriptionJsonFormatter.encodeToString(confirmation)
                     )
                 } catch (e: Exception){
                     p.reject(e)
@@ -83,26 +83,26 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
-    private suspend fun callErezeptProtocolNullChecked(p: Promise, call: suspend ErezeptProtocol.() -> Unit){
+    private suspend fun callPrescriptionProtocolNullChecked(p: Promise, call: suspend PrescriptionProtocol.() -> Unit){
         when (val proto = erezeptProtocol) {
             null -> {
-                p.reject("Protocol not available, is cardlink established?")
+                p.reject("Protocol not available, is CardLink established?")
             }
             else -> proto.call()
         }
     }
 
-    private val cardlinkControllerCallback = object : CardlinkControllerCallback {
+    private val cardLinkControllerCallback = object : CardLinkControllerCallback {
         override fun onAuthenticationCompletion(
             p0: ActivationResult?,
-            cardlinkProtocols: Set<CardLinkProtocol>
+            cardLinkProtocols: Set<CardLinkProtocol>
         ) {
             logger.debug { "onAuthenticationCompletion ${p0?.errorMessage}" }
 
-            erezeptProtocol = cardlinkProtocols.filterIsInstance<ErezeptProtocol>().first()
+            erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
 
             val availableProtocols =
-                cardlinkProtocols.joinToString(prefix = "protocols: ") { p -> p.javaClass.name }
+                cardLinkProtocols.joinToString(prefix = "protocols: ") { p -> p.javaClass.name }
             onAuthenticationCompletionCB?.invoke(p0?.errorMessage, availableProtocols)
 
         }
@@ -232,7 +232,7 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
 
     private val errorHandler = object : SdkErrorHandler {
         override fun onError(error: ServiceErrorResponse) {
-            logger.debug { "EpothekeModule onError will call registered RN callback with: ${error.errorMessage}" }
+            logger.debug { "SdkModule onError will call registered RN callback with: ${error.errorMessage}" }
             onErrorCB?.invoke(null, error.errorMessage)
         }
     }
@@ -245,20 +245,20 @@ class EpothekeModule(private val reactContext: ReactApplicationContext) :
         userInputDispatch.invoke(input)
     }
 
-    var epothekeInstance : Epotheke? = null
+    var epothekeInstance : SdkCore? = null
     @ReactMethod
-    fun startCardlink(cardlinkUrl: String) {
-        logger.debug { "EpothekeModule called with url : $cardlinkUrl" }
+    fun startCardLink(cardLinkUrl: String) {
+        logger.debug { "SdkModule called with url : $cardLinkUrl" }
 
         epothekeInstance?.let {
             it.destroyOecContext()
         }
 
         currentActivity?.let { activity ->
-            val epotheke = Epotheke(
+            val epotheke = SdkCore(
                 activity,
-                cardlinkUrl,
-                cardlinkControllerCallback,
+                cardLinkUrl,
+                cardLinkControllerCallback,
                 cardLinkInteraction,
                 errorHandler,
             )
