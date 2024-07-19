@@ -17,6 +17,7 @@ import {
   useColorScheme,
 NativeModules,
   View,
+  TextInput,
 } from 'react-native';
 
 import {
@@ -61,9 +62,16 @@ function Section({children, title}: SectionProps): React.JSX.Element {
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const [status, setStatus] = React.useState('Status: not started yet')
+  const [can, setCan] = React.useState('Not set yet');
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  };
+
+  const log = (msg: string) => {
+    console.log(msg);
+    setStatus('Status: ' + msg);
   };
 
   return (
@@ -84,7 +92,7 @@ function App(): React.JSX.Element {
             title="EPOTHEKE"
             onPress={async () => {
 
-              console.log(`btn epotheke pressed`)
+              log(`btn epotheke pressed`)
 
               /*
                 Register callbacks for CardLink interaction.
@@ -97,7 +105,7 @@ function App(): React.JSX.Element {
                 To allow this behaviour each callback, reregisters itself after execution.
               */
               let requestCardInsertionCB = () => {
-                console.log(`requestCardInsertion`)
+                log(`requestCardInsertion`)
                 //reregister callback
                 SdkModule.set_cardlinkInteractionCB_requestCardInsertion(requestCardInsertionCB)
               }
@@ -105,40 +113,41 @@ function App(): React.JSX.Element {
               SdkModule.set_cardlinkInteractionCB_requestCardInsertion(requestCardInsertionCB)
       
               let onCardInteractionComplete = () => {
-                console.log(`onCardInteractionComplete`)
+                log(`onCardInteractionComplete`)
                 SdkModule.set_cardlinkInteractionCB_onCardInteractionComplete(onCardInteractionComplete)
               }
               SdkModule.set_cardlinkInteractionCB_onCardInteractionComplete(onCardInteractionComplete)
       
               let onCardRecognizedCB = () => {
-                console.log(`onCardRecognized`)
+                log(`onCardRecognized`)
                 SdkModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB)
               }
               SdkModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB)
       
               let onCardRemovedCB = () => {
-                console.log(`onCardRemoved`)
+                log(`onCardRemoved`)
                 SdkModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB)
               }
               SdkModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB)
       
               let canRequestCB = () => {
-                console.log(`onCanRequest`)
+                log(`onCanRequest` + can)
                 //to give back data alsways use setUserInput
-                SdkModule.setUserInput("753031")
+                console.log(typeof can);
+                SdkModule.setUserInput(can)
                 SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB)
               }
               SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB)
       
               let onPhoneNumberRequestCB = () => {
-                console.log(`onPhoneNumberRequest`)
+                log(`onPhoneNumberRequest`)
                 SdkModule.setUserInput("+4915123456789")
                 SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB)
               }
               SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB)
       
               let onSmsCodeRequestCB = () => {
-                console.log(`onSmsCodeRequest`)
+                log(`onSmsCodeRequest`)
                 SdkModule.setUserInput("123456")
                 SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB)
               }
@@ -148,7 +157,7 @@ function App(): React.JSX.Element {
                 Called if the sdk runs into an error.
               */
               let sdkErrorCB = (err: any, msg: any) => {
-                console.log(`sdkError: ${msg}`)
+                log(`sdkError: ${msg}`)
                 SdkModule.set_sdkErrorCB(sdkErrorCB)
               }
               SdkModule.set_sdkErrorCB(sdkErrorCB)
@@ -159,7 +168,7 @@ function App(): React.JSX.Element {
               */
               //this callback informs about the start of the CardLink establishment
               let controllerCallback = () => {
-                console.log(`onStarted`)
+                log(`onStarted`)
                 SdkModule.set_controllerCallbackCB_onStarted(controllerCallback)
               }
               SdkModule.set_controllerCallbackCB_onStarted(controllerCallback)
@@ -173,13 +182,13 @@ function App(): React.JSX.Element {
                 become functional and can be called.
               */
               let onAuthenticationCallback = async (err: any, msg: any) => {
-                  console.log(`onAuthenticationCompletion error: ${err}`)
-                  console.log(`onAuthenticationCompletion protos: ${msg}`)
+                  log(`onAuthenticationCompletion error: ${err}`)
+                  log(`onAuthenticationCompletion protos: ${msg}`)
       
                   try {
                     //get available prescriptions
                     let availPrescriptions = await SdkModule.getPrescriptions();
-                    console.log(`prescriptions: ${availPrescriptions}`)
+                    log(`prescriptions: ${availPrescriptions}`)
       
                     //example for a selection
                     //which has to be done via a jsonstring containing the selectedPrescriptionList
@@ -196,10 +205,10 @@ function App(): React.JSX.Element {
                       "supplyOptionsType": "delivery",
                       "messageId": "bad828ad-75fa-4eea-aea5-a3587d95ce4a"
                     }`);
-                    console.log(`selection confirmation: ${confirmation}`)
+                    log(`selection confirmation: ${confirmation}`)
       
                   } catch (e) {
-                    console.log(`error : ${e}`)
+                    log(`error : ${e}`)
                   }
       
                   SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback)
@@ -211,6 +220,14 @@ function App(): React.JSX.Element {
               SdkModule.startCardLink(`https://epotheke.mock.ecsec.services/cardlink?token=RANDOMTOKEN`)
 
             }} />
+          <TextInput 
+            style={{borderWidth: 1, margin: 10}}
+            onChangeText={newText => setCan(newText)}
+            placeholder="Enter your CAN"
+            keyboardType='numeric'
+          ></TextInput>
+          <Text style={{textAlign: 'center', marginVertical: 10}}>CAN: {can}</Text>
+          <Text style={{textAlign: 'center', marginVertical: 10}}>{status}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
