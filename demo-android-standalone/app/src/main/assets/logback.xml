@@ -12,7 +12,17 @@
     </encoder>
   </appender>
 
-  <root level="DEBUG">
+  <root level="ERROR">
     <appender-ref ref="logcat" />
   </root>
+
+  <!-- Set specific log levels for different packages -->
+  <logger name="org.openecard" level="INFO">
+    <appender-ref ref="logcat" />
+  </logger>
+
+  <logger name="com.epotheke.sdk" level="DEBUG">
+    <appender-ref ref="logcat" />
+  </logger>
+
 </configuration>
