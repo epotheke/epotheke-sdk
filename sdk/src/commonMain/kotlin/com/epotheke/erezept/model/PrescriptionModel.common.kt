@@ -35,10 +35,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import java.util.UUID
+import randomUUID
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-
 
 const val REQUEST_PRESCRIPTION_LIST = "requestPrescriptionList"
 const val AVAILABLE_PRESCRIPTION_LISTS = "availablePrescriptionLists"
@@ -64,7 +63,6 @@ const val PRACTITIONER = "practitioner"
 const val PRESCRIPTION = "prescription"
 const val COVERAGE = "coverage"
 
-
 sealed interface PrescriptionMessage
 
 @Serializable
@@ -72,14 +70,14 @@ sealed interface PrescriptionMessage
 data class RequestPrescriptionList(
     @SerialName("ICCSNs")
     val iccsns: List<ByteArrayAsBase64> = emptyList(),
-    val messageId: String = UUID.randomUUID().toString(),
+    val messageId: String = randomUUID(),
 ) : PrescriptionMessage
 
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LISTS)
 data class AvailablePrescriptionLists(
     val availablePrescriptionLists: List<AvailablePrescriptionList>,
-    val messageId: String = UUID.randomUUID().toString(),
+    val messageId: String = randomUUID(),
     val correlationId: String,
 ) : PrescriptionMessage
 
@@ -97,7 +95,7 @@ data class SelectedPrescriptionList(
     val text: String? = null,
     val phone: String? = null,
     val mail: String? = null,
-    val messageId: String = UUID.randomUUID().toString(),
+    val messageId: String = randomUUID(),
 ) : PrescriptionMessage
 
 @Serializable
@@ -105,7 +103,7 @@ data class SelectedPrescriptionList(
 data class GenericErrorMessage(
     val errorCode: GenericErrorResultType,
     val errorMessage: String,
-    val messageId: String = UUID.randomUUID().toString(),
+    val messageId: String = randomUUID(),
     val correlationId: String? = null,
 ) : PrescriptionMessage
 

@@ -28,10 +28,8 @@ import platform.darwin.NSObject
 @OptIn(ExperimentalForeignApi::class)
 fun createWs(
     url: String,
-    port: Int,
-    path: String = "",
 ): WebsocketProtocol {
-    return WebsocketIos(url, port, path)
+    return WebsocketIos(url)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -48,11 +46,9 @@ private class WiredWSListenerImplementation constructor(
 @OptIn(ExperimentalForeignApi::class)
 class WebsocketIos(
     host: String,
-    port: Int,
-    path: String = ""
 ) : NSObject(), WebsocketProtocol {
 
-    private val commonWS = WebsocketCommon(host, port, path)
+    private val commonWS = WebsocketCommon(host)
 
     private fun setListener(wsListener: WebsocketListenerProtocol) =
         commonWS.setListener(WiredWSListenerImplementation(this, wsListener))

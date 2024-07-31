@@ -20,6 +20,17 @@
  *
  ***************************************************************************/
 
-fun initOeC() {
+//private val logger = KotlinLogging.logger {}
 
-}
+//@OptIn(ExperimentalForeignApi::class)
+//class SdkCore(
+//    private val cardLinkUrl: String,
+//) : NSObject() {
+//
+//    fun initOeC() {
+//        logger.debug(cardLinkUrl)
+//        println(cardLinkUrl)
+//    }
+//
+//}
+

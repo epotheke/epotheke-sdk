@@ -2,6 +2,7 @@ package com.epotheke.sdk
 
 import com.epotheke.erezept.model.*
 import kotlinx.coroutines.channels.Channel
+import kotlin.coroutines.cancellation.CancellationException
 
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
@@ -35,9 +36,9 @@ interface ChannelDispatcher {
 interface CardLinkProtocol
 
 interface PrescriptionProtocol : CardLinkProtocol {
-    @Throws(PrescriptionProtocolException::class)
+    @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
 
-    @Throws(PrescriptionProtocolException::class)
+    @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
 }
