@@ -23,8 +23,8 @@
 package com.epotheke.sdk
 
 import WebsocketCommon
+import WebsocketListenerCommon
 import WiredWSListener
-import android.util.Log
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import org.openecard.mobile.activation.Websocket
@@ -43,12 +43,18 @@ private class WiredWSListenerImplementation(
     override fun onText(msg: String) = wsListener.onText(ws, msg)
 }
 
+class WebsocketListenerAndroid(private val wsListenerCommon: WebsocketListenerCommon) : WebsocketListener {
+
+    override fun onOpen(p0: Websocket) = wsListenerCommon.onOpen()
+    override fun onClose(p0: Websocket, p1: Int, p2: String?) = wsListenerCommon.onClose(p1, p2)
+    override fun onError(p0: Websocket, p1: String) = wsListenerCommon.onError(p1)
+    override fun onText(p0: Websocket, p1: String) = wsListenerCommon.onText(p1)
+
+}
 
 class WebsocketAndroid(
-    url: String,
-) : Websocket {
-
-    private val commonWS = WebsocketCommon(url)
+    private val commonWS: WebsocketCommon,
+): Websocket {
 
     override fun setListener(wsListener: WebsocketListener) =
         commonWS.setListener(WiredWSListenerImplementation(this, wsListener))

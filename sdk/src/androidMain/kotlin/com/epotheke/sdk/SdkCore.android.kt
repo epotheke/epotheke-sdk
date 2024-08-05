@@ -22,6 +22,8 @@
 
 package com.epotheke.sdk
 
+import WebsocketCommon
+import WebsocketListenerCommon
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -67,14 +69,14 @@ class SdkCore(
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
-                val websocket = WebsocketAndroid(cardLinkUrl)
-                val wsListener = WebsocketListener()
+                val websocket = WebsocketCommon(cardLinkUrl)
+                val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(websocket, wsListener)
                 actSource.cardLinkFactory().create(
-                    websocket,
+                    WebsocketAndroid(websocket),
                     overridingControllerCallback(protocols),
                     OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
-                    wsListener
+                    WebsocketListenerAndroid(wsListener)
                 )
             }
 
@@ -106,14 +108,6 @@ class SdkCore(
         oec = null
         ctxManager = null
         activationSource = null
-    }
-
-    private fun buildProtocols(websocket: WebsocketAndroid, wsListener: WebsocketListener): Set<CardLinkProtocol> {
-        return setOf(
-            PrescriptionProtocolImp(websocket)
-        ).onEach { p ->
-            p.registerListener(wsListener);
-        }
     }
 
     @SuppressLint("NewApi")

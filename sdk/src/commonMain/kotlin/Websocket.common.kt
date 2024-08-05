@@ -20,6 +20,7 @@
  *
  ***************************************************************************/
 
+import com.epotheke.sdk.ChannelDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -28,6 +29,7 @@ import io.ktor.http.*
 import io.ktor.utils.io.core.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 
 private val log = KotlinLogging.logger {}
 
@@ -36,6 +38,33 @@ interface WiredWSListener {
     fun onClose(code: Int, reason: String?)
     fun onError(error: String)
     fun onText(msg: String)
+}
+
+open class WebsocketListenerCommon() : ChannelDispatcher {
+    private val channels: MutableList<Channel<String>> = ArrayList<Channel<String>>()
+
+    override fun addProtocolChannel(channel: Channel<String>) {
+        channels.add(channel)
+    }
+
+    fun onOpen() {
+    }
+
+    fun onClose(p1: Int, p2: String?) {
+    }
+
+    fun onError(p1: String) {
+//        protos.map { p-> p.getErrorHandler()(p1) }
+    }
+
+    fun onText(p1: String) {
+        log.debug { "Message from established link: $p1" }
+        runBlocking {
+            channels.map { c ->
+                c.send(p1)
+            }
+        }
+    }
 }
 
 class WebsocketCommon(

@@ -1,5 +1,7 @@
 package com.epotheke.sdk
 
+import WebsocketCommon
+import WebsocketListenerCommon
 import com.epotheke.erezept.model.*
 import kotlinx.coroutines.channels.Channel
 import kotlin.coroutines.cancellation.CancellationException
@@ -31,6 +33,23 @@ class PrescriptionProtocolException(val msg: GenericErrorMessage) : Exception()
 
 interface ChannelDispatcher {
     fun addProtocolChannel(channel: Channel<String>)
+}
+
+open class CardLinkProtocolBase(
+) : CardLinkProtocol {
+    protected val inputChannel = Channel<String>()
+
+    fun registerListener(channelDispatcher: ChannelDispatcher) {
+        channelDispatcher.addProtocolChannel(inputChannel)
+    }
+}
+
+fun buildProtocols(websocket: WebsocketCommon, wsListener: WebsocketListenerCommon): Set<CardLinkProtocol> {
+    return setOf(
+        PrescriptionProtocolImp(websocket)
+    ).onEach { p ->
+        p.registerListener(wsListener);
+    }
 }
 
 interface CardLinkProtocol
