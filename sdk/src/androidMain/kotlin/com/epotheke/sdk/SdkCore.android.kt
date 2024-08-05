@@ -45,11 +45,9 @@ class SdkCore(
     private val sdkErrorHandler: SdkErrorHandler
 ) {
 
-    var oec: OpeneCard? = null
-    var ctxManager: AndroidContextManager? = null
-    var activationSource: ActivationSource? = null
-    var nfcIntentHelper: NfcIntentHelper? = null
-    var needNfc = false
+    private var ctxManager: AndroidContextManager? = null
+    private var nfcIntentHelper: NfcIntentHelper? = null
+    private var needNfc = false
 
 
     fun onPause() {
@@ -63,12 +61,11 @@ class SdkCore(
     }
 
     fun initOecContext() {
-        oec = OpeneCard.createInstance()
+        val oec = OpeneCard.createInstance()
         nfcIntentHelper = NfcIntentHelper.create(ctx)
         ctxManager = oec?.context(ctx)
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
-                activationSource = actSource
                 val websocket = WebsocketCommon(cardLinkUrl)
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(websocket, wsListener)
@@ -104,10 +101,8 @@ class SdkCore(
         })
     }
 
-    protected fun cleanupOecInstances() {
-        oec = null
+    private fun cleanupOecInstances() {
         ctxManager = null
-        activationSource = null
     }
 
     @SuppressLint("NewApi")
