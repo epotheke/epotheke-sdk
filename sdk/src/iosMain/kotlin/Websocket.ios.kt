@@ -29,7 +29,7 @@ import platform.darwin.NSObject
 fun createWs(
     url: String,
 ): WebsocketProtocol {
-    return WebsocketIos(url)
+    return WebsocketIos(WebsocketCommon(url))
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -44,18 +44,25 @@ private class WiredWSListenerImplementation constructor(
 }
 
 @OptIn(ExperimentalForeignApi::class)
+class WebsocketListenerIos(private val wsListenerCommon: WebsocketListenerCommon) : WebsocketListenerProtocol, NSObject() {
+    override fun onOpen(webSocket: NSObject?) = wsListenerCommon.onOpen()
+    override fun onClose(webSocket: NSObject?, withStatusCode: Int, withReason: String?) = wsListenerCommon.onClose(withStatusCode, withReason)
+    override fun onError(webSocket: NSObject?, withError: String?) = wsListenerCommon.onError(withError ?: "unknown error")
+    override fun onText(webSocket: NSObject?, withData: String?) = wsListenerCommon.onText(withData ?: "invalid message")
+}
+
+@OptIn(ExperimentalForeignApi::class)
 class WebsocketIos(
-    host: String,
+    private val commonWS: WebsocketCommon,
 ) : NSObject(), WebsocketProtocol {
 
-    private val commonWS = WebsocketCommon(host)
 
     private fun setListener(wsListener: WebsocketListenerProtocol) =
         commonWS.setListener(WiredWSListenerImplementation(this, wsListener))
 
     override fun removeListener() = commonWS.removeListener()
     override fun getUrl(): String = commonWS.getUrl()
-    override fun setUrl(url: String) = commonWS.setUrl(url)
+    override fun setUrl(url: String?) = commonWS.setUrl(url ?: "")
     override fun getSubProtocol(): String? = commonWS.getSubProtocol()
     override fun isOpen(): Boolean = commonWS.isOpen()
     override fun isFailed(): Boolean = commonWS.isFailed()

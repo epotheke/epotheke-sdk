@@ -27,7 +27,6 @@ import com.epotheke.erezept.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import now
@@ -96,10 +95,10 @@ class PrescriptionProtocolImp(
         }
     }
 
-    override suspend fun selectPrescriptions(lst: SelectedPrescriptionList): SelectedPrescriptionListResponse {
+    override suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse {
         logger.debug { "Sending data to select prescriptions." }
         ws.send(
-            prescriptionJsonFormatter.encodeToString(lst)
+            prescriptionJsonFormatter.encodeToString(selection)
         )
 
 
@@ -115,7 +114,7 @@ class PrescriptionProtocolImp(
                 }
                 when (val prescriptionMessage = prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(response)) {
                     is SelectedPrescriptionListResponse -> {
-                        if (prescriptionMessage.correlationId == lst.messageId) {
+                        if (prescriptionMessage.correlationId == selection.messageId) {
                             return prescriptionMessage
                         }
                     }
@@ -136,7 +135,7 @@ class PrescriptionProtocolImp(
                             GenericErrorMessage(
                                 errorCode = GenericErrorResultType.UNKNOWN_ERROR,
                                 errorMessage = "Timeout",
-                                correlationId = lst.messageId
+                                correlationId = selection.messageId
                             )
                         )
                     }
