@@ -1,3 +1,7 @@
+import cocoapods.open_ecard.WebsocketProtocol
+import io.github.oshai.kotlinlogging.KotlinLogging
+import platform.darwin.NSObject
+
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
  * All rights reserved.
@@ -20,17 +24,14 @@
  *
  ***************************************************************************/
 
-//private val logger = KotlinLogging.logger {}
+private val logger = KotlinLogging.logger {}
 
-//@OptIn(ExperimentalForeignApi::class)
-//class SdkCore(
-//    private val cardLinkUrl: String,
-//) : NSObject() {
-//
-//    fun initOeC() {
-//        logger.debug(cardLinkUrl)
-//        println(cardLinkUrl)
-//    }
-//
-//}
+class SdkCore(
+    private val cardLinkUrl: String,
+) {
+    fun initOeC() {
+        logger.debug{cardLinkUrl}
+        println(cardLinkUrl)
+    }
+}
 

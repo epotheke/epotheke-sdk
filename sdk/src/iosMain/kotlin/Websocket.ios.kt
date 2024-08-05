@@ -55,6 +55,7 @@ class WebsocketIos(
 
     override fun removeListener() = commonWS.removeListener()
     override fun getUrl(): String = commonWS.getUrl()
+    override fun setUrl(url: String) = commonWS.setUrl(url)
     override fun getSubProtocol(): String? = commonWS.getSubProtocol()
     override fun isOpen(): Boolean = commonWS.isOpen()
     override fun isFailed(): Boolean = commonWS.isFailed()
