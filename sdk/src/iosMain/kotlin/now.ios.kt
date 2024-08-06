@@ -1,3 +1,5 @@
+import platform.CoreFoundation.CFAbsoluteTimeGetCurrent
+
 actual fun now(): Long {
-    TODO("Not yet implemented")
+    return CFAbsoluteTimeGetCurrent().toLong()
 }
