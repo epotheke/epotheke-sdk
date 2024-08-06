@@ -63,6 +63,7 @@ const val PRACTITIONER = "practitioner"
 const val PRESCRIPTION = "prescription"
 const val COVERAGE = "coverage"
 
+@Serializable
 sealed interface PrescriptionMessage
 
 @Serializable
