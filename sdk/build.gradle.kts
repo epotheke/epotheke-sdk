@@ -14,7 +14,6 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.logging)
                 implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.cio)
                 implementation(libs.ktor.client.websocket)
                 implementation(libs.kotlin.coroutines.core)
                 implementation(libs.kotlin.serialization.json)
@@ -29,6 +28,7 @@ kotlin {
             dependencies {
                 api(libs.oec.android)
                 implementation(libs.kotlin.coroutines.android)
+                implementation(libs.ktor.client.cio)
             }
         }
         val iosMain by getting {

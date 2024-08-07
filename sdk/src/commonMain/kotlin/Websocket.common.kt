@@ -23,7 +23,6 @@
 import com.epotheke.sdk.ChannelDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
@@ -67,22 +66,14 @@ open class WebsocketListenerCommon() : ChannelDispatcher {
     }
 }
 
+expect fun getHttpClient(): HttpClient
+
 class WebsocketCommon(
     private var url: String,
 ) {
 
     private var wsListener: WiredWSListener? = null
-    private val client: HttpClient = HttpClient(CIO) {
-        install(WebSockets) {
-            pingInterval = 15_000
-        }
-        engine {
-            endpoint {
-                keepAliveTime = 15_000
-                socketTimeout = 120_000
-            }
-        }
-    }
+    private val client: HttpClient = getHttpClient()
 
     private var wsSession: DefaultClientWebSocketSession? = null
 
