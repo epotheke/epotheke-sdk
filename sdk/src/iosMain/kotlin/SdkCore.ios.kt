@@ -2,12 +2,8 @@ import cocoapods.open_ecard.*
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.buildProtocols
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.ObjCObject
 import platform.darwin.NSObject
-import platform.posix.WEOF
-import platform.posix.faccessat
 
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
@@ -33,24 +29,30 @@ import platform.posix.faccessat
 
 private val logger = KotlinLogging.logger {}
 
+interface SdkErrorHandler {
+    fun hdl(error: NSObject?)
+}
+
 @OptIn(ExperimentalForeignApi::class)
 class SdkCore(
     private val cardLinkUrl: String,
     private val cardLinkControllerCallback: CardLinkControllerCallback,
     private val cardLinkInteractionProtocol: CardLinkInteractionProtocol,
+    private val sdkErrorHandler: SdkErrorHandler,
     private val nfcOpts: NFCConfigProtocol,
 ) {
+    private var ctx:  ContextManagerProtocol? = null
 
     @OptIn(ExperimentalForeignApi::class)
     fun initCardLink() {
         logger.debug{cardLinkUrl}
-        println(cardLinkUrl)
         val oec = OpenEcardImp()
         oec.developerOptions()
-        val ctx = oec.context(nfcOpts as NSObject) as ContextManagerProtocol
-        ctx.initializeContext(object : StartServiceHandlerProtocol, NSObject() {
+        ctx = oec.context(nfcOpts as NSObject) as ContextManagerProtocol
+        ctx!!.initializeContext(object : StartServiceHandlerProtocol, NSObject() {
             override fun onFailure(response: NSObject?) {
                 println("Fail")
+                sdkErrorHandler.hdl(response)
             }
 
             override fun onSuccess(source: NSObject?) {
@@ -71,6 +73,21 @@ class SdkCore(
         } as NSObject)
 
          }
+
+    fun terminateContext(){
+        ctx!!.terminateContext(object : StopServiceHandlerProtocol, NSObject() {
+            override fun onFailure(response: NSObject?) {
+                logger.debug { "stopped successfully" }
+            }
+
+            override fun onSuccess() {
+                logger.debug { "stopped with error" }
+                sdkErrorHandler.hdl(null)
+            }
+
+        } as NSObject)
+        
+    }
 
     @OptIn(ExperimentalForeignApi::class)
     private class OverridingControllerCallback(val protocols: Set<CardLinkProtocol>, val cardLinkControllerCallback: CardLinkControllerCallback): ControllerCallbackProtocol , NSObject(){
