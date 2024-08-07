@@ -41,11 +41,11 @@ class SdkCore(
     private val sdkErrorHandler: SdkErrorHandler,
     private val nfcOpts: NFCConfigProtocol,
 ) {
-    private var ctx:  ContextManagerProtocol? = null
+    private var ctx: ContextManagerProtocol? = null
 
     @OptIn(ExperimentalForeignApi::class)
     fun initCardLink() {
-        logger.debug{cardLinkUrl}
+        logger.debug { cardLinkUrl }
         val oec = OpenEcardImp()
         oec.developerOptions()
         ctx = oec.context(nfcOpts as NSObject) as ContextManagerProtocol
@@ -72,9 +72,9 @@ class SdkCore(
 
         } as NSObject)
 
-         }
+    }
 
-    fun terminateContext(){
+    fun terminateContext() {
         ctx!!.terminateContext(object : StopServiceHandlerProtocol, NSObject() {
             override fun onFailure(response: NSObject?) {
                 logger.debug { "stopped successfully" }
@@ -86,13 +86,16 @@ class SdkCore(
             }
 
         } as NSObject)
-        
+
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private class OverridingControllerCallback(val protocols: Set<CardLinkProtocol>, val cardLinkControllerCallback: CardLinkControllerCallback): ControllerCallbackProtocol , NSObject(){
+    private class OverridingControllerCallback(
+        val protocols: Set<CardLinkProtocol>,
+        val cardLinkControllerCallback: CardLinkControllerCallback
+    ) : ControllerCallbackProtocol, NSObject() {
         override fun onAuthenticationCompletion(result: NSObject?) {
-cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
+            cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
         }
 
         override fun onStarted() {
