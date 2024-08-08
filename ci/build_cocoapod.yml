@@ -11,9 +11,9 @@ build-cocoapod:
       policy: pull-push
     script:
         - !reference [.versioning, script]
+        - pod repo update
         - ./gradlew podPublishReleaseXCFramework
         - mv sdk/build/cocoapods/publish/release/Epotheke.xcframework Epotheke.xcframework
-        - mv sdk/build/cocoapods/publish/release/epotheke-sdk.podspe epotheke-sdk.podspec
         - cp LICENSE.GPL LICENSE
     artifacts:
       name: 'Epotheke-CocoaPod'
