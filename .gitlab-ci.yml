@@ -16,6 +16,7 @@ variables:
 stages:
     - compile
     - test
+    - package
     - publish
     - docs
 
@@ -31,3 +32,5 @@ include:
     - '/ci/test.yml'
     - '/ci/publish.yml'
     - '/ci/docs.yml'
+    - '/ci/build_cocoapod.yml'
+    - '/ci/publish_cocoapod.yml'

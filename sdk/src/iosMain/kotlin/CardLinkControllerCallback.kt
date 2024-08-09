@@ -20,6 +20,12 @@
  *
  ***************************************************************************/
 
-fun initOeC() {
+import cocoapods.open_ecard.ActivationResultProtocol
+import com.epotheke.sdk.CardLinkProtocol
+import kotlinx.cinterop.ExperimentalForeignApi
 
+interface CardLinkControllerCallback {
+    fun onStarted()
+    @OptIn(ExperimentalForeignApi::class)
+    fun onAuthenticationCompletion(p0: ActivationResultProtocol?, cardLinkProtocols: Set<CardLinkProtocol>)
 }

@@ -22,6 +22,8 @@
 
 package com.epotheke.sdk
 
+import WebsocketCommon
+import WebsocketListenerCommon
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
@@ -43,11 +45,9 @@ class SdkCore(
     private val sdkErrorHandler: SdkErrorHandler
 ) {
 
-    var oec: OpeneCard? = null
-    var ctxManager: AndroidContextManager? = null
-    var activationSource: ActivationSource? = null
-    var nfcIntentHelper: NfcIntentHelper? = null
-    var needNfc = false
+    private var ctxManager: AndroidContextManager? = null
+    private var nfcIntentHelper: NfcIntentHelper? = null
+    private var needNfc = false
 
 
     fun onPause() {
@@ -61,20 +61,19 @@ class SdkCore(
     }
 
     fun initOecContext() {
-        oec = OpeneCard.createInstance()
+        val oec = OpeneCard.createInstance()
         nfcIntentHelper = NfcIntentHelper.create(ctx)
         ctxManager = oec?.context(ctx)
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
-                activationSource = actSource
-                val websocket = WebsocketAndroid(cardLinkUrl)
-                val wsListener = WebsocketListener()
+                val websocket = WebsocketCommon(cardLinkUrl)
+                val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(websocket, wsListener)
                 actSource.cardLinkFactory().create(
-                    websocket,
+                    WebsocketAndroid(websocket),
                     overridingControllerCallback(protocols),
                     OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
-                    wsListener
+                    WebsocketListenerAndroid(wsListener)
                 )
             }
 
@@ -102,18 +101,8 @@ class SdkCore(
         })
     }
 
-    protected fun cleanupOecInstances() {
-        oec = null
+    private fun cleanupOecInstances() {
         ctxManager = null
-        activationSource = null
-    }
-
-    private fun buildProtocols(websocket: WebsocketAndroid, wsListener: WebsocketListener): Set<CardLinkProtocol> {
-        return setOf(
-            PrescriptionProtocolImp(websocket)
-        ).onEach { p ->
-            p.registerListener(wsListener);
-        }
     }
 
     @SuppressLint("NewApi")

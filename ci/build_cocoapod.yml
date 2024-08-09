@@ -1,0 +1,23 @@
+build-cocoapod:
+    stage: package
+    tags:
+        - "mac"
+    cache:
+    - key: "$CACHE_KEY"
+      paths: !reference [ .cache-gradle-base, paths ]
+      policy: pull-push
+    - key: "$CACHE_TMP_KEY"
+      paths: [ .cache-gradle-builds, paths ]
+      policy: pull-push
+    script:
+        - !reference [.versioning, script]
+        - pod repo update
+        - ./gradlew podPublishReleaseXCFramework
+        - mv sdk/build/cocoapods/publish/release/Epotheke.xcframework Epotheke.xcframework
+        - cp LICENSE.GPL LICENSE
+    artifacts:
+      name: 'Epotheke-CocoaPod'
+      paths:
+        - Epotheke.xcframework/
+        - LICENSE.*
+        - LICENSE

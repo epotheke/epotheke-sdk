@@ -20,14 +20,15 @@
  *
  ***************************************************************************/
 
+import com.epotheke.sdk.ChannelDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 
 private val log = KotlinLogging.logger {}
 
@@ -38,22 +39,41 @@ interface WiredWSListener {
     fun onText(msg: String)
 }
 
+open class WebsocketListenerCommon() : ChannelDispatcher {
+    private val channels: MutableList<Channel<String>> = ArrayList<Channel<String>>()
+
+    override fun addProtocolChannel(channel: Channel<String>) {
+        channels.add(channel)
+    }
+
+    fun onOpen() {
+    }
+
+    fun onClose(p1: Int, p2: String?) {
+    }
+
+    fun onError(p1: String) {
+//        protos.map { p-> p.getErrorHandler()(p1) }
+    }
+
+    fun onText(p1: String) {
+        log.debug { "Message from established link: $p1" }
+        runBlocking {
+            channels.map { c ->
+                c.send(p1)
+            }
+        }
+    }
+}
+
+expect fun getHttpClient(): HttpClient
+
 class WebsocketCommon(
     private var url: String,
 ) {
 
     private var wsListener: WiredWSListener? = null
-    private val client: HttpClient = HttpClient(CIO) {
-        install(WebSockets) {
-            pingInterval = 15_000
-        }
-        engine {
-            endpoint {
-                keepAliveTime = 15_000
-                socketTimeout = 120_000
-            }
-        }
-    }
+    private val client: HttpClient = getHttpClient()
 
     private var wsSession: DefaultClientWebSocketSession? = null
 

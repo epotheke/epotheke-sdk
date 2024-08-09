@@ -22,38 +22,22 @@
 
 package com.epotheke.sdk
 
-import android.annotation.TargetApi
-import android.os.Build
+import WebsocketCommon
 import com.epotheke.erezept.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
-import java.time.LocalDateTime.now
-import java.util.concurrent.TimeoutException
+import now
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toKotlinDuration
 
 private val logger = KotlinLogging.logger {}
 private const val ReceiveTimeoutSeconds = 30L
 
-open class CardLinkProtocolBase(
-    protected val ws: WebsocketAndroid,
-) : CardLinkProtocol {
-    protected val inputChannel = Channel<String>()
-
-    fun registerListener(channelDispatcher: ChannelDispatcher) {
-        channelDispatcher.addProtocolChannel(inputChannel)
-    }
-}
-
 class PrescriptionProtocolImp(
-    ws: WebsocketAndroid
-) : CardLinkProtocolBase(ws), PrescriptionProtocol {
+    private val ws: WebsocketCommon,
+) : CardLinkProtocolBase(), PrescriptionProtocol {
 
-    @TargetApi(Build.VERSION_CODES.O)
-    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
         logger.debug { "Sending data to request ecreipts." }
 
@@ -61,7 +45,7 @@ class PrescriptionProtocolImp(
             prescriptionJsonFormatter.encodeToString(req)
         )
 
-        val lastTimestampUntilTimeout = now().plusSeconds(ReceiveTimeoutSeconds)
+        val lastTimestampUntilTimeout = now() + ReceiveTimeoutSeconds
         var duration = ReceiveTimeoutSeconds.seconds
         while (true) {
             try {
@@ -82,12 +66,12 @@ class PrescriptionProtocolImp(
                     }
 
                     else -> {
-                        duration = java.time.Duration.between(now(), lastTimestampUntilTimeout).toKotlinDuration()
+                        duration = (lastTimestampUntilTimeout - now()).seconds
                     }
                 }
             } catch (e: Exception) {
                 when (e) {
-                    is TimeoutException -> {
+                    is TimeoutCancellationException -> {
                         logger.error { "Timeout during receive" }
                         throw PrescriptionProtocolException(
                             GenericErrorMessage(
@@ -98,33 +82,32 @@ class PrescriptionProtocolImp(
                         )
                     }
                 }
-                logger.error(e) { "Exceptino during receive" }
+                logger.error(e) { "Exception during receive" }
                 throw e
             }
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
-    override suspend fun selectPrescriptions(lst: SelectedPrescriptionList): SelectedPrescriptionListResponse {
-        logger.debug { "Sending data to select ecreipts." }
+    override suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse {
+        logger.debug { "Sending data to select prescriptions." }
         ws.send(
-            prescriptionJsonFormatter.encodeToString(lst)
+            prescriptionJsonFormatter.encodeToString(selection)
         )
 
 
-        val lastTimestampUntilTimeout = now().plusSeconds(ReceiveTimeoutSeconds)
+        val lastTimestampUntilTimeout = now() + ReceiveTimeoutSeconds
         var duration = ReceiveTimeoutSeconds.seconds
 
         while (true) {
             try {
                 val response = withTimeout(
-                    timeout = duration
+                     timeout = duration
                 ) {
                     inputChannel.receive()
                 }
                 when (val prescriptionMessage = prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(response)) {
                     is SelectedPrescriptionListResponse -> {
-                        if (prescriptionMessage.correlationId == lst.messageId) {
+                        if (prescriptionMessage.correlationId == selection.messageId) {
                             return prescriptionMessage
                         }
                     }
@@ -134,18 +117,18 @@ class PrescriptionProtocolImp(
                     }
 
                     else -> {
-                        duration = java.time.Duration.between(now(), lastTimestampUntilTimeout).toKotlinDuration()
+                        duration = (lastTimestampUntilTimeout - now()).seconds
                     }
                 }
             } catch (e: Exception) {
                 when (e) {
-                    is TimeoutException -> {
+                    is TimeoutCancellationException -> {
                         logger.error { "Timeout during receive" }
                         throw PrescriptionProtocolException(
                             GenericErrorMessage(
                                 errorCode = GenericErrorResultType.UNKNOWN_ERROR,
                                 errorMessage = "Timeout",
-                                correlationId = lst.messageId
+                                correlationId = selection.messageId
                             )
                         )
                     }
