@@ -6,8 +6,7 @@ target 'EpothekeDemo' do
   use_frameworks!
 
   # Pods for EpothekeDemo
-  pod 'open-ecard', '>= 2.3.0-rc.6'
-  pod 'epotheke-sdk', :path => '/Users/florianotto/epotheke/epotheke-sdk/sdk/build/cocoapods/publish/debug'
+  pod 'epotheke-sdk','>= 1.1.4-rc.1'
 
 
 end
