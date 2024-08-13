@@ -41,8 +41,8 @@ kotlin {
     cocoapods {
         name = "epotheke-sdk"
         homepage = "https://www.epotheke.com"
-        summary = "Framework for using cardlink protocol."
-        authors = "ecsec GmbH"
+        summary = "iOS framework for integration of Epotheke services"
+        authors = "florian.otto@ecsec.de"
         license = "GPLv3"
         framework {
             baseName = "Epotheke"

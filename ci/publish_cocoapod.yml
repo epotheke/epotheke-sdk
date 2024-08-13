@@ -37,21 +37,24 @@ publish-ios-pod-spec:
     - "dev-cert"
   script:
     - TAG=$(echo "${CI_COMMIT_TAG}" | cut -c 2-)
-    - echo "Pod::Spec.new do |s|" > epotheke-sdk.podspec
-    - echo "s.name              = 'epotheke-sdk'" >> epotheke-sdk.podspec
-    - echo "s.version           = '${TAG}'" >> epotheke-sdk.podspec
-    - echo "s.summary           = 'epotheke sdk'" >> epotheke-sdk.podspec
-    - echo "s.description       = 'iOS framework for integration of Epotheke services'" >> epotheke-sdk.podspec
-    - echo "s.homepage          = 'https://www.epotheke.com'" >> epotheke-sdk.podspec
-    - echo "s.author            = { 'Name' => 'florian.otto@ecsec.de' }" >> epotheke-sdk.podspec
-    - echo "s.license           = { :type => 'GPLv3', :file => 'LICENSE' }" >> epotheke-sdk.podspec
+
+    - sed -i "s/^end$//g" epotheke-sdk.podspec
+    - sed -i "s/^.*spec.source.*$//g" epotheke-sdk.podspec
+
+    - sed -i "s/spec\.version\s*=.*/spec.version = '${TAG}'/g" epotheke-sdk.podspec
     - echo "s.source            = { :http => 'https://github.com/epotheke/epotheke-sdk/releases/download/"${CI_COMMIT_TAG}"/Epotheke-CocoaPod.zip' }" >> epotheke-sdk.podspec
-    - echo "s.ios.deployment_target = '13.0'" >> epotheke-sdk.podspec
-    - cat ${PODSPEC_PARTIAL_TEMPLATE} >> epotheke-sdk.podspec
+
     - echo end >> epotheke-sdk.podspec
+
     - pod spec lint epotheke-sdk.podspec --verbose
     - pod trunk push epotheke-sdk.podspec
-  needs: [ "publish-to-github" ]
+
+  dependencies:
+    - "build-cocoapod"
+    - "publish-to-github"
+  needs:
+    - "publish-to-github"
+    - "build-cocoapod"
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)$/
       when: manual
