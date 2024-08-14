@@ -17,7 +17,7 @@ struct ContentView: View {
                 print("Starting epotheke test case")
                 performEpo()
             } label: {
-                Text("Epotheke Demo")
+                Text("epotheke Demo")
             }
         }
         .padding()
