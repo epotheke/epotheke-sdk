@@ -14,15 +14,15 @@ publish-to-github:
         https://api.github.com/repos/epotheke/epotheke-sdk/releases \
         -d '{ "tag_name":"'"${CI_COMMIT_TAG}"'", "name":"'"${TAG}"'", "draft":false, "prerelease":false, "generate_release_notes":false }' | jq '.id')
     # Upload iOS Framework
-    - zip -r EpothekePod.zip LICENSE* Epotheke.xcframework
+    - zip -r epothekePod.zip LICENSE* epotheke.xcframework
     - >-
       curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} \
         -X POST -v \
         -H "Accept: application/vnd.github+json" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         -H "Content-Type: application/zip" \
-        --data-binary "@EpothekePod.zip" \
-        https://uploads.github.com/repos/epotheke/epotheke-sdk/releases/${RELEASE_ID}/assets?name=Epotheke-CocoaPod.zip
+        --data-binary "@epothekePod.zip" \
+        https://uploads.github.com/repos/epotheke/epotheke-sdk/releases/${RELEASE_ID}/assets?name=epotheke-CocoaPod.zip
   dependencies:
     - "build-cocoapod"
   needs:
@@ -37,21 +37,29 @@ publish-ios-pod-spec:
     - "dev-cert"
   script:
     - TAG=$(echo "${CI_COMMIT_TAG}" | cut -c 2-)
-    - echo "Pod::Spec.new do |s|" > epotheke-sdk.podspec
-    - echo "s.name              = 'epotheke-sdk'" >> epotheke-sdk.podspec
-    - echo "s.version           = '${TAG}'" >> epotheke-sdk.podspec
-    - echo "s.summary           = 'epotheke sdk'" >> epotheke-sdk.podspec
-    - echo "s.description       = 'iOS framework for integration of Epotheke services'" >> epotheke-sdk.podspec
-    - echo "s.homepage          = 'https://www.epotheke.com'" >> epotheke-sdk.podspec
-    - echo "s.author            = { 'Name' => 'florian.otto@ecsec.de' }" >> epotheke-sdk.podspec
-    - echo "s.license           = { :type => 'GPLv3', :file => 'LICENSE' }" >> epotheke-sdk.podspec
-    - echo "s.source            = { :http => 'https://github.com/epotheke/epotheke-sdk/releases/download/"${CI_COMMIT_TAG}"/Epotheke-CocoaPod.zip' }" >> epotheke-sdk.podspec
-    - echo "s.ios.deployment_target = '13.0'" >> epotheke-sdk.podspec
-    - cat ${PODSPEC_PARTIAL_TEMPLATE} >> epotheke-sdk.podspec
+
+    - sed "s/^end$//g" epotheke-sdk.podspec > tmp.podspec
+    - mv tmp.podspec epotheke-sdk.podspec
+    - sed "s/^.*spec.source.*$//g" epotheke-sdk.podspec > tmp.podspec
+    - mv tmp.podspec epotheke-sdk.podspec
+
+    - echo "spec.source            = { :http => 'https://github.com/epotheke/epotheke-sdk/releases/download/"${CI_COMMIT_TAG}"/epotheke-CocoaPod.zip' }" >> epotheke-sdk.podspec
+
+    - echo "spec.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }" >> epotheke-sdk.podspec
+    - echo "spec.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }" >> epotheke-sdk.podspec
+
     - echo end >> epotheke-sdk.podspec
+
+
     - pod spec lint epotheke-sdk.podspec --verbose
     - pod trunk push epotheke-sdk.podspec
-  needs: [ "publish-to-github" ]
+
+  dependencies:
+    - "build-cocoapod"
+    - "publish-to-github"
+  needs:
+    - "publish-to-github"
+    - "build-cocoapod"
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)$/
       when: manual

@@ -41,17 +41,17 @@ kotlin {
     cocoapods {
         name = "epotheke-sdk"
         homepage = "https://www.epotheke.com"
-        summary = "Framework for using cardlink protocol."
-        authors = "ecsec GmbH"
+        summary = "iOS framework for integration of Epotheke services"
+        authors = "florian.otto@ecsec.de"
         license = "GPLv3"
         framework {
-            baseName = "Epotheke"
+            baseName = "epotheke"
             binaryOption("bundleId", "com.epotheke.sdk")
         }
 
         pod("open-ecard") {
             // TODO: use version from catalogue
-            version = "2.3.0-rc.6"
+            version = libs.versions.oec.get()
             ios.deploymentTarget = "13.0"
             moduleName = "OpenEcard"
         }
