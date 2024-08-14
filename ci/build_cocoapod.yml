@@ -13,13 +13,13 @@ build-cocoapod:
         - !reference [.versioning, script]
         - pod repo update
         - ./gradlew podPublishReleaseXCFramework
-        - mv sdk/build/cocoapods/publish/release/Epotheke.xcframework Epotheke.xcframework
+        - mv sdk/build/cocoapods/publish/release/epotheke.xcframework epotheke.xcframework
         - mv sdk/build/cocoapods/publish/release/epotheke-sdk.podspec epotheke-sdk.podspec
         - cp LICENSE.GPL LICENSE
     artifacts:
       name: 'Epotheke-CocoaPod'
       paths:
-        - Epotheke.xcframework/
+        - epotheke.xcframework/
         - epotheke-sdk.podspec
         - LICENSE.*
         - LICENSE
