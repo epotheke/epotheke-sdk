@@ -15,13 +15,18 @@ if linkage != nil
 end
 
 target 'demoReactNative' do
+
   config = use_native_modules!
+
+  # Pod for epothekeDemo
+  pod 'epotheke-sdk','>= 1.1.5-rc.3'
 
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+
 
   target 'demoReactNativeTests' do
     inherit! :complete
