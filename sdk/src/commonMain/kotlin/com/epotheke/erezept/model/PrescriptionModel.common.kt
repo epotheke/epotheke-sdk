@@ -191,6 +191,7 @@ enum class GenericErrorResultType(val value: String) {
     UNKNOWN_ERROR("UNKNOWN_ERROR");
 }
 
+@Serializable
 sealed interface MedicationItem
 
 @Serializable
@@ -285,6 +286,7 @@ data class Person(
     val vorsatzwort: String? = null,
 )
 
+@Serializable
 sealed interface Address
 
 @Serializable
@@ -307,6 +309,7 @@ data class PobAddress(
     val postfach: String,
 ) : Address
 
+@Serializable
 sealed interface PrescriptionInterface
 
 @Serializable
