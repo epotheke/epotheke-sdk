@@ -3,22 +3,27 @@
 The epotheke SDK is a Kotlin Multi-Platform (KMP) library implementing the client side of the [CardLink](https://www.epotheke.com/#eH-CL) protocol.
 It takes care of the communication with the CardLink service and the handling of the eHealth card.
 
-A simple android demo application can be found in the [demo-android-standalone](demo-android-standalone) folder.
-iOS support will follow in a successive release.
+Demo applications for native android and ios apps can be found in folders: 
+- [demo-android-standalone](demo-android-standalone)
+- [demo-ios-standalone](demo-android-standalone)
 
 The latest documentation can be found at https://mvn.ecsec.de/repository/data-public/epotheke/sdk/doc/latest/.
-
 
 ## App Integration
 
 The epotheke SDK provides an API which can be integrated directly using the `SdkCore` class.
-To eliminate the need to write platform specific glue code, there are platform specific classes, which can be used instead.
-On Android, the `SdkActivity` can be extended, so only the App specific interaction handlers need to be implemented.
 
-The epotheke SDK contains three handlers, that need to be implemented:
-- `SdkErrorHandler` for handling errors related to the SDK initialisation
-- `CardLinkInteraction` for exchanging data between the user and the CardLink service
-- `CardLinkControllerCallback` for providing the CardLink result and protocols for subsequent processes (e.i. Prescription retrieval/selection)
+This class needs to be instantiated and given the following: 
+- `cardLinkUrl` the url of the CardLink service to use
+- implementation of `CardLinkControllerCallback` for providing the CardLink result and protocols for subsequent processes (e.i. Prescription retrieval/selection)
+- implementation of `CardLinkInteraction` for exchanging data between the user and the CardLink service
+- implementation of `SdkErrorHandler` for handling errors related to the SDK initialisation
+- iosOnly: implementation of `IOSNFCOptions` for defining messages during NFC communications
+
+After the initialisation the method `initOecContext()` on android or `doInitCardLink()` can be called to start the process.
+
+On android, it is possible to extend the abstract SdkActivity class as it is done in [demo-android-standalone](demo-android-standalone). The abstract class already handles life-cycle hooks needed for NFC communications.
+If this class is not used, please refer to its implementation which hooks have to be called. 
 
 For details on how to configure your app project, refer to the [manual](https://mvn.ecsec.de/repository/data-public/epotheke/sdk/doc/latest/).
 

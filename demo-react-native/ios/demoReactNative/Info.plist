@@ -24,9 +24,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NFCReaderUsageDescription</key>
+	<string>NFC writer app</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
@@ -48,5 +49,18 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>D27600000102</string>
+		<string>D2760001448000</string>
+		<string>D27600014407</string>
+		<string>D27600014408</string>
+		<string>D2760001440A</string>
+		<string>D2760001440B</string>
+		<string>D2760001440C</string>
+		<string>A000000167455349474E</string>
+		<string>D27600006601</string>
+	</array>
+
 </dict>
 </plist>
