@@ -73,20 +73,18 @@ The manifest file of the app using the epotheke SDK must contain the following l
 
 
 === iOS
-In the current RC iOS is not yet fully supported.
 
-////
-The Open eCard Framework for iOS is delivered as a Swift and ObjC compatible framework which can be added to a project in XCode.
+In addition to the following, please also refer to the demo implementation in `./demo-ios-standalone`.
+
+The epotheke SDK for iOS is delivered as a Swift and ObjC compatible framework which can be added to a project in XCode.
 The framework must then be "embedded and signed" during the build phase of XCode.
-
 
 As an alternative the framework is also available via https://cocoapods.org/[CocoaPods].
 Within the Podfile the following has to be specified:
 
 [source,subs="+attributes"]
 ----
-use_frameworks!
-pod 'open-ecard', '~> {releaseMinor}'
+pod 'epotheke-sdk', '~> {releaseMinor}'
 ----
 
 Since the framework uses NFC technology, within "Capabilities and Signing" the "Near field communication" capability has to be activated.
@@ -109,8 +107,16 @@ A list of supported application identifiers of ISO7816 tags within the Info.plis
 ----
 <key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
 <array>
-    <!-- ICAO ePassport compatible token such as the German eID -->
-    <string>A0000002471001</string>
+    <string>D27600000102</string>
+    <string>D2760001448000</string>
+    <string>D27600014407</string>
+    <string>D27600014408</string>
+    <string>D2760001440A</string>
+    <string>D2760001440B</string>
+    <string>D2760001440C</string>
+    <string>A000000167455349474E</string>
+    <string>D27600006601</string>
+
 </array>
 ----
 
@@ -119,12 +125,8 @@ The Info.plist must also contain the `<NFCReaderUsageDescription>` key with a va
 [source,xml]
 ----
 <key>NFCReaderUsageDescription</key>
-<string>Communication with NFC enabled eID cards for authentication processes</string>
+<string>Communication with eGK for authentication purposes</string>
 ----
-
-Find a full example at the https://github.com/ecsec/open-ecard-ios[reference implementation for ios].
-
 
 The corresponding protocol definitions of the API described in this document can be found within the bundle in the "Headers" folder.
 
-////
