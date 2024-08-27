@@ -11,6 +11,11 @@ import OpenEcard.open_ecard_mobile_lib
 import Epotheke
 
 struct ContentView: View {
+    @State var showAlert = false
+    @State var text = "123123"
+
+    @State var cb = {}
+    
     var body: some View {
         VStack {
             Button {
@@ -18,6 +23,14 @@ struct ContentView: View {
                 performEpo()
             } label: {
                 Text("epotheke Demo")
+            }
+            .alert(Text("CAN"), isPresented: self.$showAlert){
+                Button("OK"){
+                    self.$cb.wrappedValue()
+                }
+                TextField("can", text: $text).textContentType(.oneTimeCode)
+            } message: {
+                Text("Enter CAN")
             }
         }
         .padding()
@@ -73,17 +86,21 @@ struct ContentView: View {
      After that the handed in callback handler has to be called with the given value to resume the process.
      */
     class CardLinkInteraction: NSObject,  CardLinkInteractionProtocol{
-        //var v :ViewController
+        var v :ContentView
 
-        //init(v:ViewController) {
-        //    self.v = v
-        //    super.init()
-        //}
+        init(v:ContentView) {
+            self.v = v
+            super.init()
+        }
 
 
         func onCanRequest(_ enterCan: (NSObjectProtocol & ConfirmPasswordOperationProtocol)!) {
             print("onCanRequest")
-            enterCan.confirmPassword("753031")
+            self.v.cb = {
+                print("doing enterCAN")
+                enterCan.confirmPassword(self.v.$text.wrappedValue)
+            }
+            self.v.showAlert = true
         }
 
         func onPhoneNumberRequest(_ enterPhoneNumber: (NSObjectProtocol & ConfirmTextOperationProtocol)!) {
@@ -182,7 +199,7 @@ struct ContentView: View {
     func performEpo() {
         let cardLinkController = CardLinkController()
         let sdkErrorHandler = SdkErrorHandlerImp()
-        let cardLinkInteraction = CardLinkInteraction()
+        let cardLinkInteraction = CardLinkInteraction(v: self)
         let url = "https://mock.test.epotheke.com/cardlink?token="+RandomUUID_iosKt.randomUUID()
         let sdk = SdkCore(cardLinkUrl: url,
                       cardLinkControllerCallback: cardLinkController,

@@ -1,7 +1,7 @@
 PODS:
   - boost (1.83.0)
   - DoubleConversion (1.1.6)
-  - epotheke-sdk (1.1.5-SNAPSHOT):
+  - epotheke-sdk (1.1.5):
     - open-ecard (= 2.3.0-rc.7)
   - FBLazyVector (0.74.3)
   - fmt (9.1.0)
@@ -1173,7 +1173,7 @@ PODS:
 DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
-  - epotheke-sdk (from `/Users/florianotto/epotheke/epotheke-sdk/sdk/build/cocoapods/publish/debug`)
+  - epotheke-sdk (>= 1.1.5)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
@@ -1231,6 +1231,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - epotheke-sdk
     - open-ecard
     - SocketRocket
 
@@ -1239,8 +1240,6 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/boost.podspec"
   DoubleConversion:
     :podspec: "../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
-  epotheke-sdk:
-    :path: "/Users/florianotto/epotheke/epotheke-sdk/sdk/build/cocoapods/publish/debug"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   fmt:
@@ -1350,7 +1349,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   boost: d3f49c53809116a5d38da093a8aa78bf551aed09
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
-  epotheke-sdk: 757175083b89d69e40e0875c4664f8cc91c3b1d3
+  epotheke-sdk: e11df14650aa02b6437b37393a461d2c8d333073
   FBLazyVector: 7e977dd099937dc5458851233141583abba49ff2
   fmt: 4c2741a687cc09f0634a2e2c72a838b99f1ff120
   glog: fdfdfe5479092de0c4bdbebedd9056951f092c4f
@@ -1406,6 +1405,6 @@ SPEC CHECKSUMS:
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   Yoga: 88480008ccacea6301ff7bf58726e27a72931c8d
 
-PODFILE CHECKSUM: 7fd0f99fd7b87135f37ffad2ee93154b86199309
+PODFILE CHECKSUM: 7f04b4df66d7aa812c2db99e56ad870cbd2d6ae4
 
 COCOAPODS: 1.15.2
