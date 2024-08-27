@@ -84,7 +84,7 @@ Within the Podfile the following has to be specified:
 
 [source,subs="+attributes"]
 ----
-pod 'epotheke-sdk', '~> {releaseMinor}'
+pod 'epotheke-sdk', '~> {release}'
 ----
 
 Since the framework uses NFC technology, within "Capabilities and Signing" the "Near field communication" capability has to be activated.
