@@ -354,7 +354,7 @@ class SdkActivityImp : SdkActivity() {
 
                 setBusy(false)
                 showInfo("Available prescriptions: \n$text")
-                enableRedeem(protocol, result)
+                enableSelection(protocol, result)
 
             } catch (e: Exception) {
                 LOG.debug(e) { "Error in request" }
@@ -369,21 +369,22 @@ class SdkActivityImp : SdkActivity() {
     /**
      * This method switches the functionality of the button to go on with a redemption.
      */
-    private fun enableRedeem(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
-        LOG.debug { "Enable action for Redeeming" }
+    private fun enableSelection(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
+        LOG.debug { "Enable action for Selection" }
         findViewById<Button>(R.id.btn_getPrescriptions).apply {
-            text = "REDEEM PRESCRIPTIONS"
+            text = "SELECT PRESCRIPTIONS"
             setOnClickListener {
-                redeemPrescriptions(protocol, available)
+                selectPrescriptions(protocol, available)
             }
         }
     }
 
     /**
      * This function uses the given protocol and the list of available prescriptions to
-     * redeem them.
+     * select all of them.
+     *
      */
-    private fun redeemPrescriptions(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
+    private fun selectPrescriptions(protocol: PrescriptionProtocol, available: AvailablePrescriptionLists) {
         /*
          * For this example we build a SelectPrescriptionList object requesting all elements (by prescription IDs) of the first list
          * from the previous answer and set the supplyOptionsType to DELIVERY
@@ -419,7 +420,6 @@ class SdkActivityImp : SdkActivity() {
      * Deactivates the button for ePrescription functionality
      */
     private fun disableEprescriptionFunction() {
-        LOG.debug { "Enable action for Redeeming" }
         findViewById<Button>(R.id.btn_getPrescriptions).apply {
             visibility = INVISIBLE
         }
