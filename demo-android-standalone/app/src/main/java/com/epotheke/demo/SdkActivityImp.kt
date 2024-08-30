@@ -54,7 +54,7 @@ private val LOG = KotlinLogging.logger {}
 /**
  * The address of the service to connect to is set to a mock service for this demo app.
  */
-private const val mockServiceUrl = "https://epotheke.mock.ecsec.services/cardlink"
+private const val serviceUrl = "https://epotheke.mock.ecsec.services/cardlink"
 
 
 /**
@@ -78,7 +78,7 @@ class SdkActivityImp : SdkActivity() {
      * @return
      */
     override fun getCardLinkUrl(): String {
-        return mockServiceUrl + "?token=" + UUID.randomUUID()
+        return serviceUrl + "?token=" + UUID.randomUUID()
     }
 
     /**
@@ -495,7 +495,7 @@ class SdkActivityImp : SdkActivity() {
         findViewById<TextView>(R.id.service).apply {
             text = """
                 ${this.text}
-                $mockServiceUrl
+                $serviceUrl
                 """.trimIndent()
         }
 
