@@ -1,17 +1,12 @@
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
+import io.ktor.client.engine.okhttp.*
 
 actual fun getHttpClient(): HttpClient {
-    return HttpClient(CIO) {
+
+    return HttpClient(OkHttp) {
         install(WebSockets) {
             pingInterval = 15_000
-        }
-        engine {
-            endpoint {
-                keepAliveTime = 15_000
-                socketTimeout = 120_000
-            }
         }
     }
 }
