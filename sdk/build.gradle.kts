@@ -28,7 +28,7 @@ kotlin {
             dependencies {
                 api(libs.oec.android)
                 implementation(libs.kotlin.coroutines.android)
-                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.client.okhttp)
             }
         }
         val iosMain by getting {
