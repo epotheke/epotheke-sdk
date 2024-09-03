@@ -183,7 +183,7 @@ struct ContentView: View {
         let cardLinkController = CardLinkController()
         let sdkErrorHandler = SdkErrorHandlerImp()
         let cardLinkInteraction = CardLinkInteraction()
-        let url = "https://epotheke.mock.ecsec.services/cardlink?token="+RandomUUID_iosKt.randomUUID()
+        let url = "https://mock.test.epotheke.com/cardlink?token="+RandomUUID_iosKt.randomUUID()
         let sdk = SdkCore(cardLinkUrl: url,
                       cardLinkControllerCallback: cardLinkController,
                       cardLinkInteractionProtocol: cardLinkInteraction,

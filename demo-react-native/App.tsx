@@ -217,7 +217,7 @@ function App(): React.JSX.Element {
       
       
               // start the CardLink establishment
-              SdkModule.startCardLink(`https://epotheke.mock.ecsec.services/cardlink?token=RANDOMTOKEN`)
+              SdkModule.startCardLink(`https://mock.test.epotheke.com/cardlink?token=RANDOMTOKEN`)
 
             }} />
           <TextInput 
