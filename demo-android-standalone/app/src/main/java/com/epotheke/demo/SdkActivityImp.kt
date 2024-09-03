@@ -54,7 +54,7 @@ private val LOG = KotlinLogging.logger {}
 /**
  * The address of the service to connect to is set to a mock service for this demo app.
  */
-private const val mockServiceUrl = "https://epotheke.mock.ecsec.services/cardlink"
+private const val mockServiceUrl = "https://mock.test.epotheke.com/cardlink"
 
 
 /**
