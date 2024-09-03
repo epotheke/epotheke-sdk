@@ -44,7 +44,7 @@ android {
     }
 }
 
-val epothekeSdkVersion = "1.1.5"
+val epothekeSdkVersion = "1.1.6-SNAPSHOT"
 
 dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
