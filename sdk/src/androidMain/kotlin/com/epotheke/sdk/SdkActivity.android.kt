@@ -37,7 +37,7 @@ private val logger = KotlinLogging.logger {}
 
 abstract class SdkActivity : Activity() {
 
-    var epotheke: SdkCore? = null
+    private var epotheke: SdkCore? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
