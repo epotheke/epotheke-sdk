@@ -109,6 +109,7 @@ class SdkCore(
     fun onNewIntent(intent: Intent) {
         val t = intent.parcelable<Tag>(NfcAdapter.EXTRA_TAG)
         t?.let {
+            needNfc = false
             ctxManager?.onNewIntent(intent)
         }
     }
@@ -119,12 +120,6 @@ class SdkCore(
             ctx.nfcIntentHelper?.enableNFCDispatch()
             ctx.needNfc = true
             delegate.requestCardInsertion()
-        }
-
-        override fun onCardInteractionComplete() {
-            ctx.nfcIntentHelper?.disableNFCDispatch()
-            ctx.needNfc = false
-            delegate.onCardInteractionComplete()
         }
     }
 
