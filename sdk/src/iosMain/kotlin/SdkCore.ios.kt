@@ -42,6 +42,7 @@ class SdkCore(
     private val nfcOpts: NFCConfigProtocol,
 ) {
     private var ctx: ContextManagerProtocol? = null
+    private var activation: ActivationControllerProtocol? = null
 
     @OptIn(ExperimentalForeignApi::class)
     fun initCardLink() {
@@ -61,12 +62,13 @@ class SdkCore(
                 val ws = WebsocketCommon(cardLinkUrl)
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(ws, wsListener)
-                factory.create(
+                activation = factory.create(
                     WebsocketIos(ws),
                     withActivation = OverridingControllerCallback(protocols, cardLinkControllerCallback) as NSObject,
                     withInteraction = cardLinkInteractionProtocol as NSObject,
                     withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,
-                )
+                ) as ActivationControllerProtocol
+
             }
 
 

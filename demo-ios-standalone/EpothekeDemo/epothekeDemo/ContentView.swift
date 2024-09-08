@@ -8,7 +8,7 @@
 import SwiftUI
 import CoreNFC
 import OpenEcard.open_ecard_mobile_lib
-import Epotheke
+import epotheke
 
 struct ContentView: View {
     @State var showAlert = false

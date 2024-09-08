@@ -71,6 +71,15 @@ private const val serviceUrl = "https://mock.test.epotheke.com/cardlink"
  * @author Florian Otto
  */
 class SdkActivityImp : SdkActivity() {
+
+
+    /**
+     * This list can contain known iccsn by the app - and later be used to request prescriptions
+     * A successfull authentication via cardlink reveals the iccsn of the used card, which can then be stored in that list.
+     * On might persist those for later use.
+     */
+    private var iccsns: MutableList<ByteArray> = emptyList<ByteArray>().toMutableList();
+
     /**
      * This method has to return the url of the epotheke service, and will be called in
      * SdkActivity during startup.
@@ -281,6 +290,13 @@ class SdkActivityImp : SdkActivity() {
                     }
                 }.toString()
 
+                //store iccsn of card
+                if(activationResult?.resultCode == ActivationResultCode.OK){
+                    val iccsnHex = activationResult.resultParameterKeys.filter { it.equals("CardLink::ICCSN") }.first()
+                    iccsns.add(iccsnHex.encodeToByteArray())
+                }
+
+
                 showInfo(resultMsg)
 
                 //based on the provided protocol implementations we can enable further use cases.
@@ -326,7 +342,9 @@ class SdkActivityImp : SdkActivity() {
                 * We can use the default values of the constructor to get everything available.
                 */
                 val result = protocol.requestPrescriptions(
-                    RequestPrescriptionList()
+                    RequestPrescriptionList(
+                        iccsns = listOf(iccsns.first())
+                    )
                 )
 
                 /*
