@@ -11,8 +11,12 @@ import OpenEcard.open_ecard_mobile_lib
 import epotheke
 
 struct ContentView: View {
-    @State var showAlert = false
-    @State var text = "123123"
+    @State var showCanAlert = false
+    @State var showNumberAlert = false
+    @State var showTanAlert = false
+    @State var can = "123123"
+    @State var tan = "123123"
+    @State var nbr = "+49 22211133"
 
     @State var cb = {}
     
@@ -23,12 +27,25 @@ struct ContentView: View {
                 performEpo()
             } label: {
                 Text("epotheke Demo")
-            }
-            .alert(Text("CAN"), isPresented: self.$showAlert){
+            } .alert(Text("Phonenumber"), isPresented: self.$showNumberAlert){
                 Button("OK"){
                     self.$cb.wrappedValue()
                 }
-                TextField("can", text: $text).textContentType(.oneTimeCode)
+                TextField("nbr", text: $nbr).textContentType(.telephoneNumber)
+            } message : {
+                Text("Enter Phonenumber")
+            }.alert(Text("TAN"), isPresented: self.$showTanAlert){
+                Button("OK"){
+                    self.$cb.wrappedValue()
+                }
+                TextField("tan", text: $tan).textContentType(.oneTimeCode)
+            } message : {
+                Text("Enter TAN")
+            }.alert(Text("CAN"), isPresented: self.$showCanAlert){
+                Button("OK"){
+                    self.$cb.wrappedValue()
+                }
+                TextField("can", text: $can).textContentType(.oneTimeCode)
             } message: {
                 Text("Enter CAN")
             }
@@ -98,20 +115,25 @@ struct ContentView: View {
             print("onCanRequest")
             self.v.cb = {
                 print("doing enterCAN")
-                enterCan.confirmPassword(self.v.$text.wrappedValue)
+                enterCan.confirmPassword(self.v.$can.wrappedValue)
             }
-            self.v.showAlert = true
+            self.v.showCanAlert = true
         }
 
         func onPhoneNumberRequest(_ enterPhoneNumber: (NSObjectProtocol & ConfirmTextOperationProtocol)!) {
             print("onPhoneNumberRequest")
-            enterPhoneNumber.confirmText("+4915123456789")
-            print("onPhoneNumberRequest")
+            self.v.cb = {
+                enterPhoneNumber.confirmText(self.v.$nbr.wrappedValue)
+            }
+            self.v.showNumberAlert = true
         }
 
         func onSmsCodeRequest(_ smsCode: (NSObjectProtocol & ConfirmPasswordOperationProtocol)!) {
             print("onSmsCodeRequest")
-            smsCode.confirmPassword("123123")
+            self.v.cb = {
+                smsCode.confirmPassword(self.v.$tan.wrappedValue)
+            }
+            self.v.showTanAlert = true
         }
 
         func requestCardInsertion() {

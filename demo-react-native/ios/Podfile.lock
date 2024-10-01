@@ -1,15 +1,15 @@
 PODS:
   - boost (1.83.0)
   - DoubleConversion (1.1.6)
-  - epotheke-sdk (1.1.5):
-    - open-ecard (= 2.3.0-rc.7)
+  - epotheke-sdk (1.1.8):
+    - open-ecard (= 2.3.2)
   - FBLazyVector (0.74.3)
   - fmt (9.1.0)
   - glog (0.3.5)
   - hermes-engine (0.74.3):
     - hermes-engine/Pre-built (= 0.74.3)
   - hermes-engine/Pre-built (0.74.3)
-  - open-ecard (2.3.0-rc.7)
+  - open-ecard (2.3.2)
   - RCT-Folly (2024.01.01.00):
     - boost
     - DoubleConversion
@@ -1173,7 +1173,7 @@ PODS:
 DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
-  - epotheke-sdk (>= 1.1.5)
+  - epotheke-sdk (>= 1.1.8)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
@@ -1349,12 +1349,12 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   boost: d3f49c53809116a5d38da093a8aa78bf551aed09
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
-  epotheke-sdk: e11df14650aa02b6437b37393a461d2c8d333073
+  epotheke-sdk: f37e0380badbb9e741997d472e317dc609c9503f
   FBLazyVector: 7e977dd099937dc5458851233141583abba49ff2
   fmt: 4c2741a687cc09f0634a2e2c72a838b99f1ff120
   glog: fdfdfe5479092de0c4bdbebedd9056951f092c4f
   hermes-engine: 1f547997900dd0752dc0cc0ae6dd16173c49e09b
-  open-ecard: 6af1a409967529c938ed1f2622ba95a6ce4f0db8
+  open-ecard: bb3ef1579f9a528f3334ba60f74cc6c0dcfaaf4d
   RCT-Folly: 02617c592a293bd6d418e0a88ff4ee1f88329b47
   RCTDeprecation: 4c7eeb42be0b2e95195563c49be08d0b839d22b4
   RCTRequired: d530a0f489699c8500e944fde963102c42dcd0c2
@@ -1405,6 +1405,6 @@ SPEC CHECKSUMS:
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   Yoga: 88480008ccacea6301ff7bf58726e27a72931c8d
 
-PODFILE CHECKSUM: 7f04b4df66d7aa812c2db99e56ad870cbd2d6ae4
+PODFILE CHECKSUM: 04b5e00933b694412abbaf190a26d597f9aa63ce
 
 COCOAPODS: 1.15.2

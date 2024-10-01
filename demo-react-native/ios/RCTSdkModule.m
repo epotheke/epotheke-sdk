@@ -7,7 +7,7 @@
 
 #import "RCTSdkModule.h"
 
-#import <Epotheke/Epotheke.h>
+#import <Epotheke/epotheke.h>
 #import <OpenEcard/open-ecard.h>
 #import <React/RCTLog.h>
 
