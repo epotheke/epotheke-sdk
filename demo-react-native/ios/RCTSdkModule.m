@@ -52,7 +52,7 @@
 
     if ([error conformsToProtocol:@protocol(ServiceErrorResponse)]) {
         RCTLogInfo(@"error msg: %@", [error getErrorMessage]);
-        self.onSdkErrorCB(@[ @[ [error getErrorMessage] ] ]);
+        self.onSdkErrorCB(@[ @"Error",  [error getErrorMessage] ]);
     }
 }
 @end
@@ -67,15 +67,19 @@
 - (void)onAuthenticationCompletionP0:(id<ActivationResult> _Nullable)p0
                    cardLinkProtocols:(nonnull NSSet<id<EpothekeCardLinkProtocol>> *)cardLinkProtocols {
     RCTLogInfo(@"onAuthComp");
-    if (self.onAuthenticationCompletionCB) {
-        for (NSObject *p in cardLinkProtocols) {
-            if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
-                // found prescriptionProto
-                self.prescriptionProtocol = p;
-                self.onAuthenticationCompletionCB(@[ @[ [NSNull null], @"PrescriptonProtocol" ] ]);
-                break;
+    if([p0 getResultCode] == 0){
+        if (self.onAuthenticationCompletionCB) {
+            for (NSObject *p in cardLinkProtocols) {
+                if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
+                    // found prescriptionProto
+                    self.prescriptionProtocol = p;
+                    self.onAuthenticationCompletionCB(@[ [NSNull null], @"PrescriptionProtocol available" ] );
+                    break;
+                }
             }
         }
+    } else {
+        self.onAuthenticationCompletionCB(@[ @"Authentication failed", [p0 getErrorMessage] ] );
     }
 }
 
