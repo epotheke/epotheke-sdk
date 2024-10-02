@@ -78,7 +78,7 @@ class SdkActivityImp : SdkActivity() {
      * A successfull authentication via cardlink reveals the iccsn of the used card, which can then be stored in that list.
      * On might persist those for later use.
      */
-    private var iccsns: MutableList<ByteArray> = emptyList<ByteArray>().toMutableList();
+    private var iccsns: MutableList<String> = emptyList<String>().toMutableList();
 
     /**
      * This method has to return the url of the epotheke service, and will be called in
@@ -292,8 +292,8 @@ class SdkActivityImp : SdkActivity() {
 
                 //store iccsn of card
                 if(activationResult?.resultCode == ActivationResultCode.OK){
-                    val iccsnHex = activationResult.resultParameterKeys.filter { it.equals("CardLink::ICCSN") }.first()
-                    iccsns.add(iccsnHex.encodeToByteArray())
+                    val iccsnHex = activationResult.getResultParameter("CardLink::ICCSN")
+                    iccsns.add(iccsnHex)
                 }
 
 
@@ -331,6 +331,7 @@ class SdkActivityImp : SdkActivity() {
      * a couroutine scope, which enables us to perform the asynchronous communications in the background of the app.
      * To keep it simple we here just use runBlocking
      */
+    @OptIn(ExperimentalStdlibApi::class)
     private fun startPrescriptionFlow(protocol: PrescriptionProtocol) {
         LOG.debug { "Start action for PrescriptionProtocol" }
 
@@ -343,7 +344,7 @@ class SdkActivityImp : SdkActivity() {
                 */
                 val result = protocol.requestPrescriptions(
                     RequestPrescriptionList(
-                        iccsns = listOf(iccsns.first())
+                        iccsns = listOf(iccsns.first().hexToByteArray())
                     )
                 )
 
@@ -362,7 +363,7 @@ class SdkActivityImp : SdkActivity() {
                         val medication = bundle.arzneimittel
                         medication.medicationItem.joinToString { item ->
                             when (item) {
-                                is MedicationCompounding -> item.rezepturname
+                                is MedicationCompounding -> item.rezepturname ?: "Unknown"
                                 is MedicationFreeText -> item.freitextverordnung
                                 is MedicationIngredient -> item.listeBestandteilWirkstoffverordnung.joinToString(limit = 3) { i -> i.wirkstoffname }
                                 is MedicationPzn -> item.handelsname
