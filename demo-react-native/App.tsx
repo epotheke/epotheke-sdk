@@ -133,32 +133,35 @@ function App(): React.JSX.Element {
           become functional and can be called.
         */
         let onAuthenticationCallback = async (err: any, msg: any) => {
-            log(`onAuthenticationCompletion error: ${err}`);
-            log(`onAuthenticationCompletion protos: ${msg}`);
+            if(err){
+                log(`onAuthenticationCompletion error: ${err}`);
+            } else {
+                log(`onAuthenticationCompletion protos: ${msg}`);
 
-            try {
-                //get available prescriptions
-                let availPrescriptions = await SdkModule.getPrescriptions();
-                log(`prescriptions: ${availPrescriptions}`);
+                try {
+                    //get available prescriptions
+                    let availPrescriptions = await SdkModule.getPrescriptions();
+                    log(`prescriptions: ${availPrescriptions}`);
 
-                //example for a selection
-                //which has to be done via a jsonstring containing the selectedPrescriptionList
-                let confirmation = await SdkModule.selectPrescriptions(`{
-                      "type": "selectedPrescriptionList",
-                      "ICCSN": "MTIzNDU2Nzg5",
-                      "prescriptionIndexList": [
-                        "160.000.764.737.300.50",
-                        "160.100.000.000.012.06",
-                        "160.100.000.000.004.30",
-                        "160.100.000.000.014.97",
-                        "160.100.000.000.006.24"
-                      ],
-                      "supplyOptionsType": "delivery",
-                      "messageId": "bad828ad-75fa-4eea-aea5-a3587d95ce4a"
-                    }`);
-                log(`selection confirmation: ${confirmation}`);
-            } catch (e) {
-                log(`error : ${e}`);
+                    //example for a selection
+                    //which has to be done via a jsonstring containing the selectedPrescriptionList
+                    let confirmation = await SdkModule.selectPrescriptions(`{
+                          "type": "selectedPrescriptionList",
+                          "ICCSN": "MTIzNDU2Nzg5",
+                          "prescriptionIndexList": [
+                            "160.000.764.737.300.50",
+                            "160.100.000.000.012.06",
+                            "160.100.000.000.004.30",
+                            "160.100.000.000.014.97",
+                            "160.100.000.000.006.24"
+                          ],
+                          "supplyOptionsType": "delivery",
+                          "messageId": "bad828ad-75fa-4eea-aea5-a3587d95ce4a"
+                        }`);
+                    log(`selection confirmation: ${confirmation}`);
+                } catch (e) {
+                    log(`error : ${e}`);
+                }
             }
 
             SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback);
