@@ -188,6 +188,9 @@ enum class GenericErrorResultType(val value: String) {
     CARD_REVOKED("CARD_REVOKED"),
     CARD_INVALID("CARD_INVALID"),
     CARD_ERROR("CARD_ERROR"),
+    UNSUPPORTED_ENVELOPE("UNSUPPORTED_ENVELOPE"),
+    NO_PRESCRIPTIONS_AVAILABLE("NO_PRESCRIPTIONS_AVAILABLE"),
+    NOT_FOUND("NOT_FOUND"),
     UNKNOWN_ERROR("UNKNOWN_ERROR");
 }
 
@@ -199,9 +202,9 @@ sealed interface MedicationItem
 data class MedicationCompounding(
     val kategorie: String,
     val impfstoff: Boolean,
-    val herstellungsanweisung: String,
+    val herstellungsanweisung: String? = null,
     val verpackung: String? = null,
-    val rezepturname: String,
+    val rezepturname: String? = null,
     val darreichungsform: String? = null,
     val gesamtmenge: String,
     val einheit: String? = null,
@@ -296,7 +299,7 @@ data class StreetAddress(
     val plz: String,
     val ort: String,
     val strasse: String,
-    val hausnummer: String,
+    val hausnummer: String? = null,
     val zusatz: String? = null,
 ) : Address
 
