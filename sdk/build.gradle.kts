@@ -17,6 +17,7 @@ kotlin {
                 implementation(libs.ktor.client.websocket)
                 implementation(libs.kotlin.coroutines.core)
                 implementation(libs.kotlin.serialization.json)
+                implementation(libs.ktor.client.auth)
             }
         }
         val commonTest by getting {
@@ -29,13 +30,11 @@ kotlin {
                 api(libs.oec.android)
                 implementation(libs.kotlin.coroutines.android)
                 implementation(libs.ktor.client.okhttp)
-                implementation("io.ktor:ktor-client-auth:2.3.+")
             }
         }
         val iosMain by getting {
             dependencies {
                 implementation(libs.ktor.client.darwin)
-                implementation("io.ktor:ktor-client-auth:2.3.+")
             }
         }
     }
