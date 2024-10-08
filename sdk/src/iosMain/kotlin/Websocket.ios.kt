@@ -20,6 +20,8 @@
  *
  ***************************************************************************/
 
+import cocoapods.open_ecard.ServiceErrorCode
+import cocoapods.open_ecard.ServiceErrorResponseProtocol
 import cocoapods.open_ecard.WebsocketProtocol
 import cocoapods.open_ecard.WebsocketListenerProtocol
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,11 +32,14 @@ import platform.darwin.NSObject
 private val logger = KotlinLogging.logger {}
 
 @OptIn(ExperimentalForeignApi::class)
-fun createWs(
-    url: String,
-    tenantToken: String?,
-): WebsocketProtocol {
-    return WebsocketIos(WebsocketCommon(url, tenantToken))
+class SockError(val errMessage: String?) : ServiceErrorResponseProtocol, NSObject() {
+    override fun getErrorMessage(): String? {
+        return errMessage
+    }
+
+    override fun getStatusCode(): ServiceErrorCode {
+        return cocoapods.open_ecard.ServiceErrorCode.kServiceErrorCodeINTERNAL_ERROR
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -65,6 +70,7 @@ class WebsocketListenerIos(private val wsListenerCommon: WebsocketListenerCommon
 @OptIn(ExperimentalForeignApi::class)
 class WebsocketIos(
     private val commonWS: WebsocketCommon,
+    private val errorHandler: SdkErrorHandler,
 ) : NSObject(), WebsocketProtocol {
 
 
@@ -83,7 +89,10 @@ class WebsocketIos(
         try {
             commonWS.connect()
         } catch (e: Exception) {
-            logger.error { "Error during WS connect: ${e.message}" }
+            errorHandler.hdl(
+                SockError("Error during WS connect: ${e.message}. Is tenantToken valid?")
+                as NSObject
+            )
         }
     }
 
@@ -92,7 +101,10 @@ class WebsocketIos(
         try {
             commonWS.close(statusCode, withReason)
         } catch (e: Exception) {
-            logger.error { "Error during WS close: ${e.message}" }
+            errorHandler.hdl(
+                SockError("Error during WS close: ${e.message}.")
+                    as NSObject
+            )
         }
     }
 
@@ -103,7 +115,10 @@ class WebsocketIos(
                 commonWS.send(data)
             }
         } catch (e: Exception) {
-            logger.error { "Error during WS send: ${e.message}" }
+            errorHandler.hdl(
+                SockError("Error during WS send: ${e.message}.")
+                    as NSObject
+            )
         }
     }
 
