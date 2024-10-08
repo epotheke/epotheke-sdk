@@ -15,6 +15,7 @@ The epotheke SDK provides an API which can be integrated directly using the `Sdk
 
 This class needs to be instantiated and given the following: 
 - `cardLinkUrl` the url of the CardLink service to use
+- `tenantToken` a JWT provided by the service provider, for environments allowing non-authenticated acces it can be null
 - implementation of `CardLinkControllerCallback` for providing the CardLink result and protocols for subsequent processes (e.i. Prescription retrieval/selection)
 - implementation of `CardLinkInteraction` for exchanging data between the user and the CardLink service
 - implementation of `SdkErrorHandler` for handling errors related to the SDK initialisation
