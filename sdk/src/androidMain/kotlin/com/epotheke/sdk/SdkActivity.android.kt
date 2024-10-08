@@ -45,6 +45,7 @@ abstract class SdkActivity : Activity() {
         epotheke = SdkCore(
             this,
             getCardLinkUrl(),
+            getTenantToken(),
             getControllerCallback(),
             getCardLinkInteraction(),
             getSdkErrorHandler(),
@@ -79,6 +80,7 @@ abstract class SdkActivity : Activity() {
     }
 
     abstract fun getCardLinkUrl(): String
+    abstract fun getTenantToken(): String?
     abstract fun getControllerCallback(): CardLinkControllerCallback
     abstract fun getCardLinkInteraction(): CardLinkInteraction
     abstract fun getSdkErrorHandler(): SdkErrorHandler

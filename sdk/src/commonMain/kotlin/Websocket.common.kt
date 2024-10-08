@@ -66,14 +66,15 @@ open class WebsocketListenerCommon() : ChannelDispatcher {
     }
 }
 
-expect fun getHttpClient(): HttpClient
+expect fun getHttpClient(tenantToken: String?): HttpClient
 
 class WebsocketCommon(
     private var url: String,
+    private var tenantToken: String?,
 ) {
 
     private var wsListener: WiredWSListener? = null
-    private val client: HttpClient = getHttpClient()
+    private val client: HttpClient = getHttpClient(tenantToken)
 
     private var wsSession: DefaultClientWebSocketSession? = null
 

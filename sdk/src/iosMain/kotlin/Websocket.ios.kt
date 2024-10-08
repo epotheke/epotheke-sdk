@@ -32,8 +32,9 @@ private val logger = KotlinLogging.logger {}
 @OptIn(ExperimentalForeignApi::class)
 fun createWs(
     url: String,
+    tenantToken: String?,
 ): WebsocketProtocol {
-    return WebsocketIos(WebsocketCommon(url))
+    return WebsocketIos(WebsocketCommon(url, tenantToken))
 }
 
 @OptIn(ExperimentalForeignApi::class)
