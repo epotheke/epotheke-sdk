@@ -5,7 +5,7 @@ It takes care of the communication with the CardLink service and the handling of
 
 Demo applications for native android and ios apps can be found in folders: 
 - [demo-android-standalone](demo-android-standalone)
-- [demo-ios-standalone](demo-android-standalone)
+- [demo-ios-standalone](demo-ios-standalone)
 
 The latest documentation can be found at https://mvn.ecsec.de/repository/data-public/epotheke/sdk/doc/latest/.
 
