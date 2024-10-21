@@ -1,0 +1,28 @@
+
+== Error Handling
+The epotheke SDK provides different methods of providing errors, which depend on the time when an error occurs and the underlying reason.
+
+=== SDK errors
+These errors can occur at any time and handle general errors like when prerequisites for a cardlink authentication are not fulfilled. Examples are: NFC is not available or the connection to the service was not possible.
+
+These errors are provided to an app via the `SdkErrorHandler`.
+
+
+=== Recoverable errors during user interaction
+
+During the authentication process the SDK needs user inputs, like TANs and CANs.
+Wrong inputs result in errors which are provided within the `CardlinkInteraction` interface.
+
+If the SDK needs the CAN value for the card to be read, at first the `onCanRequest` function is called, which has to be implemented by the app and can for example ask the user via a dialog to provide the CAN.
+If the user provides a wrong CAN the SDK will not be able to correctly connect to the card.
+Then the function `onCanRetry` will be called.
+This function indicates that the previous action failed and provides a resultCodes and a message describing what went wrong.
+
+
+=== Errors due to failed authentication
+If the authentication process is over the `onAuthenticationCompletion` handler is called which provides an `ActivationResult` object.
+This object provides the major resultcode which is `OK` if the cardlink process was successful and the app can go on with provided protocols.
+Each other major result code indicates, that there was a problem during authentication.
+For example the used card is invalid or could not be read.
+
+In these cases the `ActivationResult` will also have a minor result which can be gathered by calling `getProcessResultMinor`. In addition, there is a descriptive error message which can be gathered via `getErrorMessage`.
