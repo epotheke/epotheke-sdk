@@ -3,7 +3,7 @@ The epotheke SDK provides different methods of providing errors, which depend on
 
 === Service Error Codes
 Service error codes show problems which are not or not directly related to the process of an authentication, but prevent a successful execution.
-For example if NFC is not available or not disabled.
+For example if NFC is not available or not enabled.
 These codes occur in the `SdkErrorHandler` as result code within the `ServiceErrorResponse` object.
 The latter also contains are descriptive message which can be obtained by `getErrorMessage`
 
