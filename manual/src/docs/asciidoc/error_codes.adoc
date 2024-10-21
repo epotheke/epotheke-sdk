@@ -1,0 +1,118 @@
+== Client Error Codes
+
+Those error codes will be used on the client-side.
+That means that those errors are produced without any communication to the CardLink service.
+Usually, those errors indicate a failed card authentication by interrupting the process, providing a wrong CAN or similar failures.
+In general, the following error codes are used:
+
+[cols="1,1"]
+|===
+|Client Error Code |Description
+
+|CAN_EMPTY
+|No or an empty CAN was provided.
+
+|CAN_TOO_LONG
+|A CAN with more than 6 digits was provided.
+
+|CAN_NOT_NUMERIC
+|CAN does contain non-numeric characters.
+
+|CAN_STEP_INTERRUPTED
+|Entering CAN and Card authentication process was interrupted.
+
+|CARD_REMOVED
+|Card was removed while communicating with it.
+
+|CAN_INCORRECT
+|An incorrect CAN was provided.
+
+|OTHER_PACE_ERROR
+|Used for other PACE errors that can happen when communicating with the card. Further details are provided in the error message.
+
+|INVALID_SLOT_HANDLE
+|Can occur when slot handle of the card has become invalid.
+
+|OTHER_NFC_ERROR
+|Used for other NFC errors that can occur when communicating with the card. Further details in error message.
+
+|CLIENT_TIMEOUT
+|If a process timed out.
+
+|OTHER_CLIENT_ERROR
+|For all other errors. Further details are provided in the error message.
+|===
+
+== CardLink Error Codes
+
+This section lists all errors that are returned by the CardLink service.
+The CardLink service returns those errors via the `TaskListErrorPayload` where the error code is transmitted via an Integer value.
+This Integer value is mapped to a list of result codes which are listed in the following:
+
+[cols="1,1"]
+|===
+|CardLink Error Code |Description
+
+|NOT_FOUND
+|Returned when a requested entity could not be found.
+
+|SICCT_ERROR
+|Is used when an error happens during SICCT communication with the connector.
+
+|PROCESS_ALREADY_STARTED
+|Indicates that a CardLink process is already ongoing. This error probably occurs when the `registerEGK` message is sent twice.
+
+|UNKNOWN_WEBSOCKET_MESSAGE
+|Indicates that an unknown/unsupported WebSocket message was received by the CardLink service.
+
+|INVALID_WEBSOCKET_MESSAGE
+|Indicates that the CardLink service received an invalid WebSocket message. This can occur if required data are missing or the encoding is wrong.
+
+|EGK_LIMIT_REACHED
+|Is used when the limit of 10 eGK authentications per session is reached.
+
+|SESSION_EXPIRED
+|Is used when the paired session has exceeded the permissible 15 minutes. A new connection and a new phone pairing must be established.
+
+|EXPIRED_CERTIFICATE
+|If the CardLink service receives an expired certificate in the `registerEGK` message.
+
+|INVALID_CERTIFICATE
+|Indicates that the CardLink service received an invalid eGK certificate. This can occur when the signature is invalid, a non-eGK certificate is sent or a production eGK certificate is sent when the reference environment is used.
+
+|CERTIFICATE_VALIDITY_MISMATCH
+|Is used on a mismatch between certificate validity periods of X.509 and CVC.
+
+|INVALID_GDO
+|CardLink service is not able to parse the received EF.GDO in the `registerEGK` message.
+
+|ICCSN_MISMATCH
+|Indicates a mismatch between ICCSN in CV certificate and EF.GDO.
+
+|INVALID_EF_ATR
+|CardLink service is not able to parse the received EF.ATR in the `registerEGK` message.
+
+|UNABLE_TO_SEND_SMS
+|CardLink service is not able to send out SMS messages for TAN validation.
+
+|NOT_ADMISSIBLE_TEL_PREFIX
+|Not admissible telephone number prefix is used. CardLink allows only German telephone numbers (+49).
+
+|NUMBER_BLOCKED
+|Indicates that a blocked phone number is used.
+
+|TAN_EXPIRED
+|If the TAN for the SMS-TAN validation has expired.
+
+|TAN_INCORRECT
+|Indicates that a wrong TAN was provided.
+
+|TAN_RETRY_LIMIT_EXCEEDED
+|The TAN retry limit exceeded.
+
+|SERVER_TIMEOUT
+|Used when the client does not receive any more commands of the CardLink service. This can happen when the App is waiting for the `InternalAuthenticate` APDU but does not receive one.
+
+|UNKNOWN_ERROR
+|Indicates an unknown error and is used on internal server errors. Further details are provided in the error message.
+|===
