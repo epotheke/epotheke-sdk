@@ -4,8 +4,8 @@ The epotheke SDK provides different methods of providing errors, which depend on
 
 In particular one can distinguish between 
 
-* `General Service Errors` 
-* `Operational Errors `
+* **General Service Errors**
+* **Operational Errors**
 
 === 3.1. General Service Error Codes
 
@@ -89,8 +89,8 @@ Those minor error codes can contain CardLink specific error codes, which are lis
 
 Cardlink specific errors are divided into 
 
-* `Client Error Codes` - are provided by the SDK directly and 
-* `Cardlink Error Codes` - are problems, which are delivered from the CardLink service to the SDK.
+* **Client Error Codes** - are provided by the SDK directly and 
+* **Cardlink Error Codes** - are problems, which are delivered from the CardLink service to the SDK.
 
 These codes can occur as a minor error code within an `AuthenticationResult` object, if the process ends.
 They are also used during a `CardlinkInteraction` phase, to indicate problems with the current step.
