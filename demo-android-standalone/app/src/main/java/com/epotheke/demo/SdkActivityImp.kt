@@ -134,6 +134,11 @@ class SdkActivityImp : SdkActivity() {
         }
     }
 
+    override fun getTenantToken(): String? {
+        //if environment allows unauthenticated access tenantToken can be null
+        return null
+    }
+
     /**
      * Implementation of the CardLinkInteraction
      * The different methods get called during the interaction with the card and may require

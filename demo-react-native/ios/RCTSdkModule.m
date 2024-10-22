@@ -298,12 +298,13 @@ RCT_EXPORT_METHOD(selectPrescriptions: (NSString *)selection
     );
 }
 
-RCT_EXPORT_METHOD(startCardLink : (NSString *)cardLinkUrl) {
+RCT_EXPORT_METHOD(startCardLink : (NSString *)cardLinkUrl tenantToken: (NSString *) tenantToken) {
     RCTLogInfo(@"onStarted: %@", cardLinkUrl);
 
     IOSNFCOptions *nfcOpts = [IOSNFCOptions new];
 
     EpothekeSdkCore *sdk = [[EpothekeSdkCore alloc] initWithCardLinkUrl:cardLinkUrl
+                                                            tenantToken:tenantToken
                                              cardLinkControllerCallback:clCtrlCB
                                             cardLinkInteractionProtocol:clInteraction
                                                         sdkErrorHandler:errHandler

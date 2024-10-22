@@ -40,6 +40,7 @@ private val logger = KotlinLogging.logger {}
 class SdkCore(
     private val ctx: Activity,
     private val cardLinkUrl: String,
+    private val tenantToken: String?,
     private val cardLinkControllerCallback: CardLinkControllerCallback,
     private val cardLinkInteraction: CardLinkInteraction,
     private val sdkErrorHandler: SdkErrorHandler
@@ -66,7 +67,7 @@ class SdkCore(
         ctxManager = oec?.context(ctx)
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
-                val websocket = WebsocketCommon(cardLinkUrl)
+                val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(websocket, wsListener)
                 actSource.cardLinkFactory().create(

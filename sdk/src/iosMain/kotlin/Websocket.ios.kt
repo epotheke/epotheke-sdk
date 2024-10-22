@@ -20,16 +20,26 @@
  *
  ***************************************************************************/
 
+import cocoapods.open_ecard.ServiceErrorCode
+import cocoapods.open_ecard.ServiceErrorResponseProtocol
 import cocoapods.open_ecard.WebsocketProtocol
 import cocoapods.open_ecard.WebsocketListenerProtocol
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.plugins.websocket.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.darwin.NSObject
 
+private val logger = KotlinLogging.logger {}
+
 @OptIn(ExperimentalForeignApi::class)
-fun createWs(
-    url: String,
-): WebsocketProtocol {
-    return WebsocketIos(WebsocketCommon(url))
+class SockError(val errMessage: String?) : ServiceErrorResponseProtocol, NSObject() {
+    override fun getErrorMessage(): String? {
+        return errMessage
+    }
+
+    override fun getStatusCode(): ServiceErrorCode {
+        return cocoapods.open_ecard.ServiceErrorCode.kServiceErrorCodeINTERNAL_ERROR
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -44,16 +54,23 @@ private class WiredWSListenerImplementation constructor(
 }
 
 @OptIn(ExperimentalForeignApi::class)
-class WebsocketListenerIos(private val wsListenerCommon: WebsocketListenerCommon) : WebsocketListenerProtocol, NSObject() {
+class WebsocketListenerIos(private val wsListenerCommon: WebsocketListenerCommon) : WebsocketListenerProtocol,
+    NSObject() {
     override fun onOpen(webSocket: NSObject?) = wsListenerCommon.onOpen()
-    override fun onClose(webSocket: NSObject?, withStatusCode: Int, withReason: String?) = wsListenerCommon.onClose(withStatusCode, withReason)
-    override fun onError(webSocket: NSObject?, withError: String?) = wsListenerCommon.onError(withError ?: "unknown error")
-    override fun onText(webSocket: NSObject?, withData: String?) = wsListenerCommon.onText(withData ?: "invalid message")
+    override fun onClose(webSocket: NSObject?, withStatusCode: Int, withReason: String?) =
+        wsListenerCommon.onClose(withStatusCode, withReason)
+
+    override fun onError(webSocket: NSObject?, withError: String?) =
+        wsListenerCommon.onError(withError ?: "unknown error")
+
+    override fun onText(webSocket: NSObject?, withData: String?) =
+        wsListenerCommon.onText(withData ?: "invalid message")
 }
 
 @OptIn(ExperimentalForeignApi::class)
 class WebsocketIos(
     private val commonWS: WebsocketCommon,
+    private val errorHandler: SdkErrorHandler,
 ) : NSObject(), WebsocketProtocol {
 
 
@@ -69,31 +86,40 @@ class WebsocketIos(
 
     //    @Throws(WebsocketException::class)
     override fun connect() {
-//        try {
-        commonWS.connect()
-        //       } catch (e : Exception){
-        //           throw WebsocketException(e.message)
-        //       }
+        try {
+            commonWS.connect()
+        } catch (e: Exception) {
+            errorHandler.hdl(
+                SockError("Error during WS connect: ${e.message}. Is tenantToken valid?")
+                as NSObject
+            )
+        }
     }
 
     //    @Throws(WebsocketException::class)
     override fun close(statusCode: Int, withReason: String?) {
-        //       try {
-        commonWS.close(statusCode, withReason)
-        //      } catch (e : Exception){
-        //          throw WebsocketException(e.message)
-        //      }
+        try {
+            commonWS.close(statusCode, withReason)
+        } catch (e: Exception) {
+            errorHandler.hdl(
+                SockError("Error during WS close: ${e.message}.")
+                    as NSObject
+            )
+        }
     }
 
     //   @Throws(WebsocketException::class)
     override fun send(data: String?) {
-        //      try{
-        data?.let {
-            commonWS.send(data)
+        try {
+            data?.let {
+                commonWS.send(data)
+            }
+        } catch (e: Exception) {
+            errorHandler.hdl(
+                SockError("Error during WS send: ${e.message}.")
+                    as NSObject
+            )
         }
-        //     } catch (e : Exception){
-        //         throw WebsocketException(e.message)
-        //     }
     }
 
     override fun isClosed(): Boolean {

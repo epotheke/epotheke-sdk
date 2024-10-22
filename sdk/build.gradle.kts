@@ -17,6 +17,7 @@ kotlin {
                 implementation(libs.ktor.client.websocket)
                 implementation(libs.kotlin.coroutines.core)
                 implementation(libs.kotlin.serialization.json)
+                implementation(libs.ktor.client.auth)
             }
         }
         val commonTest by getting {

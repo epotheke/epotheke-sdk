@@ -36,6 +36,7 @@ interface SdkErrorHandler {
 @OptIn(ExperimentalForeignApi::class)
 class SdkCore(
     private val cardLinkUrl: String,
+    private val tenantToken: String?,
     private val cardLinkControllerCallback: CardLinkControllerCallback,
     private val cardLinkInteractionProtocol: CardLinkInteractionProtocol,
     private val sdkErrorHandler: SdkErrorHandler,
@@ -59,11 +60,11 @@ class SdkCore(
             override fun onSuccess(source: NSObject?) {
                 val src = source as ActivationSourceProtocol
                 val factory = src.cardLinkFactory() as CardLinkControllerFactoryProtocol
-                val ws = WebsocketCommon(cardLinkUrl)
+                val ws = WebsocketCommon(cardLinkUrl, tenantToken)
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(ws, wsListener)
                 activation = factory.create(
-                    WebsocketIos(ws),
+                    WebsocketIos(ws, sdkErrorHandler),
                     withActivation = OverridingControllerCallback(protocols, cardLinkControllerCallback) as NSObject,
                     withInteraction = cardLinkInteractionProtocol as NSObject,
                     withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,

@@ -247,8 +247,9 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
 
     var epothekeInstance : SdkCore? = null
     @ReactMethod
-    fun startCardLink(cardLinkUrl: String) {
+    fun startCardLink(cardLinkUrl: String, tenantToken: String?) {
         logger.debug { "SdkModule called with url : $cardLinkUrl" }
+        logger.debug { "SdkModule called with tenantToken: $tenantToken" }
 
         epothekeInstance?.let {
             it.destroyOecContext()
@@ -258,6 +259,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             val epotheke = SdkCore(
                 activity,
                 cardLinkUrl,
+                tenantToken,
                 cardLinkControllerCallback,
                 cardLinkInteraction,
                 errorHandler,

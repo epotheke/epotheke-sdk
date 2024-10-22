@@ -169,7 +169,9 @@ function App(): React.JSX.Element {
         SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback);
 
         // start the CardLink establishment
-        SdkModule.startCardLink(`https://mock.test.epotheke.com/cardlink?token=${uuid.v4()}`);
+        //SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink?token=${uuid.v4()}`, `TENANTTOKEN`);
+        //When the environment allows unauthenticated connection, TENANTTOKEN can be null
+        SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink?token=${uuid.v4()}`, null);
     }
 
     const log = (msg: string) => {
