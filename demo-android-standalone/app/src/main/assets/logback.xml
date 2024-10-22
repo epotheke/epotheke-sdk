@@ -17,7 +17,7 @@
   </root>
 
   <!-- Set specific log levels for different packages -->
-  <logger name="org.openecard" level="INFO">
+  <logger name="org.openecard" level="DEBUG">
     <appender-ref ref="logcat" />
   </logger>
 
