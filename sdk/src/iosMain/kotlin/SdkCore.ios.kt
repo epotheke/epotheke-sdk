@@ -2,6 +2,7 @@ import cocoapods.open_ecard.*
 import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.buildProtocols
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLoggingConfiguration
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.darwin.NSObject
 
@@ -44,14 +45,34 @@ class SdkCore(
 ) {
     private var ctx: ContextManagerProtocol? = null
     private var activation: ActivationControllerProtocol? = null
+    private var dbgLogLevel = false
+//    private var logMessageHandler: LogMessageHandlerProtocol? = null
+
+    fun setDebugLogLevel() {
+       dbgLogLevel = true
+    }
+ //   fun setLogMessageHandler(handler: LogMessageHandlerProtocol){
+ //      logMessageHandler = handler
+ //   }
 
     @OptIn(ExperimentalForeignApi::class)
     fun initCardLink() {
         logger.debug { cardLinkUrl }
         val oec = OpenEcardImp()
-        oec.developerOptions()
+
+        if(dbgLogLevel){
+            val devOpts = oec.developerOptions()
+            try{
+                (devOpts as DeveloperOptionsProtocol).setDebugLogLevel()
+            } catch (e: Exception){
+                logger.warn { "Could not set loglevel to DEBUG" }
+            }
+   //         if(logMessageHandler != null) {
+   //            oec.developerOptions().registerLogHandler(logMessageHandler)
+   //         }
+        }
         ctx = oec.context(nfcOpts as NSObject) as ContextManagerProtocol
-        ctx!!.initializeContext(object : StartServiceHandlerProtocol, NSObject() {
+        ctx?.initializeContext(object : StartServiceHandlerProtocol, NSObject() {
             override fun onFailure(response: NSObject?) {
                 println("Fail")
                 sdkErrorHandler.hdl(response)
@@ -64,8 +85,8 @@ class SdkCore(
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(ws, wsListener)
                 activation = factory.create(
-                    WebsocketIos(ws, sdkErrorHandler),
-                    withActivation = OverridingControllerCallback(protocols, cardLinkControllerCallback) as NSObject,
+                    WebsocketIos(ws),
+                    withActivation = OverridingControllerCallback(this@SdkCore, protocols, cardLinkControllerCallback) as NSObject,
                     withInteraction = cardLinkInteractionProtocol as NSObject,
                     withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,
                 ) as ActivationControllerProtocol
@@ -78,14 +99,16 @@ class SdkCore(
     }
 
     fun terminateContext() {
-        ctx!!.terminateContext(object : StopServiceHandlerProtocol, NSObject() {
+        if(activation != null){
+            (activation as ActivationControllerProtocol).cancelOngoingAuthentication()
+        }
+        ctx?.terminateContext(object : StopServiceHandlerProtocol, NSObject() {
             override fun onFailure(response: NSObject?) {
-                logger.debug { "stopped successfully" }
+                logger.warn { "Cardlink sdk stopped with error: ${(response as ServiceErrorResponseProtocol).getErrorMessage()}" }
             }
 
             override fun onSuccess() {
-                logger.debug { "stopped with error" }
-                sdkErrorHandler.hdl(null)
+                logger.debug { "Cardlink sdk stopped successfully" }
             }
 
         } as NSObject)
@@ -94,11 +117,14 @@ class SdkCore(
 
     @OptIn(ExperimentalForeignApi::class)
     private class OverridingControllerCallback(
+        val sdk: SdkCore,
         val protocols: Set<CardLinkProtocol>,
         val cardLinkControllerCallback: CardLinkControllerCallback
     ) : ControllerCallbackProtocol, NSObject() {
         override fun onAuthenticationCompletion(result: NSObject?) {
             cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
+            logger.warn { "PROCESS ENDED calling terminate" }
+            sdk.terminateContext()
         }
 
         override fun onStarted() {

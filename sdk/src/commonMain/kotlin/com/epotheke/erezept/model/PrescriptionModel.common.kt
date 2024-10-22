@@ -22,6 +22,7 @@
 
 package com.epotheke.erezept.model
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -395,6 +396,7 @@ val prescriptionModule = SerializersModule {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 val prescriptionJsonFormatter = Json {
     serializersModule = prescriptionModule;
     classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS;
