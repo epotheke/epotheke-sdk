@@ -6,10 +6,10 @@ import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.prescriptionJsonFormatter
-import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardLinkControllerCallback
-import com.epotheke.sdk.SdkCore
+import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.PrescriptionProtocol
+import com.epotheke.sdk.SdkCore
 import com.epotheke.sdk.SdkErrorHandler
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Callback
@@ -22,6 +22,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import org.openecard.mobile.activation.ActivationResult
+import org.openecard.mobile.activation.CardLinkErrorCodes
 import org.openecard.mobile.activation.CardLinkInteraction
 import org.openecard.mobile.activation.ConfirmPasswordOperation
 import org.openecard.mobile.activation.ConfirmTextOperation
@@ -98,13 +99,20 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             cardLinkProtocols: Set<CardLinkProtocol>
         ) {
             logger.debug { "onAuthenticationCompletion ${p0?.errorMessage}" }
-
             erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
 
-            val availableProtocols =
-                cardLinkProtocols.joinToString(prefix = "protocols: ") { p -> p.javaClass.name }
-            onAuthenticationCompletionCB?.invoke(p0?.errorMessage, availableProtocols)
-
+            //hotfix
+            if(p0?.errorMessage?.contains("==>") == true){
+                var minor = p0?.errorMessage?.split("==>")?.get(0)?.trim()
+                var msg = p0?.errorMessage?.split("==>")?.get(1)?.trim()
+                onAuthenticationCompletionCB?.invoke(minor, msg)
+            } else if (p0?.errorMessage != null){
+                onAuthenticationCompletionCB?.invoke(p0?.resultCode?.name, p0?.errorMessage)
+            } else {
+                onAuthenticationCompletionCB?.invoke(null, null)
+            }
+//            onAuthenticationCompletionCB?.invoke(p0?.processResultMinor, p0?.errorMessage)
+//            onAuthenticationCompletionCB?.invoke(minor, msg)
         }
 
         override fun onStarted() {
@@ -148,6 +156,13 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         onCanRequestCB = cb
     }
 
+    var onCanRetryCB: Callback? = null
+
+    @ReactMethod
+    fun set_cardlinkInteractionCB_onCanRetry(cb: Callback) {
+        onCanRetryCB = cb
+    }
+
     var onPhoneNumberRequestCB: Callback? = null
 
     @ReactMethod
@@ -155,11 +170,25 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         onPhoneNumberRequestCB = cb
     }
 
+    var onPhoneNumberRetryCB: Callback? = null
+
+    @ReactMethod
+    fun set_cardlinkInteractionCB_onPhoneNumberRetry(cb: Callback) {
+        onPhoneNumberRetryCB = cb
+    }
+
     var onSmsCodeRequestCB: Callback? = null
 
     @ReactMethod
     fun set_cardlinkInteractionCB_onSmsCodeRequest(cb: Callback) {
         onSmsCodeRequestCB = cb
+    }
+
+    var onSmsCodeRetryCB: Callback? = null
+
+    @ReactMethod
+    fun set_cardlinkInteractionCB_onSmsCodeRetry(cb: Callback) {
+        onSmsCodeRetryCB = cb
     }
 
     private val cardLinkInteraction = object : CardLinkInteraction {
@@ -200,6 +229,17 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onCanRequestCB?.invoke()
         }
 
+        override fun onCanRetry(p0: ConfirmPasswordOperation?, p1: CardLinkErrorCodes.ClientCodes?, p2: String?) {
+            logger.debug { "onCanRetry" }
+            p0?.let {
+                userInputDispatch = { s ->
+                    logger.debug { "confirming number $s with framework interaction" }
+                    p0.confirmPassword(s)
+                }
+            }
+            onCanRetryCB?.invoke(p1?.name, p2)
+        }
+
         override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) {
             logger.debug { "onPhoneNumberRequest" }
             p0?.let {
@@ -209,6 +249,17 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                 }
             }
             onPhoneNumberRequestCB?.invoke()
+        }
+
+        override fun onPhoneNumberRetry(p0: ConfirmTextOperation?, p1: CardLinkErrorCodes.CardLinkCodes?, p2: String?) {
+            logger.debug { "onPhoneNumberRetry" }
+            p0?.let {
+                userInputDispatch = { s ->
+                    logger.debug { "confirming number $s with framework interaction" }
+                    p0.confirmText(s)
+                }
+            }
+            onPhoneNumberRetryCB?.invoke(p1?.name,p2)
         }
 
         override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) {
@@ -222,6 +273,17 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onSmsCodeRequestCB?.invoke()
         }
 
+        override fun onSmsCodeRetry(p0: ConfirmPasswordOperation?, p1: CardLinkErrorCodes.CardLinkCodes?, p2: String?) {
+            logger.debug { "onSmsCodeRetry" }
+            p0?.let {
+                userInputDispatch = { s ->
+                    logger.debug { "confirming tan $s with framework interaction" }
+                    p0.confirmPassword(s)
+                }
+            }
+            onSmsCodeRetryCB?.invoke(p1?.name,p2)
+        }
+
     }
     var onErrorCB: Callback? = null
 
@@ -233,7 +295,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     private val errorHandler = object : SdkErrorHandler {
         override fun onError(error: ServiceErrorResponse) {
             logger.debug { "SdkModule onError will call registered RN callback with: ${error.errorMessage}" }
-            onErrorCB?.invoke(null, error.errorMessage)
+            onErrorCB?.invoke(error.statusCode.name, error.errorMessage)
         }
     }
 

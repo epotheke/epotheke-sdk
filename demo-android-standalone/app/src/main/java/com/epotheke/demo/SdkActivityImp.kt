@@ -149,13 +149,23 @@ class SdkActivityImp : SdkActivity() {
          * Called when the SDK needs to communicates with the card.
          * The user must read the CAN from it card and enter it within the app.
          * The given CAN has then be handed back to the SDK via
-         * confirmPasswordOperation.confirmPassowrd("<CANVALUE>")
+         * confirmPasswordOperation.confirmPassword("<CANVALUE>")
          *
          * @param confirmPasswordOperation
         </CANVALUE> */
         override fun onCanRequest(confirmPasswordOperation: ConfirmPasswordOperation) {
             LOG.debug { "epotheke implementation onCanRequest" }
             getValueFromUser("Please provide CAN of card", "000000") { value ->
+                confirmPasswordOperation.confirmPassword(value)
+            }
+        }
+        /**
+         * Called if something went wrong in the last step.
+         * Information can be gathered by errCode and errMsg.
+         */
+        override fun onCanRetry(confirmPasswordOperation: ConfirmPasswordOperation, errCode: CardLinkErrorCodes.ClientCodes?, errMessage: String?) {
+            LOG.debug { "epotheke implementation onCanRetry, code: $errCode - msg: $errMessage" }
+            getValueFromUser("Problem with CAN. Please try again and provide CAN", "000000") { value ->
                 confirmPasswordOperation.confirmPassword(value)
             }
         }
@@ -182,6 +192,20 @@ class SdkActivityImp : SdkActivity() {
         }
 
         /**
+         * Called if something went wrong in the last step.
+         * Information can be gathered by errCode and errMsg.
+         */
+        override fun onPhoneNumberRetry(confirmTextOperation: ConfirmTextOperation, errCode: CardLinkErrorCodes.CardLinkCodes?, errMsg: String?) {
+            LOG.debug { "epotheke implementation onPhoneRetry, code: $errCode - msg: $errMsg" }
+            getValueFromUser(
+                "Problem with phone number. Please try again",
+                "+4915123456789"
+            ) { value ->
+                confirmTextOperation.confirmText(value)
+            }
+        }
+
+        /**
          * Called during the cardlink establishment.
          * The user will get an SMS containing a TAN for verification purposes.
          * The given TAN has then be handed back to the SDK via
@@ -198,6 +222,20 @@ class SdkActivityImp : SdkActivity() {
             ) { value ->
                 confirmPasswordOperation.confirmPassword(value)
             }
+        }
+        /**
+         * Called if something went wrong in the last step.
+         * Information can be gathered by errCode and errMsg.
+         */
+        override fun onSmsCodeRetry(confirmPasswordOperation: ConfirmPasswordOperation, errCode: CardLinkErrorCodes.CardLinkCodes?, errMsg: String?) {
+            LOG.debug { "epotheke implementation onSmsCodeRetry, code: $errCode - msg: $errMsg" }
+            getValueFromUser(
+                "Problem with TAN. Please try again",
+                "123456"
+            ) { value ->
+                confirmPasswordOperation?.confirmPassword(value)
+            }
+
         }
 
         /**
