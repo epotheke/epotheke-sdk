@@ -229,7 +229,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onCanRequestCB?.invoke()
         }
 
-        override fun onCanRetry(p0: ConfirmPasswordOperation?, p1: CardLinkErrorCodes.ClientCodes?, p2: String?) {
+        override fun onCanRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
             logger.debug { "onCanRetry" }
             p0?.let {
                 userInputDispatch = { s ->
@@ -237,7 +237,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p0.confirmPassword(s)
                 }
             }
-            onCanRetryCB?.invoke(p1?.name, p2)
+            onCanRetryCB?.invoke(p1, p2)
         }
 
         override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) {
@@ -251,7 +251,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onPhoneNumberRequestCB?.invoke()
         }
 
-        override fun onPhoneNumberRetry(p0: ConfirmTextOperation?, p1: CardLinkErrorCodes.CardLinkCodes?, p2: String?) {
+        override fun onPhoneNumberRetry(p0: ConfirmTextOperation?, p1: String?, p2: String?) {
             logger.debug { "onPhoneNumberRetry" }
             p0?.let {
                 userInputDispatch = { s ->
@@ -259,7 +259,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p0.confirmText(s)
                 }
             }
-            onPhoneNumberRetryCB?.invoke(p1?.name,p2)
+            onPhoneNumberRetryCB?.invoke(p1,p2)
         }
 
         override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) {
@@ -273,7 +273,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onSmsCodeRequestCB?.invoke()
         }
 
-        override fun onSmsCodeRetry(p0: ConfirmPasswordOperation?, p1: CardLinkErrorCodes.CardLinkCodes?, p2: String?) {
+        override fun onSmsCodeRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
             logger.debug { "onSmsCodeRetry" }
             p0?.let {
                 userInputDispatch = { s ->
@@ -281,7 +281,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p0.confirmPassword(s)
                 }
             }
-            onSmsCodeRetryCB?.invoke(p1?.name,p2)
+            onSmsCodeRetryCB?.invoke(p1,p2)
         }
 
     }
