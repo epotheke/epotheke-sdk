@@ -85,14 +85,12 @@ class SdkCore(
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(ws, wsListener)
                 activation = factory.create(
-                    WebsocketIos(ws),
+                    WebsocketIos(ws, sdkErrorHandler),
                     withActivation = OverridingControllerCallback(this@SdkCore, protocols, cardLinkControllerCallback) as NSObject,
                     withInteraction = cardLinkInteractionProtocol as NSObject,
                     withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,
                 ) as ActivationControllerProtocol
-
             }
-
 
         } as NSObject)
 

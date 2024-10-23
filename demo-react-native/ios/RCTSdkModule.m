@@ -100,8 +100,11 @@
 @property RCTResponseSenderBlock onCardRecognizedCB;
 @property RCTResponseSenderBlock onCardRemovedCB;
 @property RCTResponseSenderBlock onCanRequestCB;
+@property RCTResponseSenderBlock onCanRetryCB;
 @property RCTResponseSenderBlock onPhoneNumberRequestCB;
+@property RCTResponseSenderBlock onPhoneNumberRetryCB;
 @property RCTResponseSenderBlock onSmsCodeRequestCB;
+@property RCTResponseSenderBlock onSmsCodeRetryCB;
 @end
 
 @implementation CardLinkInterActionImp
@@ -148,6 +151,20 @@
     }
 }
 
+- (void)onCanRetry:(NSObject<ConfirmPasswordOperation> *)enterCan 
+		   withResultCode:(NSString*)resultCode
+		   withErrorMessage:(NSString*)errorMessage {
+    RCTLogInfo(@"onCanRetry");
+    if (enterCan && self.onCanRequestCB) {
+        self.userInputDispatch = ^(NSString *input) {
+          if ([enterCan conformsToProtocol:@protocol(ConfirmPasswordOperation)]) {
+              [enterCan confirmPassword:input];
+          }
+        };
+        self.onCanRetryCB(@[resultCode, errorMessage]);
+    }
+}
+
 - (void)onPhoneNumberRequest:(NSObject<ConfirmTextOperation> *)enterPhoneNumber {
     RCTLogInfo(@"onPhoneNumberRequest");
     if (enterPhoneNumber && self.onPhoneNumberRequestCB) {
@@ -157,6 +174,19 @@
           }
         };
         self.onPhoneNumberRequestCB(nil);
+    }
+}
+- (void)onPhoneNumberRetry:(NSObject<ConfirmTextOperation> *)enterPhoneNumber 
+		   withResultCode:(NSString*)resultCode
+		   withErrorMessage:(NSString*)errorMessage {
+    RCTLogInfo(@"onPhoneNumberRetry");
+    if (enterPhoneNumber && self.onPhoneNumberRequestCB) {
+        self.userInputDispatch = ^(NSString *input) {
+          if ([enterPhoneNumber conformsToProtocol:@protocol(ConfirmTextOperation)]) {
+              [enterPhoneNumber confirmText:input];
+          }
+        };
+        self.onPhoneNumberRetryCB(@[resultCode,errorMessage]);
     }
 }
 
@@ -169,6 +199,19 @@
           }
         };
         self.onSmsCodeRequestCB(nil);
+    }
+}
+- (void)onSmsCodeRetry:(NSObject<ConfirmPasswordOperation> *)smsCode 
+		   withResultCode:(NSString*)resultCode
+		   withErrorMessage:(NSString*)errorMessage {
+    RCTLogInfo(@"onSmsCodeRetry");
+    if (smsCode && self.onSmsCodeRequestCB) {
+        self.userInputDispatch = ^(NSString *input) {
+          if ([smsCode conformsToProtocol:@protocol(ConfirmPasswordOperation)]) {
+              [smsCode confirmPassword:input];
+          }
+        };
+        self.onSmsCodeRetryCB(@[resultCode, errorMessage]);
     }
 }
 @end
@@ -234,6 +277,12 @@ RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCanRequest : (RCTResponseSenderBlo
     }
     clInteraction.onCanRequestCB = cb;
 }
+RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCanRetry : (RCTResponseSenderBlock)cb) {
+    if (!clInteraction) {
+        clInteraction = [CardLinkInterActionImp new];
+    }
+    clInteraction.onCanRetryCB = cb;
+}
 
 RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onPhoneNumberRequest : (RCTResponseSenderBlock)cb) {
     if (!clInteraction) {
@@ -241,12 +290,24 @@ RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onPhoneNumberRequest : (RCTResponseS
     }
     clInteraction.onPhoneNumberRequestCB = cb;
 }
+RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onPhoneNumberRetry : (RCTResponseSenderBlock)cb) {
+    if (!clInteraction) {
+        clInteraction = [CardLinkInterActionImp new];
+    }
+    clInteraction.onPhoneNumberRetryCB = cb;
+}
 
 RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onSmsCodeRequest : (RCTResponseSenderBlock)cb) {
     if (!clInteraction) {
         clInteraction = [CardLinkInterActionImp new];
     }
     clInteraction.onSmsCodeRequestCB = cb;
+}
+RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onSmsCodeRetry : (RCTResponseSenderBlock)cb) {
+    if (!clInteraction) {
+        clInteraction = [CardLinkInterActionImp new];
+    }
+    clInteraction.onSmsCodeRetryCB = cb;
 }
 
 RCTResponseSenderBlock onSdkError;
