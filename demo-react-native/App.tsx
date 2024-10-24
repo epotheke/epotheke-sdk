@@ -87,6 +87,15 @@ function App(): React.JSX.Element {
         };
         SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB);
 
+        let canRetryCB = (code: String | undefined, msg: String | undefined) => {
+            log('canRetryCB');
+            SdkModule.set_cardlinkInteractionCB_onCanRetry(canRetryCB);
+            setInputValue('123123');
+            setmodalTxt('Retry Can due to: ' + code + ' - ' + msg);
+            toggleModalVisibility();
+        };
+        SdkModule.set_cardlinkInteractionCB_onCanRetry(canRetryCB);
+
         let onPhoneNumberRequestCB = () => {
             log('onPhoneNumberRequest');
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
@@ -96,6 +105,15 @@ function App(): React.JSX.Element {
         };
         SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
 
+        let onPhoneNumberRetryCB = (code: String | undefined, msg: String | undefined) => {
+            log('onPhoneNumberRetryCB');
+            SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
+            setmodalTxt('Retry Number due to: ' + code + ' - ' + msg);
+            setInputValue('015111122233');
+            toggleModalVisibility();
+        };
+        SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
+
         let onSmsCodeRequestCB = () => {
             log('onSmsCodeRequest');
             SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB);
@@ -104,6 +122,16 @@ function App(): React.JSX.Element {
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB);
+
+        let onSmsCodeRetryCB = (code: String | undefined, msg: String | undefined) => {
+            log('onSmsCodeRetryCB');
+            SdkModule.set_cardlinkInteractionCB_onSmsCodeRetry(onSmsCodeRetryCB);
+            setmodalTxt('Retry TAN due to: ' + code + ' - ' + msg);
+            setInputValue('123456789');
+            toggleModalVisibility();
+        };
+        SdkModule.set_cardlinkInteractionCB_onSmsCodeRetry(onSmsCodeRetryCB);
+
 
         /*
           Called if the sdk runs into an error.
@@ -134,31 +162,31 @@ function App(): React.JSX.Element {
         */
         let onAuthenticationCallback = async (err: any, msg: any) => {
             if(err){
-                log(`onAuthenticationCompletion error: ${err}`);
+                log(`onAuthenticationCompletion error: ${err} - ${msg}`);
             } else {
-                log(`onAuthenticationCompletion protos: ${msg}`);
-
                 try {
+                    log(`success`);
+
                     //get available prescriptions
                     let availPrescriptions = await SdkModule.getPrescriptions();
                     log(`prescriptions: ${availPrescriptions}`);
 
-                    //example for a selection
-                    //which has to be done via a jsonstring containing the selectedPrescriptionList
-                    let confirmation = await SdkModule.selectPrescriptions(`{
-                          "type": "selectedPrescriptionList",
-                          "ICCSN": "MTIzNDU2Nzg5",
-                          "prescriptionIndexList": [
-                            "160.000.764.737.300.50",
-                            "160.100.000.000.012.06",
-                            "160.100.000.000.004.30",
-                            "160.100.000.000.014.97",
-                            "160.100.000.000.006.24"
-                          ],
-                          "supplyOptionsType": "delivery",
-                          "messageId": "bad828ad-75fa-4eea-aea5-a3587d95ce4a"
-                        }`);
-                    log(`selection confirmation: ${confirmation}`);
+                    ////example for a selection
+                    ////which has to be done via a jsonstring containing the selectedPrescriptionList
+                    //let confirmation = await SdkModule.selectPrescriptions(`{
+                    //      "type": "selectedPrescriptionList",
+                    //      "ICCSN": "MTIzNDU2Nzg5",
+                    //      "prescriptionIndexList": [
+                    //        "160.000.764.737.300.50",
+                    //        "160.100.000.000.012.06",
+                    //        "160.100.000.000.004.30",
+                    //        "160.100.000.000.014.97",
+                    //        "160.100.000.000.006.24"
+                    //      ],
+                    //      "supplyOptionsType": "delivery",
+                    //      "messageId": "bad828ad-75fa-4eea-aea5-a3587d95ce4a"
+                    //    }`);
+                    //log(`selection confirmation: ${confirmation}`);
                 } catch (e) {
                     log(`error : ${e}`);
                 }
@@ -169,7 +197,9 @@ function App(): React.JSX.Element {
         SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback);
 
         // start the CardLink establishment
-        SdkModule.startCardLink(`https://mock.test.epotheke.com/cardlink?token=${uuid.v4()}`);
+        //SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink?token=${uuid.v4()}`, `TENANTTOKEN`);
+        //When the environment allows unauthenticated connection, TENANTTOKEN can be null
+        SdkModule.startCardLink(`https://mock.test.epotheke.com/cardlink?token=${uuid.v4()}`, null);
     }
 
     const log = (msg: string) => {

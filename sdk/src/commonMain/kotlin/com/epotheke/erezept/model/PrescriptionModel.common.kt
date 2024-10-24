@@ -22,6 +22,7 @@
 
 package com.epotheke.erezept.model
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -395,6 +396,7 @@ val prescriptionModule = SerializersModule {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 val prescriptionJsonFormatter = Json {
     serializersModule = prescriptionModule;
     classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS;
@@ -408,11 +410,13 @@ object ByteArrayAsBase64Serializer : KSerializer<ByteArray> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ByteArrayAsBase64Serializer", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: ByteArray) {
-        val base64Encoded = Base64.encode(value).trimEnd('=')
-        encoder.encodeString(base64Encoded)
+        encoder.encodeString(
+            Base64.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL).encode(value)
+        )
     }
 
     override fun deserialize(decoder: Decoder): ByteArray {
-        return Base64.decode(decoder.decodeString())
+        return Base64.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
+            .decode(decoder.decodeString())
     }
 }
