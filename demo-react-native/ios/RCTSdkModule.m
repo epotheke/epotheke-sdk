@@ -52,7 +52,7 @@
 
     if ([error conformsToProtocol:@protocol(ServiceErrorResponse)]) {
         RCTLogInfo(@"error msg: %@", [error getErrorMessage]);
-        self.onSdkErrorCB(@[ @"Error",  [error getErrorMessage] ]);
+        self.onSdkErrorCB(@[ @"INTERNAL_ERROR",  [error getErrorMessage] ]);
     }
 }
 @end
@@ -67,19 +67,25 @@
 - (void)onAuthenticationCompletionP0:(id<ActivationResult> _Nullable)p0
                    cardLinkProtocols:(nonnull NSSet<id<EpothekeCardLinkProtocol>> *)cardLinkProtocols {
     RCTLogInfo(@"onAuthComp");
-    if([p0 getResultCode] == 0){
+    if([p0 getResultCode] == kActivationResultCodeOK){
         if (self.onAuthenticationCompletionCB) {
             for (NSObject *p in cardLinkProtocols) {
                 if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
                     // found prescriptionProto
                     self.prescriptionProtocol = p;
-                    self.onAuthenticationCompletionCB(@[ [NSNull null], @"PrescriptionProtocol available" ] );
+                    self.onAuthenticationCompletionCB(@[ [NSNull null], [NSNull null] ] );
                     break;
                 }
             }
         }
     } else {
-        self.onAuthenticationCompletionCB(@[ @"Authentication failed", [p0 getErrorMessage] ] );
+        if ([[p0 getErrorMessage] rangeOfString:@"==>"].location == NSNotFound){
+            self.onAuthenticationCompletionCB(@[ @"CLIENT_ERROR", [p0 getErrorMessage] ] );
+        } else {
+            NSString *code = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][0];
+            NSString *msg = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][1];
+            self.onAuthenticationCompletionCB(@[ code, msg ] );
+        }
     }
 }
 
