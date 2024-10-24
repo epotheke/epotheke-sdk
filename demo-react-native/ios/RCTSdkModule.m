@@ -167,6 +167,12 @@
               [enterCan confirmPassword:input];
           }
         };
+        if(!resultCode){
+            resultCode = @"UNKNOWN_ERROR";
+        }
+        if(!errorMessage){
+            errorMessage = @"No detailed message available.";
+        }
         self.onCanRetryCB(@[resultCode, errorMessage]);
     }
 }
@@ -192,6 +198,12 @@
               [enterPhoneNumber confirmText:input];
           }
         };
+        if(!resultCode){
+            resultCode = @"UNKNOWN_ERROR";
+        }
+        if(!errorMessage){
+            errorMessage = @"No detailed message available.";
+        }
         self.onPhoneNumberRetryCB(@[resultCode,errorMessage]);
     }
 }
@@ -217,6 +229,12 @@
               [smsCode confirmPassword:input];
           }
         };
+        if(!resultCode){
+            resultCode = @"UNKNOWN_ERROR";
+        }
+        if(!errorMessage){
+            errorMessage = @"No detailed message available.";
+        }
         self.onSmsCodeRetryCB(@[resultCode, errorMessage]);
     }
 }
