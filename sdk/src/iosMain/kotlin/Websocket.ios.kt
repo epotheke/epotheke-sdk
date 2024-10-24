@@ -89,10 +89,12 @@ class WebsocketIos(
         try {
             commonWS.connect()
         } catch (e: Exception) {
-            errorHandler.hdl(
-                SockError("Error during WS connect: ${e.message}. Is tenantToken valid?")
-                as NSObject
-            )
+
+            logger.warn(e) {"Websocket connection failed."}
+//            errorHandler.hdl(
+//                SockError("Error during WS connect: ${e.message}. Is tenantToken valid?")
+//                as NSObject
+//            )
         }
     }
 
@@ -101,10 +103,11 @@ class WebsocketIos(
         try {
             commonWS.close(statusCode, withReason)
         } catch (e: Exception) {
-            errorHandler.hdl(
-                SockError("Error during WS close: ${e.message}.")
-                    as NSObject
-            )
+            logger.warn(e) {"Websocket close failed."}
+            //errorHandler.hdl(
+            //    SockError("Error during WS close: ${e.message}.")
+            //        as NSObject
+            //)
         }
     }
 
@@ -115,10 +118,11 @@ class WebsocketIos(
                 commonWS.send(data)
             }
         } catch (e: Exception) {
-            errorHandler.hdl(
-                SockError("Error during WS send: ${e.message}.")
-                    as NSObject
-            )
+            logger.warn(e) {"Websocket close failed."}
+            //errorHandler.hdl(
+            //    SockError("Error during WS send: ${e.message}.")
+            //        as NSObject
+            //)
         }
     }
 
