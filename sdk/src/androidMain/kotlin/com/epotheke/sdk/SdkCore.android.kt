@@ -131,6 +131,7 @@ class SdkCore(
                 nfcIntentHelper?.disableNFCDispatch()
                 needNfc = false
                 cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                destroyOecContext()
             }
         }
     }
