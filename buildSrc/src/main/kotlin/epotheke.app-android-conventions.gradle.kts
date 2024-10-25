@@ -4,6 +4,7 @@ val androidMinSdk: String by project
 plugins {
     id("epotheke.kotlin-conventions")
     id("com.android.application")
+    id("org.jetbrains.compose")
 }
 
 kotlin {

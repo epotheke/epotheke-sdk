@@ -119,13 +119,39 @@ struct ContentView: View {
             }
             self.v.showCanAlert = true
         }
+	func onCanRetry(
+            _ enterCan: (any NSObjectProtocol & ConfirmPasswordOperationProtocol)!,
+            withResultCode resultCode: String!,
+            withErrorMessage errorMessage: String!
+        ) {
+            print("onCanRetry")
+            self.v.cb = {
+                print("can retry due to")
+                print(resultCode)
+                enterCan.confirmPassword(self.v.$can.wrappedValue)
+            }
+            self.v.showCanAlert = true
 
-        func onPhoneNumberRequest(_ enterPhoneNumber: (NSObjectProtocol & ConfirmTextOperationProtocol)!) {
+       }
+       func onPhoneNumberRequest(_ enterPhoneNumber: (NSObjectProtocol & ConfirmTextOperationProtocol)!) {
             print("onPhoneNumberRequest")
             self.v.cb = {
                 enterPhoneNumber.confirmText(self.v.$nbr.wrappedValue)
             }
             self.v.showNumberAlert = true
+        }
+        func onPhoneNumberRetry(
+            _ enterPhoneNumber: (any NSObjectProtocol & ConfirmTextOperationProtocol)!,
+            withResultCode resultCode: String!,
+            withErrorMessage errorMessage: String!
+        ) {
+            print("onPhoneRetry due to")
+	    print(resultCode)
+            self.v.cb = {
+                enterPhoneNumber.confirmText(self.v.$nbr.wrappedValue)
+            }
+            self.v.showNumberAlert = true
+
         }
 
         func onSmsCodeRequest(_ smsCode: (NSObjectProtocol & ConfirmPasswordOperationProtocol)!) {
@@ -136,6 +162,18 @@ struct ContentView: View {
             self.v.showTanAlert = true
         }
 
+        func onSmsCodeRetry(
+            _ smsCode: (any NSObjectProtocol & ConfirmPasswordOperationProtocol)!,
+            withResultCode resultCode: String!,
+            withErrorMessage errorMessage: String!
+        ) {
+            print("onSmsCodeRetry due to")
+	    print(resultCode)
+            self.v.cb = {
+                smsCode.confirmPassword(self.v.$tan.wrappedValue)
+            }
+            self.v.showTanAlert = true
+        }
         func requestCardInsertion() {
             print("requestCardInsertion")
         }
