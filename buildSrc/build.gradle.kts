@@ -9,6 +9,7 @@ dependencies {
     implementation(libs.plugins.kotlinCocoapods)
     implementation(libs.plugins.androidLibrary)
     implementation(libs.plugins.androidApplication)
+    implementation(libs.plugins.jetbrainsCompose)
 
     implementation(libs.plugins.kotlinJvm)
     implementation(libs.plugins.kotlinAllOpen)
