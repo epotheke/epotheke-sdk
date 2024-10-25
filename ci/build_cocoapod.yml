@@ -11,6 +11,7 @@ build-cocoapod:
       policy: pull-push
     script:
         - !reference [.versioning, script]
+        - source ~/.zshrc
         - pod repo update
         - ./gradlew podPublishReleaseXCFramework
         - mv sdk/build/cocoapods/publish/release/epotheke.xcframework epotheke.xcframework
