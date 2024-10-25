@@ -163,7 +163,7 @@ class SdkActivityImp : SdkActivity() {
          * Called if something went wrong in the last step.
          * Information can be gathered by errCode and errMsg.
          */
-        override fun onCanRetry(confirmPasswordOperation: ConfirmPasswordOperation, errCode: CardLinkErrorCodes.ClientCodes?, errMessage: String?) {
+        override fun onCanRetry(confirmPasswordOperation: ConfirmPasswordOperation, errCode: String?, errMessage: String?) {
             LOG.debug { "epotheke implementation onCanRetry, code: $errCode - msg: $errMessage" }
             getValueFromUser("Problem with CAN. Please try again and provide CAN", "000000") { value ->
                 confirmPasswordOperation.confirmPassword(value)
@@ -195,7 +195,7 @@ class SdkActivityImp : SdkActivity() {
          * Called if something went wrong in the last step.
          * Information can be gathered by errCode and errMsg.
          */
-        override fun onPhoneNumberRetry(confirmTextOperation: ConfirmTextOperation, errCode: CardLinkErrorCodes.CardLinkCodes?, errMsg: String?) {
+        override fun onPhoneNumberRetry(confirmTextOperation: ConfirmTextOperation, errCode: String?, errMsg: String?) {
             LOG.debug { "epotheke implementation onPhoneRetry, code: $errCode - msg: $errMsg" }
             getValueFromUser(
                 "Problem with phone number. Please try again",
@@ -227,7 +227,7 @@ class SdkActivityImp : SdkActivity() {
          * Called if something went wrong in the last step.
          * Information can be gathered by errCode and errMsg.
          */
-        override fun onSmsCodeRetry(confirmPasswordOperation: ConfirmPasswordOperation, errCode: CardLinkErrorCodes.CardLinkCodes?, errMsg: String?) {
+        override fun onSmsCodeRetry(confirmPasswordOperation: ConfirmPasswordOperation, errCode: String?, errMsg: String?) {
             LOG.debug { "epotheke implementation onSmsCodeRetry, code: $errCode - msg: $errMsg" }
             getValueFromUser(
                 "Problem with TAN. Please try again",
