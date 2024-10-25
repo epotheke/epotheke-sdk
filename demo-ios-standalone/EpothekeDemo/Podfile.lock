@@ -1,10 +1,10 @@
 PODS:
-  - epotheke-sdk (1.1.8):
-    - open-ecard (= 2.3.2)
-  - open-ecard (2.3.2)
+  - epotheke-sdk (1.1.11):
+    - open-ecard (= 2.3.5)
+  - open-ecard (2.3.5)
 
 DEPENDENCIES:
-  - epotheke-sdk (>= 1.1.8)
+  - epotheke-sdk (>= 1.1.11)
 
 SPEC REPOS:
   trunk:
@@ -12,9 +12,9 @@ SPEC REPOS:
     - open-ecard
 
 SPEC CHECKSUMS:
-  epotheke-sdk: f37e0380badbb9e741997d472e317dc609c9503f
-  open-ecard: bb3ef1579f9a528f3334ba60f74cc6c0dcfaaf4d
+  epotheke-sdk: c716b42a8e1f588a14dac7471023036f7e911c4f
+  open-ecard: a50e8331e144cfb53528d31ad65bfba7f3081303
 
-PODFILE CHECKSUM: 7d8a9e97eb60acb478c64a3596c7aec72e3473d1
+PODFILE CHECKSUM: 49a1d3d8c6674deac1972d55580db8156171f8a8
 
 COCOAPODS: 1.15.2
