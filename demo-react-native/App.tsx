@@ -137,7 +137,7 @@ function App(): React.JSX.Element {
           Called if the sdk runs into an error.
         */
         let sdkErrorCB = (code: String | undefined, msg: String | undefined) => {
-            log(`sdkError: ${err} - msg: ${msg}`);
+            log(`sdkError: ${code} - msg: ${msg}`);
             SdkModule.set_sdkErrorCB(sdkErrorCB);
         };
         SdkModule.set_sdkErrorCB(sdkErrorCB);
@@ -161,8 +161,9 @@ function App(): React.JSX.Element {
           become functional and can be called.
         */
         let onAuthenticationCallback = async (code: String | undefined, msg: String | undefined) => {
-            if(err){
-                log(`onAuthenticationCompletion error: ${err} - ${msg}`);
+            log(`authcallback`);
+            if(code){
+                log(`onAuthenticationCompletion error: ${code} - ${msg}`);
             } else {
                 try {
                     log(`success`);
