@@ -50,6 +50,7 @@ class SdkCore(
     private var nfcIntentHelper: NfcIntentHelper? = null
     private var needNfc = false
     private var activation: ActivationController? = null
+    private var preventAuthCallbackOnFail = false
 
 
     fun onPause() {
@@ -72,7 +73,7 @@ class SdkCore(
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(websocket, wsListener)
                 activation = actSource.cardLinkFactory().create(
-                    WebsocketAndroid(websocket),
+                    WebsocketAndroid(websocket, overridingSdkErrorHandler(sdkErrorHandler)),
                     overridingControllerCallback(protocols),
                     OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
                     WebsocketListenerAndroid(wsListener)
@@ -127,13 +128,25 @@ class SdkCore(
         }
     }
 
+    private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler): SdkErrorHandler {
+       return object : SdkErrorHandler {
+           override fun onError(error: ServiceErrorResponse) {
+               //prevent onAuthCompletion since we don't want two callbacks if process is already failed
+               preventAuthCallbackOnFail = true
+               sdkErrorHandler.onError(error)
+           }
+       }
+    }
+
     private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>): ControllerCallback {
         return object : ControllerCallback {
             override fun onStarted() = cardLinkControllerCallback.onStarted()
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
                 nfcIntentHelper?.disableNFCDispatch()
                 needNfc = false
-                cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                if(!preventAuthCallbackOnFail) {
+                    cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                }
                 destroyOecContext()
             }
         }
