@@ -39,6 +39,9 @@ function App(): React.JSX.Element {
     // This is to manage TextInput State
     const [inputValue, setInputValue] = useState('');
 
+    // This is to toggle whether or not a hard-coded tenantToken is send as auth token
+    const [useTenantToken, setUseTenantToken] = useState(false);
+
     const toggleModalVisibility = () => {
         setModalVisible(!isModalVisible);
     };
@@ -206,7 +209,13 @@ function App(): React.JSX.Element {
         // start the CardLink establishment
         //SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink?token=${uuid.v4()}`, `TENANTTOKEN`);
         //When the environment allows unauthenticated connection, TENANTTOKEN can be null
-        SdkModule.startCardLink(`https://mock.test.epotheke.com/cardlink?token=${uuid.v4()}`, null);
+        const tenantToken = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
+
+        if(useTenantToken){
+            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, tenantToken);
+        }else {
+            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, null);
+        }
     }
 
     const log = (msg: string) => {
@@ -218,7 +227,16 @@ function App(): React.JSX.Element {
         <SafeAreaView style={styles.view}>
             <ScrollView style={styles.view} contentInsetAdjustmentBehavior="automatic">
                 <View style={styles.view}>
+                    <View style={styles.space} style={styles.button}/>
                     <Button title="EPOTHEKE" onPress={doCL} />
+                    <View style={styles.space} />
+                    <Text>Use tenantToken:</Text>
+                    <CheckBox
+                        disabled={false}
+                        value={useTenantToken}
+                        onValueChange={(v) => setUseTenantToken(v)}
+                    />
+                    <View style={styles.space} />
                     <Text>{status}</Text>
                     <Modal
                         animationType="slide"
@@ -297,6 +315,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderWidth: 1,
         marginBottom: 8,
+    },
+    button: {
+      margin: 20,
+    },
+    space: {
+      width: 20,
+      height: 20,
     },
 });
 
