@@ -49,6 +49,7 @@ class SdkCore(
     private var ctxManager: AndroidContextManager? = null
     private var nfcIntentHelper: NfcIntentHelper? = null
     private var needNfc = false
+    private var activation: ActivationController? = null
 
 
     fun onPause() {
@@ -70,7 +71,7 @@ class SdkCore(
                 val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(websocket, wsListener)
-                actSource.cardLinkFactory().create(
+                activation = actSource.cardLinkFactory().create(
                     WebsocketAndroid(websocket),
                     overridingControllerCallback(protocols),
                     OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
@@ -87,6 +88,7 @@ class SdkCore(
     }
 
     fun destroyOecContext() {
+        activation?.cancelOngoingAuthentication()
         ctxManager?.terminateContext(object : StopServiceHandler {
             override fun onSuccess() {
                 // do nothing
@@ -104,6 +106,7 @@ class SdkCore(
 
     private fun cleanupOecInstances() {
         ctxManager = null
+        activation = null
     }
 
     @SuppressLint("NewApi")

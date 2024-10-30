@@ -21,6 +21,8 @@ import {
     Appearance,
 } from 'react-native';
 
+import CheckBox from 'expo-checkbox';
+
 import uuid from 'react-native-uuid';
 
 const {SdkModule} = NativeModules;
@@ -41,6 +43,10 @@ function App(): React.JSX.Element {
         setModalVisible(!isModalVisible);
     };
 
+    async function abortCL() {
+        SdkModule.abortCardLink()
+        toggleModalVisibility();
+    }
     async function doCL() {
         /*
           Register callbacks for CardLink interaction.
@@ -236,6 +242,7 @@ function App(): React.JSX.Element {
                                         toggleModalVisibility();
                                     }}
                                 />
+                                <Button title="Abort" onPress={abortCL} />
                             </View>
                         </View>
                     </Modal>
