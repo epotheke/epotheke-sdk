@@ -42,6 +42,8 @@ function App(): React.JSX.Element {
     // This is to toggle whether or not a hard-coded tenantToken is send as auth token
     const [useTenantToken, setUseTenantToken] = useState(false);
     const [useInvalidTenantToken, setUseInvalidTenantToken ] = useState(false);
+    const [useRevokedTenantToken, setUseRevokedTenantToken ] = useState(false);
+    const [useExpiredTenantToken, setUseExpiredTenantToken ] = useState(false);
 
     //Use staging default dev
     const [useStaging, setUseStaging] = useState(false);
@@ -215,9 +217,13 @@ function App(): React.JSX.Element {
 
         const tenantTokenDEV = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
         const tenantTokenDEV_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
+        const tenantTokenDEV_revoked = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY1NzgxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzc4MSwianRpIjoiYTkxNGQxMGItYmI0NS00NDcyLTg0NWUtYzZiNTNiOTNiNjhmIn0.en-cBlvd5jO0Nz2kuj7dPNFH5xlzPd9TLQZLjxdBkiSfRlV9-i060zO3emUhN8tgSU5ZmwlcGF1sRJLbwJSyPg"
+        const tenantTokenDEV_expired = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY2MDc5LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjM3OSwianRpIjoiNTk3MDFkMTktMjEwNC00OGI0LWI2ZDQtOWQ0ZDhmNmIxZmVjIn0.9Wqj4YMAV18Lfm6v5SdcI8dlGAuqA8TsAuTyDXt5IBKEZaI1OWBq_RdxwP78nD_9H3eX8VgL_9EJ5VpvEWyn4g"
 
         const tenantTokenSTAGING = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
         const tenantTokenSTAGING_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
+        const tenantTokenSTAGING_revoked = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY1ODk3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzg5NywianRpIjoiMTJiZWYxMmYtMDYyYS00NTdlLWJmNzAtOGZkZGM5ZDFkYzg1In0.IkrGzjESTE0tCPgqoAklXHKW4jYfzcUDtMR8h97NtJw5X0jYfy_l_K_jhFIXDHav8LhJ1esqwVb4yWOvqmY91Q"
+        const tenantTokenSTAGING_expired = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY2MjMxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjUzMSwianRpIjoiMmQ0Mzc5MDEtYWYwNC00MDQ2LWE0M2UtOWEwNjUxNDJhZDVjIn0._pnFl3myeBhYmlRbIU6dIBqG685IyUdbo8aOUrDqbyLZVQtqPT1t179TIcRfUYBcWjGekxiZpv_CMde2BXEDpA"
 
         if(useTenantToken){
             if(useStaging){
@@ -230,6 +236,18 @@ function App(): React.JSX.Element {
                 SdkModule.startCardLink(envUrl, tenantTokenSTAGING_invalid);
             } else {
                 SdkModule.startCardLink(envUrl, tenantTokenDEV_invalid);
+            }
+        } else if (useRevokedTenantToken){
+            if(useStaging){
+               SdkModule.startCardLink(envUrl, tenantTokenSTAGING_revoked);
+            } else {
+               SdkModule.startCardLink(envUrl, tenantTokenDEV_revoked);
+            }
+        } else if (useExpiredTenantToken){
+            if(useStaging){
+               SdkModule.startCardLink(envUrl, tenantTokenSTAGING_expired);
+            } else {
+               SdkModule.startCardLink(envUrl, tenantTokenDEV_expired);
             }
         } else {
             SdkModule.startCardLink(envUrl, null);
@@ -251,6 +269,7 @@ function App(): React.JSX.Element {
                     <View style={styles.space} />
                     <Text>Switch to staging environment (deafult dev):</Text>
                     <CheckBox
+                        style={styles.cb}
                         disabled={false}
                         value={useStaging}
                         onValueChange={(v) => {
@@ -262,28 +281,63 @@ function App(): React.JSX.Element {
                             }
                         }}
                     />
-                    <Text>Use tenantToken:</Text>
+                    <View style={styles.space} />
+                    <Text>Use valid tenantToken:</Text>
                     <CheckBox
+                        style={styles.cb}
                         disabled={false}
                         value={useTenantToken}
                         onValueChange={(v) => {
                             setUseTenantToken(v)
                             if(v){
                                 setUseInvalidTenantToken(!v)
+                                setUseRevokedTenantToken(!v)
+                                setUseExpiredTenantToken(!v)
                             }
                         }}
                     />
                     <Text>Invalid tenantToken:</Text>
                     <CheckBox
+                        style={styles.cb}
                         disabled={false}
                         value={useInvalidTenantToken}
                         onValueChange={(v) => {
                             setUseInvalidTenantToken(v)
                             if(v){
                                 setUseTenantToken(!v)
+                                setUseRevokedTenantToken(!v)
+                                setUseExpiredTenantToken(!v)
                             }
                         }}
                     />
+                    <Text>Revoked tenantToken:</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={useRevokedTenantToken}
+                        onValueChange={(v) => {
+                            setUseRevokedTenantToken(v)
+                            if(v){
+                                setUseTenantToken(!v)
+                                setUseInvalidTenantToken(!v)
+                                setUseExpiredTenantToken(!v)
+                            }
+                        }}
+                    />
+                     <Text>Expired tenantToken:</Text>
+                     <CheckBox
+                         style={styles.cb}
+                         disabled={false}
+                         value={useExpiredTenantToken}
+                         onValueChange={(v) => {
+                             setUseExpiredTenantToken(v)
+                             if(v){
+                                 setUseTenantToken(!v)
+                                 setUseInvalidTenantToken(!v)
+                                 setUseRevokedTenantToken(!v)
+                             }
+                         }}
+                     />
                     <View style={styles.space} />
                     <Text>{status}</Text>
                     <Modal
@@ -371,6 +425,9 @@ const styles = StyleSheet.create({
       width: 20,
       height: 20,
     },
+    cb: {
+      marginLeft: 20,
+    }
 });
 
 export default App;
