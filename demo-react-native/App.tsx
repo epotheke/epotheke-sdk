@@ -41,7 +41,7 @@ function App(): React.JSX.Element {
 
     // This is to toggle whether or not a hard-coded tenantToken is send as auth token
     const [useTenantToken, setUseTenantToken] = useState(false);
-
+    const [useInvalidTenantToken, setUseInvalidTenantToken ] = useState(false);
     const toggleModalVisibility = () => {
         setModalVisible(!isModalVisible);
     };
@@ -172,10 +172,10 @@ function App(): React.JSX.Element {
         let onAuthenticationCallback = async (code: String | undefined, msg: String | undefined) => {
             log(`authcallback`);
             if(code){
-                log(`onAuthenticationCompletion error: ${code} - ${msg}`);
+                log(`onAuthenticationCompletion status: ${code} ${msg}`);
             } else {
                 try {
-                    log(`success`);
+                    log(`onAuthenticationCompletion successfull`);
 
                     //get available prescriptions
                     let availPrescriptions = await SdkModule.getPrescriptions();
@@ -209,11 +209,14 @@ function App(): React.JSX.Element {
         // start the CardLink establishment
         //SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink?token=${uuid.v4()}`, `TENANTTOKEN`);
         //When the environment allows unauthenticated connection, TENANTTOKEN can be null
-        const tenantToken = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
+        const tenantTokenDEV = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
+        const tenantTokenDEV_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
 
         if(useTenantToken){
-            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, tenantToken);
-        }else {
+            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, tenantTokenDEV);
+        } else if (useInvalidTenantToken){
+            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, tenantTokenDEV_invalid);
+        } else {
             SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, null);
         }
     }
@@ -234,7 +237,23 @@ function App(): React.JSX.Element {
                     <CheckBox
                         disabled={false}
                         value={useTenantToken}
-                        onValueChange={(v) => setUseTenantToken(v)}
+                        onValueChange={(v) => {
+                            setUseTenantToken(v)
+                            if(v){
+                                setUseInvalidTenantToken(!v)
+                            }
+                        }}
+                    />
+                    <Text>Invalid tenantToken:</Text>
+                    <CheckBox
+                        disabled={false}
+                        value={useInvalidTenantToken}
+                        onValueChange={(v) => {
+                            setUseInvalidTenantToken(v)
+                            if(v){
+                                setUseTenantToken(!v)
+                            }
+                        }}
                     />
                     <View style={styles.space} />
                     <Text>{status}</Text>
