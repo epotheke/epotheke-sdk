@@ -49,6 +49,8 @@ class SdkCore(
     private var ctxManager: AndroidContextManager? = null
     private var nfcIntentHelper: NfcIntentHelper? = null
     private var needNfc = false
+    private var activation: ActivationController? = null
+    private var preventAuthCallbackOnFail = false
 
 
     fun onPause() {
@@ -70,8 +72,8 @@ class SdkCore(
                 val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(websocket, wsListener)
-                actSource.cardLinkFactory().create(
-                    WebsocketAndroid(websocket),
+                activation = actSource.cardLinkFactory().create(
+                    WebsocketAndroid(websocket, overridingSdkErrorHandler(sdkErrorHandler)),
                     overridingControllerCallback(protocols),
                     OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
                     WebsocketListenerAndroid(wsListener)
@@ -87,6 +89,7 @@ class SdkCore(
     }
 
     fun destroyOecContext() {
+        activation?.cancelOngoingAuthentication()
         ctxManager?.terminateContext(object : StopServiceHandler {
             override fun onSuccess() {
                 // do nothing
@@ -104,6 +107,7 @@ class SdkCore(
 
     private fun cleanupOecInstances() {
         ctxManager = null
+        activation = null
     }
 
     @SuppressLint("NewApi")
@@ -124,13 +128,25 @@ class SdkCore(
         }
     }
 
+    private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler): SdkErrorHandler {
+       return object : SdkErrorHandler {
+           override fun onError(error: ServiceErrorResponse) {
+               //prevent onAuthCompletion since we don't want two callbacks if process is already failed
+               preventAuthCallbackOnFail = true
+               sdkErrorHandler.onError(error)
+           }
+       }
+    }
+
     private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>): ControllerCallback {
         return object : ControllerCallback {
             override fun onStarted() = cardLinkControllerCallback.onStarted()
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
                 nfcIntentHelper?.disableNFCDispatch()
                 needNfc = false
-                cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                if(!preventAuthCallbackOnFail) {
+                    cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                }
                 destroyOecContext()
             }
         }

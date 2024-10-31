@@ -50,6 +50,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     }
 
     private var erezeptProtocol: PrescriptionProtocol? = null
+    private var ws_sessionId: String? = null
 
     @ReactMethod
     fun getPrescriptions(p: Promise) {
@@ -93,6 +94,11 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    @ReactMethod
+    fun getWsSessionId(p: Promise) {
+        p.resolve(ws_sessionId)
+    }
+
     private val cardLinkControllerCallback = object : CardLinkControllerCallback {
         override fun onAuthenticationCompletion(
             p0: ActivationResult?,
@@ -100,11 +106,15 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         ) {
             logger.debug { "onAuthenticationCompletion ${p0?.errorMessage}" }
             erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
+            ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
 
             //hotfix
             if(p0?.errorMessage?.contains("==>") == true){
                 var minor = p0?.errorMessage?.split("==>")?.get(0)?.trim()
                 var msg = p0?.errorMessage?.split("==>")?.get(1)?.trim()
+                if(minor?.contains("invalidSlotHandle") == true){
+                    minor="CARD_REMOVED"
+                }
                 onAuthenticationCompletionCB?.invoke(minor, msg)
             } else if (p0?.errorMessage != null){
                 onAuthenticationCompletionCB?.invoke(p0?.resultCode?.name, p0?.errorMessage)
@@ -308,6 +318,13 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     }
 
     var epothekeInstance : SdkCore? = null
+    @ReactMethod
+    fun abortCardLink() {
+        logger.debug { "SdkModule abort called $epothekeInstance" }
+        epothekeInstance?.let {
+            it.destroyOecContext()
+        }
+    }
     @ReactMethod
     fun startCardLink(cardLinkUrl: String, tenantToken: String?) {
         logger.debug { "SdkModule called with url : $cardLinkUrl" }

@@ -27,11 +27,19 @@ import WebsocketListenerCommon
 import WiredWSListener
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
-import org.openecard.mobile.activation.Websocket
-import org.openecard.mobile.activation.WebsocketException
-import org.openecard.mobile.activation.WebsocketListener
+import org.openecard.mobile.activation.*
 
 private val logger = KotlinLogging.logger {}
+
+class SockError(private val status: ServiceErrorCode, private val errMessage: String?) : ServiceErrorResponse {
+    override fun getErrorMessage(): String? {
+        return errMessage
+    }
+
+    override fun getStatusCode(): ServiceErrorCode {
+        return status
+    }
+}
 
 private class WiredWSListenerImplementation(
     private val ws: WebsocketAndroid,
@@ -54,6 +62,7 @@ class WebsocketListenerAndroid(private val wsListenerCommon: WebsocketListenerCo
 
 class WebsocketAndroid(
     private val commonWS: WebsocketCommon,
+    private val sdkErrorHandler: SdkErrorHandler,
 ): Websocket {
 
     override fun setListener(wsListener: WebsocketListener) =
@@ -72,7 +81,11 @@ class WebsocketAndroid(
         try {
             commonWS.connect()
         } catch (e: Exception) {
-            throw WebsocketException(e.message ?: "Unknown error", e)
+//            throw WebsocketException(e.message ?: "Unknown error", e)
+            sdkErrorHandler.onError(SockError(
+                if (e.message?.contains("401") == true) ServiceErrorCode.NOT_AUTHORIZED else  ServiceErrorCode.NO_CONNECTION,
+                e.message
+            ))
         }
     }
 
@@ -81,7 +94,8 @@ class WebsocketAndroid(
         try {
             commonWS.close(statusCode, reason)
         } catch (e: Exception) {
-            throw WebsocketException(e.message ?: "Unknown error", e)
+            //throw WebsocketException(e.message ?: "Unknown error", e)
+            sdkErrorHandler.onError(SockError(ServiceErrorCode.LOST_CONNECTION, e.message))
         }
     }
 
@@ -91,7 +105,8 @@ class WebsocketAndroid(
         try {
             commonWS.send(data)
         } catch (e: Exception) {
-            throw WebsocketException(e.message ?: "Unknown error", e)
+            //throw WebsocketException(e.message ?: "Unknown error", e)
+            sdkErrorHandler.onError(SockError(ServiceErrorCode.LOST_CONNECTION, e.message))
         }
     }
 }

@@ -21,6 +21,8 @@ import {
     Appearance,
 } from 'react-native';
 
+import CheckBox from 'expo-checkbox';
+
 import uuid from 'react-native-uuid';
 
 const {SdkModule} = NativeModules;
@@ -37,10 +39,23 @@ function App(): React.JSX.Element {
     // This is to manage TextInput State
     const [inputValue, setInputValue] = useState('');
 
+    // This is to toggle whether or not a hard-coded tenantToken is send as auth token
+    const [useTenantToken, setUseTenantToken] = useState(false);
+    const [useInvalidTenantToken, setUseInvalidTenantToken ] = useState(false);
+    const [useRevokedTenantToken, setUseRevokedTenantToken ] = useState(false);
+    const [useExpiredTenantToken, setUseExpiredTenantToken ] = useState(false);
+
+    //Use staging default dev
+    const [useStaging, setUseStaging] = useState(false);
+    const [envUrl, setEnvUrl] = useState(`https://service.dev.epotheke.com/cardlink`)
     const toggleModalVisibility = () => {
         setModalVisible(!isModalVisible);
     };
 
+    async function abortCL() {
+        SdkModule.abortCardLink()
+        toggleModalVisibility();
+    }
     async function doCL() {
         /*
           Register callbacks for CardLink interaction.
@@ -100,7 +115,7 @@ function App(): React.JSX.Element {
             log('onPhoneNumberRequest');
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
             setmodalTxt('Provide phone number');
-            setInputValue('015111122233');
+            setInputValue('+49');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
@@ -109,7 +124,7 @@ function App(): React.JSX.Element {
             log('onPhoneNumberRetryCB');
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
             setmodalTxt('Retry Number due to: ' + code + ' - ' + msg);
-            setInputValue('015111122233');
+            setInputValue('+49');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
@@ -118,7 +133,7 @@ function App(): React.JSX.Element {
             log('onSmsCodeRequest');
             SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB);
             setmodalTxt('Provide TAN');
-            setInputValue('123456789');
+            setInputValue('');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB);
@@ -127,7 +142,7 @@ function App(): React.JSX.Element {
             log('onSmsCodeRetryCB');
             SdkModule.set_cardlinkInteractionCB_onSmsCodeRetry(onSmsCodeRetryCB);
             setmodalTxt('Retry TAN due to: ' + code + ' - ' + msg);
-            setInputValue('123456789');
+            setInputValue('');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onSmsCodeRetry(onSmsCodeRetryCB);
@@ -136,8 +151,8 @@ function App(): React.JSX.Element {
         /*
           Called if the sdk runs into an error.
         */
-        let sdkErrorCB = (err: any, msg: any) => {
-            log(`sdkError: ${err} - msg: ${msg}`);
+        let sdkErrorCB = (code: String | undefined, msg: String | undefined) => {
+            log(`sdkError: ${code} - msg: ${msg}`);
             SdkModule.set_sdkErrorCB(sdkErrorCB);
         };
         SdkModule.set_sdkErrorCB(sdkErrorCB);
@@ -160,15 +175,17 @@ function App(): React.JSX.Element {
             SdkModule.selectPrescriptions();
           become functional and can be called.
         */
-        let onAuthenticationCallback = async (err: any, msg: any) => {
-            if(err){
-                log(`onAuthenticationCompletion error: ${err} - ${msg}`);
+        let onAuthenticationCallback = async (code: String | undefined, msg: String | undefined) => {
+            log(`authcallback`);
+            if(code){
+                log(`onAuthenticationCompletion status: ${code} ${msg}`);
             } else {
                 try {
-                    log(`success`);
+                    log(`onAuthenticationCompletion successfull`);
 
                     //get available prescriptions
                     let availPrescriptions = await SdkModule.getPrescriptions();
+                    log(`wsSessionID: ${await SdkModule.getWsSessionId()}`);
                     log(`prescriptions: ${availPrescriptions}`);
 
                     ////example for a selection
@@ -197,9 +214,66 @@ function App(): React.JSX.Element {
         SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback);
 
         // start the CardLink establishment
-        //SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink?token=${uuid.v4()}`, `TENANTTOKEN`);
         //When the environment allows unauthenticated connection, TENANTTOKEN can be null
-        SdkModule.startCardLink(`https://mock.test.epotheke.com/cardlink?token=${uuid.v4()}`, null);
+
+        /*
+        The cardlink urls are following the scheme:
+        `https://service.ENV.epotheke.com/cardlink`
+        ENV can be dev, staging, prod
+
+        After a successfull authentication one can also call
+        await SdkModule.getWsSessionId()
+        which delivers a connection token, and can append this to the cardlink url as a query parameter.
+        `https://service.ENV.epotheke.com/cardlink?token=TOKEN`
+
+        This allows to reuse a once validated session, which means that for 15 minutes a new connection will not require
+        a TAN validation. Technically the onPhoneNumberRequest and onSmsCodeRequest callbacks will not be called from the SDK
+        After the timeout the SMS validation is again active but without the need to reenter the phonenumber.
+
+        A second consequence of reusing sessions is, that one can register up to ten eGKs within one session.
+        And get rescriptions for all of them.
+
+        Tokens which were not returned by an earlier successfull session will be ignored.
+
+        */
+
+        const tenantTokenDEV = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
+        const tenantTokenDEV_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
+        const tenantTokenDEV_revoked = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY1NzgxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzc4MSwianRpIjoiYTkxNGQxMGItYmI0NS00NDcyLTg0NWUtYzZiNTNiOTNiNjhmIn0.en-cBlvd5jO0Nz2kuj7dPNFH5xlzPd9TLQZLjxdBkiSfRlV9-i060zO3emUhN8tgSU5ZmwlcGF1sRJLbwJSyPg"
+        const tenantTokenDEV_expired = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY2MDc5LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjM3OSwianRpIjoiNTk3MDFkMTktMjEwNC00OGI0LWI2ZDQtOWQ0ZDhmNmIxZmVjIn0.9Wqj4YMAV18Lfm6v5SdcI8dlGAuqA8TsAuTyDXt5IBKEZaI1OWBq_RdxwP78nD_9H3eX8VgL_9EJ5VpvEWyn4g"
+
+        const tenantTokenSTAGING = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
+        const tenantTokenSTAGING_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
+        const tenantTokenSTAGING_revoked = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY1ODk3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzg5NywianRpIjoiMTJiZWYxMmYtMDYyYS00NTdlLWJmNzAtOGZkZGM5ZDFkYzg1In0.IkrGzjESTE0tCPgqoAklXHKW4jYfzcUDtMR8h97NtJw5X0jYfy_l_K_jhFIXDHav8LhJ1esqwVb4yWOvqmY91Q"
+        const tenantTokenSTAGING_expired = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY2MjMxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjUzMSwianRpIjoiMmQ0Mzc5MDEtYWYwNC00MDQ2LWE0M2UtOWEwNjUxNDJhZDVjIn0._pnFl3myeBhYmlRbIU6dIBqG685IyUdbo8aOUrDqbyLZVQtqPT1t179TIcRfUYBcWjGekxiZpv_CMde2BXEDpA"
+
+        if(useTenantToken){
+            if(useStaging){
+                SdkModule.startCardLink(envUrl, tenantTokenSTAGING);
+            } else {
+                SdkModule.startCardLink(envUrl, tenantTokenDEV);
+            }
+        } else if (useInvalidTenantToken){
+            if(useStaging){
+                SdkModule.startCardLink(envUrl, tenantTokenSTAGING_invalid);
+            } else {
+                SdkModule.startCardLink(envUrl, tenantTokenDEV_invalid);
+            }
+        } else if (useRevokedTenantToken){
+            if(useStaging){
+               SdkModule.startCardLink(envUrl, tenantTokenSTAGING_revoked);
+            } else {
+               SdkModule.startCardLink(envUrl, tenantTokenDEV_revoked);
+            }
+        } else if (useExpiredTenantToken){
+            if(useStaging){
+               SdkModule.startCardLink(envUrl, tenantTokenSTAGING_expired);
+            } else {
+               SdkModule.startCardLink(envUrl, tenantTokenDEV_expired);
+            }
+        } else {
+            SdkModule.startCardLink(envUrl, null);
+        }
     }
 
     const log = (msg: string) => {
@@ -211,7 +285,82 @@ function App(): React.JSX.Element {
         <SafeAreaView style={styles.view}>
             <ScrollView style={styles.view} contentInsetAdjustmentBehavior="automatic">
                 <View style={styles.view}>
+                    <View style={styles.space} style={styles.button}/>
                     <Button title="EPOTHEKE" onPress={doCL} />
+                    <Text>Url: {envUrl}</Text>
+                    <View style={styles.space} />
+                    <Text>Switch to staging environment (deafult dev):</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={useStaging}
+                        onValueChange={(v) => {
+                            setUseStaging(v)
+                            if(v){
+                                setEnvUrl(`https://service.staging.epotheke.com/cardlink`)
+                            } else {
+                                setEnvUrl(`https://service.dev.epotheke.com/cardlink`)
+                            }
+                        }}
+                    />
+                    <View style={styles.space} />
+                    <Text>Use valid tenantToken:</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={useTenantToken}
+                        onValueChange={(v) => {
+                            setUseTenantToken(v)
+                            if(v){
+                                setUseInvalidTenantToken(!v)
+                                setUseRevokedTenantToken(!v)
+                                setUseExpiredTenantToken(!v)
+                            }
+                        }}
+                    />
+                    <Text>Invalid tenantToken:</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={useInvalidTenantToken}
+                        onValueChange={(v) => {
+                            setUseInvalidTenantToken(v)
+                            if(v){
+                                setUseTenantToken(!v)
+                                setUseRevokedTenantToken(!v)
+                                setUseExpiredTenantToken(!v)
+                            }
+                        }}
+                    />
+                    <Text>Revoked tenantToken:</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={useRevokedTenantToken}
+                        onValueChange={(v) => {
+                            setUseRevokedTenantToken(v)
+                            if(v){
+                                setUseTenantToken(!v)
+                                setUseInvalidTenantToken(!v)
+                                setUseExpiredTenantToken(!v)
+                            }
+                        }}
+                    />
+                     <Text>Expired tenantToken:</Text>
+                     <CheckBox
+                         style={styles.cb}
+                         disabled={false}
+                         value={useExpiredTenantToken}
+                         onValueChange={(v) => {
+                             setUseExpiredTenantToken(v)
+                             if(v){
+                                 setUseTenantToken(!v)
+                                 setUseInvalidTenantToken(!v)
+                                 setUseRevokedTenantToken(!v)
+                             }
+                         }}
+                     />
+                    <View style={styles.space} />
                     <Text>{status}</Text>
                     <Modal
                         animationType="slide"
@@ -235,6 +384,7 @@ function App(): React.JSX.Element {
                                         toggleModalVisibility();
                                     }}
                                 />
+                                <Button title="Abort" onPress={abortCL} />
                             </View>
                         </View>
                     </Modal>
@@ -290,6 +440,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         marginBottom: 8,
     },
+    button: {
+      margin: 20,
+    },
+    space: {
+      width: 20,
+      height: 20,
+    },
+    cb: {
+      marginLeft: 20,
+    }
 });
 
 export default App;

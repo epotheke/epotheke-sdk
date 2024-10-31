@@ -3475,6 +3475,11 @@
     "jest-message-util" "^29.7.0"
     "jest-util" "^29.7.0"
 
+"expo-checkbox@^3.0.0":
+  "integrity" "sha512-ZfNUawE0Bp/Xa5Gwtn04yfg6rCnKdqdmBXvEGbYg5U+IfRfLh+ocLiiBAcx760DfdYpzMGQOGpUtWQeEVmJwNw=="
+  "resolved" "https://registry.npmjs.org/expo-checkbox/-/expo-checkbox-3.0.0.tgz"
+  "version" "3.0.0"
+
 "exponential-backoff@^3.1.1":
   "integrity" "sha512-dX7e/LHVJ6W3DE1MHWi9S1EYzDESENfLrYohG2G++ovZrYOkm4Knwa0mc1cn84xJOR4KEU0WSchhLbd0UklbHw=="
   "resolved" "https://registry.npmjs.org/exponential-backoff/-/exponential-backoff-3.1.1.tgz"

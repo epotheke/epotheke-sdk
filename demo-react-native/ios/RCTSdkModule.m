@@ -48,19 +48,18 @@
 @end
 
 @implementation SdkErroHandler
-- (void)hdlError:(NSObject<ServiceErrorResponse> *_Nullable)error {
-
-    if ([error conformsToProtocol:@protocol(ServiceErrorResponse)]) {
-        RCTLogInfo(@"error msg: %@", [error getErrorMessage]);
-        self.onSdkErrorCB(@[ @"INTERNAL_ERROR",  [error getErrorMessage] ]);
-    }
+- (void)hdlCode:(nonnull NSString *)code error:(nonnull NSString *)error {
+    RCTLogInfo(@"error code:%@ msg: %@", code, error);
+    self.onSdkErrorCB(@[ code, error ]);
 }
+
 @end
 
 @interface CardLinkControllerCallback : NSObject <EpothekeCardLinkControllerCallback>
 @property RCTResponseSenderBlock onStartedCB;
 @property RCTResponseSenderBlock onAuthenticationCompletionCB;
 @property EpothekePrescriptionProtocolImp *prescriptionProtocol;
+@property NSString *wsSessionID;
 @end
 
 @implementation CardLinkControllerCallback
@@ -73,6 +72,7 @@
                 if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
                     // found prescriptionProto
                     self.prescriptionProtocol = p;
+                    self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
                     self.onAuthenticationCompletionCB(@[ [NSNull null], [NSNull null] ] );
                     break;
                 }
@@ -80,11 +80,15 @@
         }
     } else {
         if ([[p0 getErrorMessage] rangeOfString:@"==>"].location == NSNotFound){
-            self.onAuthenticationCompletionCB(@[ @"CLIENT_ERROR", [p0 getErrorMessage] ] );
+            self.onAuthenticationCompletionCB(@[ @"INTERRUPTED", [p0 getErrorMessage] ] );
         } else {
             NSString *code = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][0];
             NSString *msg = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][1];
-            self.onAuthenticationCompletionCB(@[ code, msg ] );
+            if([code rangeOfString:@"invalidSlotHandle"].location != NSNotFound){
+                self.onAuthenticationCompletionCB(@[ @"CARD_REMOVED", msg ] );
+            }else{
+                self.onAuthenticationCompletionCB(@[ code, msg ] );
+            }
         }
     }
 }
@@ -342,6 +346,17 @@ RCT_EXPORT_METHOD(set_sdkErrorCB : (RCTResponseSenderBlock)cb) {
     errHandler.onSdkErrorCB = cb;
 }
 
+RCT_EXPORT_METHOD(getWsSessionId : (RCTPromiseResolveBlock)resolve  : (RCTPromiseRejectBlock)reject) {
+    
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        if (clCtrlCB && clCtrlCB.wsSessionID) {
+            resolve(clCtrlCB.wsSessionID);
+        } else {
+            resolve(nil);
+        }
+    });
+}
+
 RCT_EXPORT_METHOD(getPrescriptions : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
 
     dispatch_sync(dispatch_get_main_queue(), ^{
@@ -383,12 +398,13 @@ RCT_EXPORT_METHOD(selectPrescriptions: (NSString *)selection
     );
 }
 
+EpothekeSdkCore *sdk;
 RCT_EXPORT_METHOD(startCardLink : (NSString *)cardLinkUrl tenantToken: (NSString *) tenantToken) {
     RCTLogInfo(@"onStarted: %@", cardLinkUrl);
 
     IOSNFCOptions *nfcOpts = [IOSNFCOptions new];
 
-    EpothekeSdkCore *sdk = [[EpothekeSdkCore alloc] initWithCardLinkUrl:cardLinkUrl
+    sdk = [[EpothekeSdkCore alloc] initWithCardLinkUrl:cardLinkUrl
                                                             tenantToken:tenantToken
                                              cardLinkControllerCallback:clCtrlCB
                                             cardLinkInteractionProtocol:clInteraction
@@ -396,6 +412,12 @@ RCT_EXPORT_METHOD(startCardLink : (NSString *)cardLinkUrl tenantToken: (NSString
                                                                 nfcOpts:nfcOpts];
 
     [sdk doInitCardLink];
+}
+
+RCT_EXPORT_METHOD(abortCardLink) {
+    if(sdk){
+        [sdk terminateContext];
+    }
 }
 
 @end
