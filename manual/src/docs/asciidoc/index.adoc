@@ -4,3 +4,4 @@ Tobias Wich; Florian Otto
 
 include::introduction.adoc[]
 include::project_setup.adoc[]
+include::error_handling.adoc[]
