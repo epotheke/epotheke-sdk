@@ -105,6 +105,9 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             if(p0?.errorMessage?.contains("==>") == true){
                 var minor = p0?.errorMessage?.split("==>")?.get(0)?.trim()
                 var msg = p0?.errorMessage?.split("==>")?.get(1)?.trim()
+                if(minor?.contains("invalidSlotHandle") == true){
+                    minor="CARD_REMOVED"
+                }
                 onAuthenticationCompletionCB?.invoke(minor, msg)
             } else if (p0?.errorMessage != null){
                 onAuthenticationCompletionCB?.invoke(p0?.resultCode?.name, p0?.errorMessage)
