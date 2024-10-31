@@ -109,7 +109,7 @@ function App(): React.JSX.Element {
             log('onPhoneNumberRequest');
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
             setmodalTxt('Provide phone number');
-            setInputValue('015111122233');
+            setInputValue('+49');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
@@ -118,7 +118,7 @@ function App(): React.JSX.Element {
             log('onPhoneNumberRetryCB');
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
             setmodalTxt('Retry Number due to: ' + code + ' - ' + msg);
-            setInputValue('015111122233');
+            setInputValue('+49');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
@@ -127,7 +127,7 @@ function App(): React.JSX.Element {
             log('onSmsCodeRequest');
             SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB);
             setmodalTxt('Provide TAN');
-            setInputValue('123456789');
+            setInputValue('');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB);
@@ -136,7 +136,7 @@ function App(): React.JSX.Element {
             log('onSmsCodeRetryCB');
             SdkModule.set_cardlinkInteractionCB_onSmsCodeRetry(onSmsCodeRetryCB);
             setmodalTxt('Retry TAN due to: ' + code + ' - ' + msg);
-            setInputValue('123456789');
+            setInputValue('');
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onSmsCodeRetry(onSmsCodeRetryCB);
