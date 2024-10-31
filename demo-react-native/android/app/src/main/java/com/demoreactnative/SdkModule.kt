@@ -50,6 +50,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     }
 
     private var erezeptProtocol: PrescriptionProtocol? = null
+    private var ws_sessionId: String? = null
 
     @ReactMethod
     fun getPrescriptions(p: Promise) {
@@ -93,6 +94,11 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    @ReactMethod
+    fun getWsSessionId(p: Promise) {
+        p.resolve(ws_sessionId)
+    }
+
     private val cardLinkControllerCallback = object : CardLinkControllerCallback {
         override fun onAuthenticationCompletion(
             p0: ActivationResult?,
@@ -100,6 +106,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         ) {
             logger.debug { "onAuthenticationCompletion ${p0?.errorMessage}" }
             erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
+            ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
 
             //hotfix
             if(p0?.errorMessage?.contains("==>") == true){

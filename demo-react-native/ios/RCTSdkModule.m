@@ -59,6 +59,7 @@
 @property RCTResponseSenderBlock onStartedCB;
 @property RCTResponseSenderBlock onAuthenticationCompletionCB;
 @property EpothekePrescriptionProtocolImp *prescriptionProtocol;
+@property NSString *wsSessionID;
 @end
 
 @implementation CardLinkControllerCallback
@@ -71,6 +72,7 @@
                 if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
                     // found prescriptionProto
                     self.prescriptionProtocol = p;
+                    self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
                     self.onAuthenticationCompletionCB(@[ [NSNull null], [NSNull null] ] );
                     break;
                 }
@@ -342,6 +344,17 @@ RCT_EXPORT_METHOD(set_sdkErrorCB : (RCTResponseSenderBlock)cb) {
         errHandler = [SdkErroHandler new];
     }
     errHandler.onSdkErrorCB = cb;
+}
+
+RCT_EXPORT_METHOD(getWsSessionId : (RCTPromiseResolveBlock)resolve  : (RCTPromiseRejectBlock)reject) {
+    
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        if (clCtrlCB && clCtrlCB.wsSessionID) {
+            resolve(clCtrlCB.wsSessionID);
+        } else {
+            resolve(nil);
+        }
+    });
 }
 
 RCT_EXPORT_METHOD(getPrescriptions : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {

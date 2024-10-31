@@ -185,6 +185,7 @@ function App(): React.JSX.Element {
 
                     //get available prescriptions
                     let availPrescriptions = await SdkModule.getPrescriptions();
+                    log(`wsSessionID: ${await SdkModule.getWsSessionId()}`);
                     log(`prescriptions: ${availPrescriptions}`);
 
                     ////example for a selection
@@ -214,6 +215,27 @@ function App(): React.JSX.Element {
 
         // start the CardLink establishment
         //When the environment allows unauthenticated connection, TENANTTOKEN can be null
+
+        /*
+        The cardlink urls are following the scheme:
+        `https://service.ENV.epotheke.com/cardlink`
+        ENV can be dev, staging, prod
+
+        After a successfull authentication one can also call
+        await SdkModule.getWsSessionId()
+        which delivers a connection token, and can append this to the cardlink url as a query parameter.
+        `https://service.ENV.epotheke.com/cardlink?token=TOKEN`
+
+        This allows to reuse a once validated session, which means that for 15 minutes a new connection will not require
+        a TAN validation. Technically the onPhoneNumberRequest and onSmsCodeRequest callbacks will not be called from the SDK
+        After the timeout the SMS validation is again active but without the need to reenter the phonenumber.
+
+        A second consequence of reusing sessions is, that one can register up to ten eGKs within one session.
+        And get rescriptions for all of them.
+
+        Tokens which were not returned by an earlier successfull session will be ignored.
+
+        */
 
         const tenantTokenDEV = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
         const tenantTokenDEV_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
