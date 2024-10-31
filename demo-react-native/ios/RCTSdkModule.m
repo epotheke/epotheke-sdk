@@ -48,13 +48,11 @@
 @end
 
 @implementation SdkErroHandler
-- (void)hdlError:(NSObject<ServiceErrorResponse> *_Nullable)error {
-
-    if ([error conformsToProtocol:@protocol(ServiceErrorResponse)]) {
-        RCTLogInfo(@"error msg: %@", [error getErrorMessage]);
-        self.onSdkErrorCB(@[ @"INTERNAL_ERROR",  [error getErrorMessage] ]);
-    }
+- (void)hdlCode:(nonnull NSString *)code error:(nonnull NSString *)error {
+    RCTLogInfo(@"error code:%@ msg: %@", code, error);
+    self.onSdkErrorCB(@[ code, error ]);
 }
+
 @end
 
 @interface CardLinkControllerCallback : NSObject <EpothekeCardLinkControllerCallback>
@@ -84,7 +82,11 @@
         } else {
             NSString *code = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][0];
             NSString *msg = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][1];
-            self.onAuthenticationCompletionCB(@[ code, msg ] );
+            if([code rangeOfString:@"invalidSlotHandle"].location != NSNotFound){
+                self.onAuthenticationCompletionCB(@[ @"CARD_REMOVED", msg ] );
+            }else{
+                self.onAuthenticationCompletionCB(@[ code, msg ] );
+            }
         }
     }
 }

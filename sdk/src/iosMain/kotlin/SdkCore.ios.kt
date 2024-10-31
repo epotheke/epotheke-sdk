@@ -31,7 +31,7 @@ import platform.darwin.NSObject
 private val logger = KotlinLogging.logger {}
 
 interface SdkErrorHandler {
-    fun hdl(error: NSObject?)
+    fun hdl(code: String, error: String)
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -46,6 +46,7 @@ class SdkCore(
     private var ctx: ContextManagerProtocol? = null
     private var activation: ActivationControllerProtocol? = null
     private var dbgLogLevel = false
+    private var preventAuthCallbackOnFail = false
 //    private var logMessageHandler: LogMessageHandlerProtocol? = null
 
     fun setDebugLogLevel() {
@@ -75,7 +76,8 @@ class SdkCore(
         ctx?.initializeContext(object : StartServiceHandlerProtocol, NSObject() {
             override fun onFailure(response: NSObject?) {
                 println("Fail")
-                sdkErrorHandler.hdl(response)
+                val resp = response as ServiceErrorResponseProtocol
+                sdkErrorHandler.hdl(resp.getStatusCode().name, resp.getErrorMessage() ?: "no message")
             }
 
             override fun onSuccess(source: NSObject?) {
@@ -85,7 +87,7 @@ class SdkCore(
                 val wsListener = WebsocketListenerCommon()
                 val protocols = buildProtocols(ws, wsListener)
                 activation = factory.create(
-                    WebsocketIos(ws, sdkErrorHandler),
+                    WebsocketIos(ws, overridingErrorHandler(sdkErrorHandler)),
                     withActivation = OverridingControllerCallback(this@SdkCore, protocols, cardLinkControllerCallback) as NSObject,
                     withInteraction = cardLinkInteractionProtocol as NSObject,
                     withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,
@@ -113,6 +115,15 @@ class SdkCore(
 
     }
 
+    private fun overridingErrorHandler(sdkErrorHandler: SdkErrorHandler): SdkErrorHandler{
+        return object : SdkErrorHandler {
+            override fun hdl(code: String, error: String) {
+                preventAuthCallbackOnFail = true
+                sdkErrorHandler.hdl(code, error)
+            }
+        }
+    }
+
     @OptIn(ExperimentalForeignApi::class)
     private class OverridingControllerCallback(
         val sdk: SdkCore,
@@ -120,7 +131,9 @@ class SdkCore(
         val cardLinkControllerCallback: CardLinkControllerCallback
     ) : ControllerCallbackProtocol, NSObject() {
         override fun onAuthenticationCompletion(result: NSObject?) {
-            cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
+            if(!sdk.preventAuthCallbackOnFail) {
+                cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
+            }
             logger.warn { "PROCESS ENDED calling terminate" }
             sdk.terminateContext()
         }

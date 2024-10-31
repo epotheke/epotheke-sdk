@@ -32,13 +32,13 @@ import platform.darwin.NSObject
 private val logger = KotlinLogging.logger {}
 
 @OptIn(ExperimentalForeignApi::class)
-class SockError(val errMessage: String?) : ServiceErrorResponseProtocol, NSObject() {
+class SockError(private val code: ServiceErrorCode, private val errMessage: String?) : ServiceErrorResponseProtocol, NSObject() {
     override fun getErrorMessage(): String? {
         return errMessage
     }
 
     override fun getStatusCode(): ServiceErrorCode {
-        return cocoapods.open_ecard.ServiceErrorCode.kServiceErrorCodeINTERNAL_ERROR
+        return code
     }
 }
 
@@ -89,13 +89,16 @@ class WebsocketIos(
         try {
             commonWS.connect()
         } catch (e: Exception) {
-
             logger.warn(e) {"Websocket connection failed."}
-//            errorHandler.hdl(
-//                SockError("Error during WS connect: ${e.message}. Is tenantToken valid?")
-//                as NSObject
-//            )
-        }
+            val code = if(e.message?.contains("-1011") == true)
+                ServiceErrorCode.kServiceErrorCodeNOT_AUTHORIZED.name.replace("kServiceErrorCode","")
+                else
+                ServiceErrorCode.kServiceErrorCodeNO_CONNECTION.name.replace("kServiceErrorCode","")
+            errorHandler.hdl(
+                code,
+                e.message ?: "no message"
+            )
+      }
     }
 
     //    @Throws(WebsocketException::class)
@@ -104,10 +107,10 @@ class WebsocketIos(
             commonWS.close(statusCode, withReason)
         } catch (e: Exception) {
             logger.warn(e) {"Websocket close failed."}
-            //errorHandler.hdl(
-            //    SockError("Error during WS close: ${e.message}.")
-            //        as NSObject
-            //)
+            errorHandler.hdl(
+                ServiceErrorCode.kServiceErrorCodeLOST_CONNECTION.name.replace("kServiceErrorCode", ""),
+                e.message?: "no message"
+            )
         }
     }
 
@@ -118,11 +121,11 @@ class WebsocketIos(
                 commonWS.send(data)
             }
         } catch (e: Exception) {
-            logger.warn(e) {"Websocket close failed."}
-            //errorHandler.hdl(
-            //    SockError("Error during WS send: ${e.message}.")
-            //        as NSObject
-            //)
+            logger.warn(e) {"Websocket send failed."}
+            errorHandler.hdl(
+                ServiceErrorCode.kServiceErrorCodeLOST_CONNECTION.name.replace("kServiceErrorCode",""),
+                e.message ?: "no message"
+            )
         }
     }
 
