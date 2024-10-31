@@ -78,7 +78,7 @@
         }
     } else {
         if ([[p0 getErrorMessage] rangeOfString:@"==>"].location == NSNotFound){
-            self.onAuthenticationCompletionCB(@[ @"CLIENT_ERROR", [p0 getErrorMessage] ] );
+            self.onAuthenticationCompletionCB(@[ @"INTERRUPTED", [p0 getErrorMessage] ] );
         } else {
             NSString *code = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][0];
             NSString *msg = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][1];
