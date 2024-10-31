@@ -42,6 +42,10 @@ function App(): React.JSX.Element {
     // This is to toggle whether or not a hard-coded tenantToken is send as auth token
     const [useTenantToken, setUseTenantToken] = useState(false);
     const [useInvalidTenantToken, setUseInvalidTenantToken ] = useState(false);
+
+    //Use staging default dev
+    const [useStaging, setUseStaging] = useState(false);
+    const [envUrl, setEnvUrl] = useState(`https://service.dev.epotheke.com/cardlink`)
     const toggleModalVisibility = () => {
         setModalVisible(!isModalVisible);
     };
@@ -207,17 +211,28 @@ function App(): React.JSX.Element {
         SdkModule.set_controllerCallbackCB_onAuthenticationCompletion(onAuthenticationCallback);
 
         // start the CardLink establishment
-        //SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink?token=${uuid.v4()}`, `TENANTTOKEN`);
         //When the environment allows unauthenticated connection, TENANTTOKEN can be null
+
         const tenantTokenDEV = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
         const tenantTokenDEV_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
 
+        const tenantTokenSTAGING = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
+        const tenantTokenSTAGING_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
+
         if(useTenantToken){
-            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, tenantTokenDEV);
+            if(useStaging){
+                SdkModule.startCardLink(envUrl, tenantTokenSTAGING);
+            } else {
+                SdkModule.startCardLink(envUrl, tenantTokenDEV);
+            }
         } else if (useInvalidTenantToken){
-            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, tenantTokenDEV_invalid);
+            if(useStaging){
+                SdkModule.startCardLink(envUrl, tenantTokenSTAGING_invalid);
+            } else {
+                SdkModule.startCardLink(envUrl, tenantTokenDEV_invalid);
+            }
         } else {
-            SdkModule.startCardLink(`https://service.dev.epotheke.com/cardlink`, null);
+            SdkModule.startCardLink(envUrl, null);
         }
     }
 
@@ -232,7 +247,21 @@ function App(): React.JSX.Element {
                 <View style={styles.view}>
                     <View style={styles.space} style={styles.button}/>
                     <Button title="EPOTHEKE" onPress={doCL} />
+                    <Text>Url: {envUrl}</Text>
                     <View style={styles.space} />
+                    <Text>Switch to staging environment (deafult dev):</Text>
+                    <CheckBox
+                        disabled={false}
+                        value={useStaging}
+                        onValueChange={(v) => {
+                            setUseStaging(v)
+                            if(v){
+                                setEnvUrl(`https://service.staging.epotheke.com/cardlink`)
+                            } else {
+                                setEnvUrl(`https://service.dev.epotheke.com/cardlink`)
+                            }
+                        }}
+                    />
                     <Text>Use tenantToken:</Text>
                     <CheckBox
                         disabled={false}
