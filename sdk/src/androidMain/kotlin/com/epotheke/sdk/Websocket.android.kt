@@ -82,7 +82,10 @@ class WebsocketAndroid(
             commonWS.connect()
         } catch (e: Exception) {
 //            throw WebsocketException(e.message ?: "Unknown error", e)
-            sdkErrorHandler.onError(SockError(ServiceErrorCode.NO_CONNECTION, e.message))
+            sdkErrorHandler.onError(SockError(
+                if (e.message?.contains("401") == true) ServiceErrorCode.NOT_AUTHORIZED else  ServiceErrorCode.NO_CONNECTION,
+                e.message
+            ))
         }
     }
 
