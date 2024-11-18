@@ -52,6 +52,10 @@ function App(): React.JSX.Element {
         setModalVisible(!isModalVisible);
     };
 
+    // Reusable session to cardlink which allows reusing a validated phonenumber for 15 minutes
+    const [wsSession, setWsSession] = useState(null);
+    const [reUseWsSession, setReUseWsSession] = useState(false);
+
     async function abortCL() {
         SdkModule.abortCardLink()
         toggleModalVisibility();
@@ -185,7 +189,12 @@ function App(): React.JSX.Element {
 
                     //get available prescriptions
                     let availPrescriptions = await SdkModule.getPrescriptions();
-                    log(`wsSessionID: ${await SdkModule.getWsSessionId()}`);
+
+                    //store wsSession for later reuse
+                    let wsSession = await SdkModule.getWsSessionId()
+                    log(`wsSessionID: ${wsSession}`);
+                    setWsSession(wsSession);
+
                     log(`prescriptions: ${availPrescriptions}`);
 
                     ////example for a selection
@@ -247,32 +256,37 @@ function App(): React.JSX.Element {
         const tenantTokenSTAGING_revoked = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY1ODk3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzg5NywianRpIjoiMTJiZWYxMmYtMDYyYS00NTdlLWJmNzAtOGZkZGM5ZDFkYzg1In0.IkrGzjESTE0tCPgqoAklXHKW4jYfzcUDtMR8h97NtJw5X0jYfy_l_K_jhFIXDHav8LhJ1esqwVb4yWOvqmY91Q"
         const tenantTokenSTAGING_expired = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY2MjMxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjUzMSwianRpIjoiMmQ0Mzc5MDEtYWYwNC00MDQ2LWE0M2UtOWEwNjUxNDJhZDVjIn0._pnFl3myeBhYmlRbIU6dIBqG685IyUdbo8aOUrDqbyLZVQtqPT1t179TIcRfUYBcWjGekxiZpv_CMde2BXEDpA"
 
+        var url = envUrl;
+        if(reUseWsSession && wsSession){
+            url += `?token=${wsSession}`
+        }
+
         if(useTenantToken){
             if(useStaging){
-                SdkModule.startCardLink(envUrl, tenantTokenSTAGING);
+                SdkModule.startCardLink(url, tenantTokenSTAGING);
             } else {
-                SdkModule.startCardLink(envUrl, tenantTokenDEV);
+                SdkModule.startCardLink(url, tenantTokenDEV);
             }
         } else if (useInvalidTenantToken){
             if(useStaging){
-                SdkModule.startCardLink(envUrl, tenantTokenSTAGING_invalid);
+                SdkModule.startCardLink(url, tenantTokenSTAGING_invalid);
             } else {
-                SdkModule.startCardLink(envUrl, tenantTokenDEV_invalid);
+                SdkModule.startCardLink(url, tenantTokenDEV_invalid);
             }
         } else if (useRevokedTenantToken){
             if(useStaging){
-               SdkModule.startCardLink(envUrl, tenantTokenSTAGING_revoked);
+               SdkModule.startCardLink(url, tenantTokenSTAGING_revoked);
             } else {
-               SdkModule.startCardLink(envUrl, tenantTokenDEV_revoked);
+               SdkModule.startCardLink(url, tenantTokenDEV_revoked);
             }
         } else if (useExpiredTenantToken){
             if(useStaging){
-               SdkModule.startCardLink(envUrl, tenantTokenSTAGING_expired);
+               SdkModule.startCardLink(url, tenantTokenSTAGING_expired);
             } else {
-               SdkModule.startCardLink(envUrl, tenantTokenDEV_expired);
+               SdkModule.startCardLink(url, tenantTokenDEV_expired);
             }
         } else {
-            SdkModule.startCardLink(envUrl, null);
+            SdkModule.startCardLink(url, null);
         }
     }
 
@@ -289,7 +303,7 @@ function App(): React.JSX.Element {
                     <Button title="EPOTHEKE" onPress={doCL} />
                     <Text>Url: {envUrl}</Text>
                     <View style={styles.space} />
-                    <Text>Switch to staging environment (deafult dev):</Text>
+                    <Text>Switch to staging environment (default dev):</Text>
                     <CheckBox
                         style={styles.cb}
                         disabled={false}
@@ -301,6 +315,16 @@ function App(): React.JSX.Element {
                             } else {
                                 setEnvUrl(`https://service.dev.epotheke.com/cardlink`)
                             }
+                        }}
+                    />
+                    <View style={styles.space} />
+                    <Text>Reuse wsSession if exists. Current: {wsSession}</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={reUseWsSession}
+                        onValueChange={(v) => {
+                            setReUseWsSession(v)
                         }}
                     />
                     <View style={styles.space} />
