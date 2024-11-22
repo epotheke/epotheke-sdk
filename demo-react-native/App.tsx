@@ -5,7 +5,7 @@
  * @format
  */
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useMemo} from 'react';
 
 import {
     Button,
@@ -22,11 +22,35 @@ import {
 } from 'react-native';
 
 import CheckBox from 'expo-checkbox';
+import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 
 import uuid from 'react-native-uuid';
 
 const {SdkModule} = NativeModules;
 const {width} = Dimensions.get('window');
+
+const envUrls = {
+    'dev' : 'https://service.dev.epotheke.com/cardlink',
+    'staging' : 'https://service.staging.epotheke.com/cardlink',
+    'prod' : 'https://service.prod.epotheke.com/cardlink',
+}
+
+const tenantTokens = {
+    'dev': {
+        'none':null,
+        'valid':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g",
+        'invalid':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g",
+        'revoked':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY1NzgxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzc4MSwianRpIjoiYTkxNGQxMGItYmI0NS00NDcyLTg0NWUtYzZiNTNiOTNiNjhmIn0.en-cBlvd5jO0Nz2kuj7dPNFH5xlzPd9TLQZLjxdBkiSfRlV9-i060zO3emUhN8tgSU5ZmwlcGF1sRJLbwJSyPg",
+        'expired':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY2MDc5LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjM3OSwianRpIjoiNTk3MDFkMTktMjEwNC00OGI0LWI2ZDQtOWQ0ZDhmNmIxZmVjIn0.9Wqj4YMAV18Lfm6v5SdcI8dlGAuqA8TsAuTyDXt5IBKEZaI1OWBq_RdxwP78nD_9H3eX8VgL_9EJ5VpvEWyn4g"
+    },
+    'staging': {
+        'none':null,
+        'valid':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA",
+        'invalid':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA",
+        'revoked':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY1ODk3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzg5NywianRpIjoiMTJiZWYxMmYtMDYyYS00NTdlLWJmNzAtOGZkZGM5ZDFkYzg1In0.IkrGzjESTE0tCPgqoAklXHKW4jYfzcUDtMR8h97NtJw5X0jYfy_l_K_jhFIXDHav8LhJ1esqwVb4yWOvqmY91Q",
+        'expired':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY2MjMxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjUzMSwianRpIjoiMmQ0Mzc5MDEtYWYwNC00MDQ2LWE0M2UtOWEwNjUxNDJhZDVjIn0._pnFl3myeBhYmlRbIU6dIBqG685IyUdbo8aOUrDqbyLZVQtqPT1t179TIcRfUYBcWjGekxiZpv_CMde2BXEDpA"
+    }
+}
 
 function App(): React.JSX.Element {
     const [status, setStatus] = useState('Status: not started yet');
@@ -34,22 +58,68 @@ function App(): React.JSX.Element {
 
     // This is to manage Modal State
     const [isModalVisible, setModalVisible] = useState(false);
+    const toggleModalVisibility = () => {
+        setModalVisible(!isModalVisible);
+    };
 
     // This is to manage TextInput State
     const [inputValue, setInputValue] = useState('');
 
-    // This is to toggle whether or not a hard-coded tenantToken is send as auth token
-    const [useTenantToken, setUseTenantToken] = useState(false);
-    const [useInvalidTenantToken, setUseInvalidTenantToken ] = useState(false);
-    const [useRevokedTenantToken, setUseRevokedTenantToken ] = useState(false);
-    const [useExpiredTenantToken, setUseExpiredTenantToken ] = useState(false);
+    const env_radioBtn: RadioButtonProps[] = useMemo(()=>([
+        {
+            id: 'dev',
+            label: 'dev',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        },
+        {
+            id: 'staging',
+            label: 'staging',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        },
+        {
+            id: 'prod',
+            label: 'prod',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        }
+    ]), []);
+    const [selectedEnv, setSelectedEnv] = useState<string>('dev');
 
-    //Use staging default dev
-    const [useStaging, setUseStaging] = useState(false);
-    const [envUrl, setEnvUrl] = useState(`https://service.dev.epotheke.com/cardlink`)
-    const toggleModalVisibility = () => {
-        setModalVisible(!isModalVisible);
-    };
+    const tenantTokens_radioBtn: RadioButtonProps[] = useMemo(()=>([
+        {
+            id: 'none',
+            label: 'none',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        },
+        {
+            id: 'valid',
+            label: 'valid',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        },
+        {
+            id: 'invalid',
+            label: 'invalid',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        },
+        {
+            id: 'revoked',
+            label: 'revoked',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        },
+        {
+            id: 'expired',
+            label: 'expired',
+            color: 'black',
+            labelStyle: styles.txtblack,
+        },
+    ]), []);
+    const [selectedTenantTokenId, setSelectedTenantTokenId] = useState<string>('none');
 
     // Reusable session to cardlink which allows reusing a validated phonenumber for 15 minutes
     const [wsSession, setWsSession] = useState(null);
@@ -245,48 +315,13 @@ function App(): React.JSX.Element {
 
         */
 
-        const tenantTokenDEV = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
-        const tenantTokenDEV_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
-        const tenantTokenDEV_revoked = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY1NzgxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzc4MSwianRpIjoiYTkxNGQxMGItYmI0NS00NDcyLTg0NWUtYzZiNTNiOTNiNjhmIn0.en-cBlvd5jO0Nz2kuj7dPNFH5xlzPd9TLQZLjxdBkiSfRlV9-i060zO3emUhN8tgSU5ZmwlcGF1sRJLbwJSyPg"
-        const tenantTokenDEV_expired = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMzY2MDc5LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjM3OSwianRpIjoiNTk3MDFkMTktMjEwNC00OGI0LWI2ZDQtOWQ0ZDhmNmIxZmVjIn0.9Wqj4YMAV18Lfm6v5SdcI8dlGAuqA8TsAuTyDXt5IBKEZaI1OWBq_RdxwP78nD_9H3eX8VgL_9EJ5VpvEWyn4g"
-
-        const tenantTokenSTAGING = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
-        const tenantTokenSTAGING_invalid = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
-        const tenantTokenSTAGING_revoked = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY1ODk3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzg5NywianRpIjoiMTJiZWYxMmYtMDYyYS00NTdlLWJmNzAtOGZkZGM5ZDFkYzg1In0.IkrGzjESTE0tCPgqoAklXHKW4jYfzcUDtMR8h97NtJw5X0jYfy_l_K_jhFIXDHav8LhJ1esqwVb4yWOvqmY91Q"
-        const tenantTokenSTAGING_expired = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY2MjMxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjUzMSwianRpIjoiMmQ0Mzc5MDEtYWYwNC00MDQ2LWE0M2UtOWEwNjUxNDJhZDVjIn0._pnFl3myeBhYmlRbIU6dIBqG685IyUdbo8aOUrDqbyLZVQtqPT1t179TIcRfUYBcWjGekxiZpv_CMde2BXEDpA"
-
-        var url = envUrl;
+        var url = envUrls[selectedEnv];
         if(reUseWsSession && wsSession){
             url += `?token=${wsSession}`
         }
+        const tenantToken = tenantTokens[selectedEnv][selectedTenantTokenId];
+        SdkModule.startCardLink(url, tenantToken);
 
-        if(useTenantToken){
-            if(useStaging){
-                SdkModule.startCardLink(url, tenantTokenSTAGING);
-            } else {
-                SdkModule.startCardLink(url, tenantTokenDEV);
-            }
-        } else if (useInvalidTenantToken){
-            if(useStaging){
-                SdkModule.startCardLink(url, tenantTokenSTAGING_invalid);
-            } else {
-                SdkModule.startCardLink(url, tenantTokenDEV_invalid);
-            }
-        } else if (useRevokedTenantToken){
-            if(useStaging){
-               SdkModule.startCardLink(url, tenantTokenSTAGING_revoked);
-            } else {
-               SdkModule.startCardLink(url, tenantTokenDEV_revoked);
-            }
-        } else if (useExpiredTenantToken){
-            if(useStaging){
-               SdkModule.startCardLink(url, tenantTokenSTAGING_expired);
-            } else {
-               SdkModule.startCardLink(url, tenantTokenDEV_expired);
-            }
-        } else {
-            SdkModule.startCardLink(url, null);
-        }
     }
 
     const log = (msg: string) => {
@@ -300,24 +335,17 @@ function App(): React.JSX.Element {
                 <View style={styles.view}>
                     <Text style={styles.header}>Epotheke Test App</Text>
                     <View style={styles.space} style={styles.button}/>
-                    <Text>Environment-URL: {envUrl}</Text>
+                    <Text style={styles.txtblack}>Environment-URL: {envUrls[selectedEnv]}</Text>
                     <View style={styles.space} />
-                    <Text>Switch to staging environment (default dev):</Text>
-                    <CheckBox
-                        style={styles.cb}
-                        disabled={false}
-                        value={useStaging}
-                        onValueChange={(v) => {
-                            setUseStaging(v)
-                            if(v){
-                                setEnvUrl(`https://service.staging.epotheke.com/cardlink`)
-                            } else {
-                                setEnvUrl(`https://service.dev.epotheke.com/cardlink`)
-                            }
-                        }}
+                    <Text style={styles.txtblack}>Environment:</Text>
+                    <RadioGroup
+                        layout="row"
+                        radioButtons={env_radioBtn}
+                        onPress={setSelectedEnv}
+                        selectedId={selectedEnv}
                     />
                     <View style={styles.space} />
-                    <Text>Reuse wsSession if exists. Current: {wsSession}</Text>
+                    <Text style={styles.txtblack}>Reuse wsSession if exists. Current: {wsSession}</Text>
                     <CheckBox
                         style={styles.cb}
                         disabled={false}
@@ -327,66 +355,17 @@ function App(): React.JSX.Element {
                         }}
                     />
                     <View style={styles.space} />
-                    <Text>Use valid tenantToken:</Text>
-                    <CheckBox
-                        style={styles.cb}
-                        disabled={false}
-                        value={useTenantToken}
-                        onValueChange={(v) => {
-                            setUseTenantToken(v)
-                            if(v){
-                                setUseInvalidTenantToken(!v)
-                                setUseRevokedTenantToken(!v)
-                                setUseExpiredTenantToken(!v)
-                            }
-                        }}
+                    <Text style={styles.txtblack}>Use tenantToken:</Text>
+                    <RadioGroup
+                        layout="row"
+                        radioButtons={tenantTokens_radioBtn}
+                        onPress={setSelectedTenantTokenId}
+                        selectedId={selectedTenantTokenId}
                     />
-                    <Text>Invalid tenantToken:</Text>
-                    <CheckBox
-                        style={styles.cb}
-                        disabled={false}
-                        value={useInvalidTenantToken}
-                        onValueChange={(v) => {
-                            setUseInvalidTenantToken(v)
-                            if(v){
-                                setUseTenantToken(!v)
-                                setUseRevokedTenantToken(!v)
-                                setUseExpiredTenantToken(!v)
-                            }
-                        }}
-                    />
-                    <Text>Revoked tenantToken:</Text>
-                    <CheckBox
-                        style={styles.cb}
-                        disabled={false}
-                        value={useRevokedTenantToken}
-                        onValueChange={(v) => {
-                            setUseRevokedTenantToken(v)
-                            if(v){
-                                setUseTenantToken(!v)
-                                setUseInvalidTenantToken(!v)
-                                setUseExpiredTenantToken(!v)
-                            }
-                        }}
-                    />
-                     <Text>Expired tenantToken:</Text>
-                     <CheckBox
-                         style={styles.cb}
-                         disabled={false}
-                         value={useExpiredTenantToken}
-                         onValueChange={(v) => {
-                             setUseExpiredTenantToken(v)
-                             if(v){
-                                 setUseTenantToken(!v)
-                                 setUseInvalidTenantToken(!v)
-                                 setUseRevokedTenantToken(!v)
-                             }
-                         }}
-                     />
                     <View style={styles.space} />
                     <Button title="Start epotheke process" onPress={doCL} />
                     <View style={styles.space} />
-                    <Text>{status}</Text>
+                    <Text style={styles.txtblack}>{status}</Text>
                     <Modal
                         animationType="slide"
                         transparent
@@ -394,7 +373,7 @@ function App(): React.JSX.Element {
                         presentationStyle="overFullScreen">
                         <View style={styles.viewWrapper}>
                             <View style={styles.modalView}>
-                                <Text>{modalTxt}</Text>
+                                <Text style={styles.txtblack}>{modalTxt}</Text>
                                 <TextInput
                                     placeholder="Enter something..."
                                     value={inputValue}
@@ -420,31 +399,40 @@ function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+    txtblack: {
+        color: 'black',
+    },
     view: {
         height: '100%',
         width: '100%',
         backgroundColor: 'white',
+        color: 'black',
     },
     sectionContainer: {
         marginTop: 32,
         paddingHorizontal: 24,
+        color: 'black',
     },
     sectionTitle: {
         fontSize: 24,
         fontWeight: '600',
+        color: 'black',
     },
     sectionDescription: {
         marginTop: 8,
         fontSize: 18,
         fontWeight: '400',
+        color: 'black',
     },
     highlight: {
         fontWeight: '700',
+        color: 'black',
     },
     viewWrapper: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        color: 'black',
     },
     modalView: {
         alignItems: 'center',
@@ -458,6 +446,7 @@ const styles = StyleSheet.create({
         width: width * 0.8,
         borderRadius: 2,
         backgroundColor: 'white',
+        color: 'black',
     },
     textInput: {
         width: '80%',
@@ -466,15 +455,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderWidth: 1,
         marginBottom: 8,
+        color: 'black',
     },
     button: {
       margin: 20,
+      color: 'black'
     },
     header: {
         margin: "auto",
         marginTop: 20,
         fontSize: 24,
         fontWeight: '600',
+        color: 'black'
     },
     space: {
       width: 20,
