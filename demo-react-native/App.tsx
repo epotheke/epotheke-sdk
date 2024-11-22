@@ -29,7 +29,6 @@ const {SdkModule} = NativeModules;
 const {width} = Dimensions.get('window');
 
 function App(): React.JSX.Element {
-    useEffect(() => Appearance.setColorScheme('light'), []);
     const [status, setStatus] = useState('Status: not started yet');
     const [modalTxt, setmodalTxt] = useState('Text');
 
@@ -299,9 +298,9 @@ function App(): React.JSX.Element {
         <SafeAreaView style={styles.view}>
             <ScrollView style={styles.view} contentInsetAdjustmentBehavior="automatic">
                 <View style={styles.view}>
+                    <Text style={styles.header}>Epotheke Test App</Text>
                     <View style={styles.space} style={styles.button}/>
-                    <Button title="EPOTHEKE" onPress={doCL} />
-                    <Text>Url: {envUrl}</Text>
+                    <Text>Environment-URL: {envUrl}</Text>
                     <View style={styles.space} />
                     <Text>Switch to staging environment (default dev):</Text>
                     <CheckBox
@@ -385,6 +384,8 @@ function App(): React.JSX.Element {
                          }}
                      />
                     <View style={styles.space} />
+                    <Button title="Start epotheke process" onPress={doCL} />
+                    <View style={styles.space} />
                     <Text>{status}</Text>
                     <Modal
                         animationType="slide"
@@ -420,6 +421,8 @@ function App(): React.JSX.Element {
 
 const styles = StyleSheet.create({
     view: {
+        height: '100%',
+        width: '100%',
         backgroundColor: 'white',
     },
     sectionContainer: {
@@ -466,6 +469,12 @@ const styles = StyleSheet.create({
     },
     button: {
       margin: 20,
+    },
+    header: {
+        margin: "auto",
+        marginTop: 20,
+        fontSize: 24,
+        fontWeight: '600',
     },
     space: {
       width: 20,

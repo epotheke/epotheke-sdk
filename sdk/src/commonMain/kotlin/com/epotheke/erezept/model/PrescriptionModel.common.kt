@@ -134,6 +134,7 @@ data class AvailablePrescriptionList(
 @SerialName(PRESCRIPTION_BUNDLE)
 data class PrescriptionBundle(
     val prescriptionId: String,
+    val accessCode: String?,
     val erstellungszeitpunkt: String,
     val status: String,
     val krankenversicherung: Coverage,
