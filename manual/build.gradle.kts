@@ -18,6 +18,12 @@ tasks.asciidoctor {
         include("index.adoc")
     }
 
+    resources(delegateClosureOf<CopySpec> {
+        from("src/docs/asciidoc") {
+            include("img/**")
+        }
+    })
+
     val versionMinor = "^([1-9][0-9]*\\.[0-9]+)\\.[0-9]+.*".toRegex().find(project.version.toString())?.groups?.get(1)?.value
     attributes(mapOf(
         "toc" to "left",
