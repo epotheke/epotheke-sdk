@@ -1,4 +1,4 @@
-== 3. Error Handling
+== Error Handling
 
 The epotheke SDK provides different methods of providing errors, which depend on the time when an error occurs and the underlying reason.
 
@@ -7,7 +7,7 @@ In particular one can distinguish between
 * **General Service Errors**
 * **Operational Errors**
 
-=== 3.1. General Service Error Codes
+=== General Service Error Codes
 
 General Service Error Codes show problems which are not or not directly related to the process of an authentication, but prevent a successful execution.
 As an example of a general error is that NFC is not available or not enabled on the device.
@@ -53,9 +53,9 @@ The codes are:
 
 |===
 
-=== 3.2 Operational Error Codes
+=== Operational Error Codes
 
-==== 3.2.1 Major Result Codes
+==== Major Result Codes
 When a CardLink process is finished, the `ActivationResult` is provided within the completion handler.
 This result contains a major `ResultCode`, which can be `OK`, indicating a successful process or other codes indicating some problem.
 
@@ -85,7 +85,7 @@ In addition to the Major Result Codes listed above, there may be a minor code wi
 Those minor error codes can contain CardLink specific error codes, which are listed in the following. 
 
 
-==== 3.2.2 Cardlink specific Minor Error Codes
+==== Cardlink specific Minor Error Codes
 
 Cardlink specific errors are divided into 
 
@@ -97,7 +97,7 @@ They are also used during a `CardlinkInteraction` phase, to indicate problems wi
 The latter happens when a problem is recoverable and a step can be retried.
 For example, if a wrong CAN was provided by the user in the first `onCanRequest`, the SDK will call `onCanRetry` which enables to retry the input of the CAN and provides a corresponding error code.
 
-===== 3.2.2.1 Client Error Codes
+===== Client Error Codes
 
 Client error codes will be solely used on the client side.
 That means that those errors are produced without any communication to the CardLink service.
@@ -154,7 +154,7 @@ In general, the following error codes are used:
 
 |===
 
-===== 3.2.2.2 CardLink Error Codes
+===== CardLink Error Codes
 
 This section lists all errors that are returned by the CardLink service.
 The CardLink service returns those errors via the `TaskListErrorPayload`, where the error code is transmitted via an Integer value under the hood.
