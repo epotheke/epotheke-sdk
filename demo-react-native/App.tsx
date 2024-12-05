@@ -32,7 +32,7 @@ const {width} = Dimensions.get('window');
 const envUrls = {
     'dev' : 'https://service.dev.epotheke.com/cardlink',
     'staging' : 'https://service.staging.epotheke.com/cardlink',
-    'prod' : 'https://service.prod.epotheke.com/cardlink',
+    'prod' : 'https://service.epotheke.com/cardlink',
 }
 
 const tenantTokens = {
@@ -49,7 +49,15 @@ const tenantTokens = {
         'invalid':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA",
         'revoked':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY1ODk3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzg5NywianRpIjoiMTJiZWYxMmYtMDYyYS00NTdlLWJmNzAtOGZkZGM5ZDFkYzg1In0.IkrGzjESTE0tCPgqoAklXHKW4jYfzcUDtMR8h97NtJw5X0jYfy_l_K_jhFIXDHav8LhJ1esqwVb4yWOvqmY91Q",
         'expired':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY2MjMxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjUzMSwianRpIjoiMmQ0Mzc5MDEtYWYwNC00MDQ2LWE0M2UtOWEwNjUxNDJhZDVjIn0._pnFl3myeBhYmlRbIU6dIBqG685IyUdbo8aOUrDqbyLZVQtqPT1t179TIcRfUYBcWjGekxiZpv_CMde2BXEDpA"
+    },
+    'prod': {
+        'none':null,
+        'valid':"eyJraWQiOiJ0ZW5hbnQtc2lnbmVyLTIwMjQxMTA2IiwiYWxnIjoiRVMyNTYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMzBiMWZmZDEtY2ViZC00Mzc4LWE2MGUtZjYwNGU2OTJiNmZjIiwiaWF0IjoxNzMzMzgzNTUwLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5NjQ1NTU1MCwianRpIjoiYTUxOWM5M2QtY2JkMi00MDBkLWE2OTgtZWQzODA1M2VjNmE2In0.NeujvpXY9_LPiqobqHGw3_GslF2upVmI0A-nKiu7yNZn6xvJNB4fgmQOxTAIqd2rB6y7aD_kYQRTt39GIHkZAg",
+        'invalid':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI7IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA",
+        'revoked':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY1ODk3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzQzNzg5NywianRpIjoiMTJiZWYxMmYtMDYyYS00NTdlLWJmNzAtOGZkZGM5ZDFkYzg1In0.IkrGzjESTE0tCPgqoAklXHKW4jYfzcUDtMR8h97NtJw5X0jYfy_l_K_jhFIXDHav8LhJ1esqwVb4yWOvqmY91Q",
+        'expired':"eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzY2MjMxLCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTczMDM2NjUzMSwianRpIjoiMmQ0Mzc5MDEtYWYwNC00MDQ2LWE0M2UtOWEwNjUxNDJhZDVjIn0._pnFl3myeBhYmlRbIU6dIBqG685IyUdbo8aOUrDqbyLZVQtqPT1t179TIcRfUYBcWjGekxiZpv_CMde2BXEDpA"
     }
+
 }
 
 function App(): React.JSX.Element {
@@ -123,7 +131,7 @@ function App(): React.JSX.Element {
 
     // Reusable session to cardlink which allows reusing a validated phonenumber for 15 minutes
     const [wsSession, setWsSession] = useState(null);
-    const [reUseWsSession, setReUseWsSession] = useState(false);
+    const [reUseWsSession, setReUseWsSession] = useState(true);
 
     async function abortCL() {
         SdkModule.abortCardLink()
