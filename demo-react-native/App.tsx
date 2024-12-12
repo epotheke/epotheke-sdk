@@ -137,7 +137,21 @@ function App(): React.JSX.Element {
         SdkModule.abortCardLink()
         toggleModalVisibility();
     }
+
+    const [fetchPrescriptionsEnabled, setFetchPrescriptionsEnabled] = useState<boolean>(false);
+    async function fetchPrescriptions() {
+          //get available prescriptions
+          try{
+            let availPrescriptions = await SdkModule.getPrescriptions();
+            log(`prescriptions: ${availPrescriptions}`);
+          } catch (e) {
+            log(`error during fetch: ${e}`);
+          }
+    }
+
     async function doCL() {
+
+        setFetchPrescriptionsEnabled(false)
         /*
           Register callbacks for CardLink interaction.
           These are called by the framework during CardLink establishment, to inform app and user about the current state of the process and
@@ -264,15 +278,13 @@ function App(): React.JSX.Element {
                 try {
                     log(`onAuthenticationCompletion successfull`);
 
-                    //get available prescriptions
-                    let availPrescriptions = await SdkModule.getPrescriptions();
 
                     //store wsSession for later reuse
                     let wsSession = await SdkModule.getWsSessionId()
                     log(`wsSessionID: ${wsSession}`);
                     setWsSession(wsSession);
 
-                    log(`prescriptions: ${availPrescriptions}`);
+                    setFetchPrescriptionsEnabled(true)
 
                     ////example for a selection
                     ////which has to be done via a jsonstring containing the selectedPrescriptionList
@@ -371,7 +383,13 @@ function App(): React.JSX.Element {
                         selectedId={selectedTenantTokenId}
                     />
                     <View style={styles.space} />
-                    <Button title="Start epotheke process" onPress={doCL} />
+                    <Button title="Establish Cardlink" onPress={doCL} />
+                    <View style={styles.space} />
+                    <Button
+                        title="Fetch prescriptions"
+                        disabled={!fetchPrescriptionsEnabled}
+                        onPress={fetchPrescriptions}
+                    />
                     <View style={styles.space} />
                     <Text style={styles.txtblack}>{status}</Text>
                     <Modal
