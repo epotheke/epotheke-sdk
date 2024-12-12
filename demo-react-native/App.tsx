@@ -93,7 +93,7 @@ function App(): React.JSX.Element {
             labelStyle: styles.txtblack,
         }
     ]), []);
-    const [selectedEnv, setSelectedEnv] = useState<string>('dev');
+    const [selectedEnv, setSelectedEnv] = useState<string>('prod');
 
     const tenantTokens_radioBtn: RadioButtonProps[] = useMemo(()=>([
         {
@@ -127,7 +127,7 @@ function App(): React.JSX.Element {
             labelStyle: styles.txtblack,
         },
     ]), []);
-    const [selectedTenantTokenId, setSelectedTenantTokenId] = useState<string>('none');
+    const [selectedTenantTokenId, setSelectedTenantTokenId] = useState<string>('valid');
 
     // Reusable session to cardlink which allows reusing a validated phonenumber for 15 minutes
     const [wsSession, setWsSession] = useState(null);
