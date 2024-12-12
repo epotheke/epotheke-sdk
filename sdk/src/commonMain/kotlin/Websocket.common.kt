@@ -73,6 +73,7 @@ class WebsocketCommon(
     private var tenantToken: String?,
 ) {
 
+    private var receiveJob: Job? = null
     private var wsListener: WiredWSListener? = null
     private val client: HttpClient = getHttpClient(tenantToken)
 
@@ -149,6 +150,7 @@ class WebsocketCommon(
      * This method can also be used to reestablish a lost connection.
      */
     fun connect() {
+        this.receiveJob?.cancel()
         runBlocking {
             val uri = Url(url)
 
@@ -168,7 +170,7 @@ class WebsocketCommon(
             wsListener?.onOpen()
         }
 
-        CoroutineScope(Dispatchers.IO).launch {
+        this.receiveJob = CoroutineScope(Dispatchers.IO).launch {
             log.debug { "Entering websocket receive loop." }
             wsSession?.receiveLoop()
         }
