@@ -142,7 +142,9 @@ class SdkCore(
         return object : ControllerCallback {
             override fun onStarted() = cardLinkControllerCallback.onStarted()
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
-                nfcIntentHelper?.disableNFCDispatch()
+                if(!ctx.isDestroyed) {
+                    nfcIntentHelper?.disableNFCDispatch()
+                }
                 needNfc = false
                 if(!preventAuthCallbackOnFail) {
                     cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
