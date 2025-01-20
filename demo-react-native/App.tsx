@@ -21,6 +21,9 @@ import {
     Appearance,
 } from 'react-native';
 
+import Clipboard from '@react-native-clipboard/clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import CheckBox from 'expo-checkbox';
 import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 
@@ -60,9 +63,12 @@ const tenantTokens = {
 
 }
 
+
+
 function App(): React.JSX.Element {
     const [status, setStatus] = useState('Status: not started yet');
     const [modalTxt, setmodalTxt] = useState('Text');
+    const [logFromSdk, setLogFromSdk] = useState('no log yet');
 
     // This is to manage Modal State
     const [isModalVisible, setModalVisible] = useState(false);
@@ -72,8 +78,20 @@ function App(): React.JSX.Element {
 
     // This is to manage TextInput State
     const [inputValue, setInputValue] = useState('');
+    const [inputValueStorageKey, setInputValueStorageKey] = useState(undefined);
+
+    async function storeInputValue(val: string){
+        if(inputValueStorageKey){
+            await AsyncStorage.setItem(inputValueStorageKey, val);
+        }
+        setInputValueStorageKey(undefined);
+    }
+    async function loadInputValue(key: string){
+        return await AsyncStorage.getItem(key)
+    }
 
     const env_radioBtn: RadioButtonProps[] = useMemo(()=>([
+
         {
             id: 'dev',
             label: 'dev',
@@ -132,6 +150,8 @@ function App(): React.JSX.Element {
     // Reusable session to cardlink which allows reusing a validated phonenumber for 15 minutes
     const [wsSession, setWsSession] = useState(null);
     const [reUseWsSession, setReUseWsSession] = useState(true);
+    const [useStoredInput, setUseStoredInput ] = useState(false);
+    const [loopOnSuccess, setLoopOnSuccess] = useState(false);
 
     async function abortCL() {
         SdkModule.abortCardLink()
@@ -146,6 +166,19 @@ function App(): React.JSX.Element {
             log(`prescriptions: ${availPrescriptions}`);
           } catch (e) {
             log(`error during fetch: ${e}`);
+          }
+    }
+
+    async function copyLogsToClipboard() {
+          //get available prescriptions
+          try {
+                if(SdkModule.getLog){
+                    Clipboard.setString(await SdkModule.getLog());
+                    log("Logs copied to clipboard");
+                } else {
+                    log("only ios");
+                }
+          } catch (e) {
           }
     }
 
@@ -188,30 +221,63 @@ function App(): React.JSX.Element {
         };
         SdkModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB);
 
-        let canRequestCB = () => {
-            log('onCanRequest');
-            SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB);
-            setInputValue('123123');
+        let canRequestCB = async () => {
+            var can = "123123"
+            try {
+                var c = await loadInputValue("CAN");
+                if(!!c){
+                    if(useStoredInput){
+                        SdkModule.setUserInput(c);
+                        SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB);
+                        return;
+                    }
+                    can = c;
+                }
+            } catch (e) {
+                log("could not load " + e)
+            }
+            log(`onCanRequest - stored: `);
+            setInputValueStorageKey("CAN");
+            setInputValue(can);
             setmodalTxt('Provide CAN');
+
             toggleModalVisibility();
+            SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB);
         };
         SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB);
 
         let canRetryCB = (code: String | undefined, msg: String | undefined) => {
-            log('canRetryCB');
-            SdkModule.set_cardlinkInteractionCB_onCanRetry(canRetryCB);
+            log(`canRetryCB`);
             setInputValue('123123');
-            setmodalTxt('Retry Can due to: ' + code + ' - ' + msg);
+            setmodalTxt('CAN WRONG - Provide correct CAN');
+            setInputValueStorageKey("CAN");
             toggleModalVisibility();
+            SdkModule.set_cardlinkInteractionCB_onCanRetry(canRetryCB);
         };
         SdkModule.set_cardlinkInteractionCB_onCanRetry(canRetryCB);
 
-        let onPhoneNumberRequestCB = () => {
+        let onPhoneNumberRequestCB = async () => {
             log('onPhoneNumberRequest');
-            SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
+
+            var phone= "+49";
+            try {
+                var p = await loadInputValue("PHONE");
+                if(!!p){
+                    if(useStoredInput){
+                        SdkModule.setUserInput(p);
+                        SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
+                        return;
+                    }
+                    phone = p;
+                }
+            } catch (e) {
+                log("could not load " + e)
+            }
+            setInputValueStorageKey("PHONE");
+            setInputValue(phone);
             setmodalTxt('Provide phone number');
-            setInputValue('+49');
             toggleModalVisibility();
+            SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
         };
         SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
 
@@ -220,6 +286,7 @@ function App(): React.JSX.Element {
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
             setmodalTxt('Retry Number due to: ' + code + ' - ' + msg);
             setInputValue('+49');
+            setInputValueStorageKey("PHONE");
             toggleModalVisibility();
         };
         SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
@@ -271,7 +338,11 @@ function App(): React.JSX.Element {
           become functional and can be called.
         */
         let onAuthenticationCallback = async (code: String | undefined, msg: String | undefined) => {
-            log(`authcallback`);
+            log(`onAuthenticationCompletion`);
+            if(SdkModule.getLog){
+                setLogFromSdk(await SdkModule.getLog());
+            }
+
             if(code){
                 log(`onAuthenticationCompletion status: ${code} ${msg}`);
             } else {
@@ -304,6 +375,17 @@ function App(): React.JSX.Element {
                     //log(`selection confirmation: ${confirmation}`);
                 } catch (e) {
                     log(`error : ${e}`);
+                }
+
+                if(loopOnSuccess){
+                    setTimeout(async ()=> {
+                        var url = envUrls[selectedEnv];
+                        if(reUseWsSession && wsSession){
+                            url += `?token=${wsSession}`
+                        }
+                        const tenantToken = tenantTokens[selectedEnv][selectedTenantTokenId];
+                        SdkModule.startCardLink(url, tenantToken);
+                    }, 10000);
                 }
             }
 
@@ -345,7 +427,7 @@ function App(): React.JSX.Element {
     }
 
     const log = (msg: string) => {
-        console.log(msg);
+        console.log("js-log: " + msg);
         setStatus('Status: ' + msg);
     };
 
@@ -382,6 +464,27 @@ function App(): React.JSX.Element {
                         onPress={setSelectedTenantTokenId}
                         selectedId={selectedTenantTokenId}
                     />
+                    <Text style={styles.txtblack}>Try using user input without asking:</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={useStoredInput}
+                        onValueChange={(v) => {
+                            setUseStoredInput(v);
+                        }}
+                    />
+                    <Text style={styles.txtblack}>Loop on success (use dev since no smstan):</Text>
+                    <CheckBox
+                        style={styles.cb}
+                        disabled={false}
+                        value={loopOnSuccess}
+                        onValueChange={(v) => {
+                            setLoopOnSuccess(v);
+                            if(!!v){
+                                setUseStoredInput(v);
+                            }
+                        }}
+                    />
                     <View style={styles.space} />
                     <Button title="Establish Cardlink" onPress={doCL} />
                     <View style={styles.space} />
@@ -390,8 +493,19 @@ function App(): React.JSX.Element {
                         disabled={!fetchPrescriptionsEnabled}
                         onPress={fetchPrescriptions}
                     />
+
+                    <View style={styles.space} />
+                    <View style={styles.space} />
                     <View style={styles.space} />
                     <Text style={styles.txtblack}>{status}</Text>
+                    <Button
+                        title="Copy logs"
+                        onPress={copyLogsToClipboard}
+                    />
+                    <TextInput
+                        multiline
+                        value={logFromSdk}
+                    />
                     <Modal
                         animationType="slide"
                         transparent
@@ -408,8 +522,9 @@ function App(): React.JSX.Element {
                                 />
                                 <Button
                                     title="OK"
-                                    onPress={() => {
-                                        console.log('Sending ${inputValue} to sdk');
+                                    onPress={async () => {
+                                        log(`Sending ${inputValue} to sdk`);
+                                        await storeInputValue(inputValue);
                                         SdkModule.setUserInput(inputValue);
                                         toggleModalVisibility();
                                     }}

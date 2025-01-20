@@ -46,14 +46,14 @@ class SdkCore(
     private var activation: ActivationControllerProtocol? = null
     private var dbgLogLevel = false
     private var preventAuthCallbackOnFail = false
-//    private var logMessageHandler: LogMessageHandlerProtocol? = null
+    private var logMessageHandler: LogMessageHandlerProtocol? = null
 
     fun setDebugLogLevel() {
        dbgLogLevel = true
     }
- //   fun setLogMessageHandler(handler: LogMessageHandlerProtocol){
- //      logMessageHandler = handler
- //   }
+    fun setLogMessageHandler(handler: LogMessageHandlerProtocol){
+       logMessageHandler = handler
+    }
 
     @OptIn(ExperimentalForeignApi::class)
     fun initCardLink() {
@@ -64,12 +64,12 @@ class SdkCore(
             val devOpts = oec.developerOptions()
             try{
                 (devOpts as DeveloperOptionsProtocol).setDebugLogLevel()
+                if(logMessageHandler != null) {
+                    (devOpts as DeveloperOptionsProtocol).registerLogHandler(logMessageHandler as NSObject)
+                }
             } catch (e: Exception){
                 logger.warn { "Could not set loglevel to DEBUG" }
             }
-   //         if(logMessageHandler != null) {
-   //            oec.developerOptions().registerLogHandler(logMessageHandler)
-   //         }
         }
         ctx = oec.context(nfcOpts as NSObject) as ContextManagerProtocol
         ctx?.initializeContext(object : StartServiceHandlerProtocol, NSObject() {
