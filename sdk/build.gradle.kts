@@ -67,6 +67,20 @@ android {
     packaging {
         resources.excludes.add("cif-repo/repo-config.properties")
     }
+
+    buildTypes {
+        defaultConfig {
+            consumerProguardFiles("./consumer-proguard.txt")
+        }
+    }
+
+    publishing {
+        singleVariant("release") {
+            // if you don't want sources/javadoc, remove these lines
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 }
 
 publishing {

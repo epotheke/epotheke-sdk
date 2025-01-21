@@ -1,0 +1,46 @@
+-keep class org.openecard.ws.** { *; }
+-keep class org.openecard.addon.** { *; }
+-keep class org.openecard.addons.cardlink.** { *; }
+-keep class javax.xml.** { *; }
+-keep class ch.qos.logback.** { *; }
+-keep class iso.std.iso_iec._24727.tech.schema.** { *; }
+-keep class org.w3.** { *; }
+-keep class de.bund.bsi.ecard.api._1.** { *; }
+-keep class oasis.names.tc.** { *; }
+-keep class org.etsi.uri.** { *; }
+-keep class org.glassfish.jaxb.** { *; }
+-keep class jakarta.xml.** { *; }
+-keep class org.openecard.wsdef.** { *; }
+-keep class oasis.names.tc.** { *; }
+-keep class org.openecard.sal.tiny-sal.**{ *; }
+-keep class org.openecard.common.** { *; }
+
+-dontwarn com.sun.xml.fastinfoset.sax.AttributesHolder
+-dontwarn com.sun.xml.fastinfoset.stax.StAXDocumentParser
+-dontwarn com.sun.xml.fastinfoset.stax.StAXDocumentSerializer
+-dontwarn java.awt.Component
+-dontwarn java.awt.GraphicsEnvironment
+-dontwarn java.beans.BeanDescriptor
+-dontwarn java.beans.BeanInfo
+-dontwarn java.beans.IntrospectionException
+-dontwarn java.beans.Introspector
+-dontwarn java.beans.PropertyDescriptor
+-dontwarn javax.lang.model.SourceVersion
+-dontwarn javax.mail.Address
+-dontwarn javax.mail.Authenticator
+-dontwarn javax.mail.BodyPart
+-dontwarn javax.mail.Message$RecipientType
+-dontwarn javax.mail.Message
+-dontwarn javax.mail.Multipart
+-dontwarn javax.mail.PasswordAuthentication
+-dontwarn javax.mail.Session
+-dontwarn javax.mail.Transport
+-dontwarn javax.mail.internet.AddressException
+-dontwarn javax.mail.internet.InternetAddress
+-dontwarn javax.mail.internet.MimeBodyPart
+-dontwarn javax.mail.internet.MimeMessage
+-dontwarn javax.mail.internet.MimeMultipart
+-dontwarn org.jvnet.fastinfoset.VocabularyApplicationData
+-dontwarn org.jvnet.staxex.Base64Data
+-dontwarn org.jvnet.staxex.XMLStreamReaderEx
+-dontwarn org.jvnet.staxex.XMLStreamWriterEx
