@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 plugins {
     kotlin("multiplatform")
 }
@@ -10,6 +12,10 @@ kotlin {
     //java.targetCompatibility = JavaVersion.valueOf("11")
 
     applyDefaultHierarchyTemplate()
+
+    compilerOptions {
+        this.languageVersion = KotlinVersion.KOTLIN_2_0
+    }
 }
 
 val testHeapSize: String by project

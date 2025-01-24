@@ -26,6 +26,7 @@ import com.epotheke.erezept.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.encodeToString
 import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
@@ -36,7 +37,7 @@ class PrescriptionProtocolImp(
 ) : CardLinkProtocolBase(), PrescriptionProtocol {
 
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
-        logger.debug { "Sending data to request ecreipts." }
+        logger.debug { "Sending data to request eReceipts." }
 
         ws.send(
             prescriptionJsonFormatter.encodeToString(req)
