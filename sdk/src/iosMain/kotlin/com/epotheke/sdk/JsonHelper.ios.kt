@@ -1,8 +1,9 @@
+package com.epotheke.sdk
+
 import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionListResponse
 import com.epotheke.erezept.model.prescriptionJsonFormatter
-import kotlinx.serialization.encodeToString
 
 class JsonHelper {
     fun getSelectedPrescriptionListFrom(jsonString: String): SelectedPrescriptionList {

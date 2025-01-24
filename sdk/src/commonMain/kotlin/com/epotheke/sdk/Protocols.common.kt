@@ -1,11 +1,3 @@
-package com.epotheke.sdk
-
-import WebsocketCommon
-import WebsocketListenerCommon
-import com.epotheke.erezept.model.*
-import kotlinx.coroutines.channels.Channel
-import kotlin.coroutines.cancellation.CancellationException
-
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
  * All rights reserved.
@@ -28,6 +20,11 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  ***************************************************************************/
 
+package com.epotheke.sdk
+
+import com.epotheke.erezept.model.*
+import kotlinx.coroutines.channels.Channel
+import kotlin.coroutines.cancellation.CancellationException
 
 class PrescriptionProtocolException(val msg: GenericErrorMessage) : Exception()
 

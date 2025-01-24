@@ -22,13 +22,10 @@
 
 package com.epotheke.sdk
 
-import WebsocketCommon
 import com.epotheke.erezept.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
-import kotlinx.serialization.encodeToString
-import now
 import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}

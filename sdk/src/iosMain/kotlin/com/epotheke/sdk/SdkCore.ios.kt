@@ -1,11 +1,3 @@
-import cocoapods.open_ecard.*
-import com.epotheke.sdk.CardLinkProtocol
-import com.epotheke.sdk.buildProtocols
-import io.github.oshai.kotlinlogging.KotlinLogging
-import io.github.oshai.kotlinlogging.KotlinLoggingConfiguration
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.darwin.NSObject
-
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
  * All rights reserved.
@@ -27,6 +19,13 @@ import platform.darwin.NSObject
  * you and ecsec GmbH.
  *
  ***************************************************************************/
+
+package com.epotheke.sdk
+
+import cocoapods.open_ecard.*
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.darwin.NSObject
 
 private val logger = KotlinLogging.logger {}
 

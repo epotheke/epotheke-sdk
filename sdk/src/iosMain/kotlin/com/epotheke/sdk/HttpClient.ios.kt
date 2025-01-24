@@ -1,3 +1,5 @@
+package com.epotheke.sdk
+
 import io.ktor.client.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.auth.providers.*

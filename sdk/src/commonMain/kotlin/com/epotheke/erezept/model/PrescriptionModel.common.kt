@@ -36,7 +36,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import randomUUID
+import com.epotheke.sdk.randomUUID
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -373,7 +373,7 @@ enum class SupplyOptionsType {
     DELIVERY;
 }
 
-val prescriptionModule = SerializersModule {
+private val prescriptionModule = SerializersModule {
     polymorphic(PrescriptionMessage::class) {
         subclass(RequestPrescriptionList::class)
         subclass(AvailablePrescriptionLists::class)
@@ -397,10 +397,11 @@ val prescriptionModule = SerializersModule {
     }
 }
 
+
 @OptIn(ExperimentalSerializationApi::class)
 val prescriptionJsonFormatter = Json {
-    serializersModule = prescriptionModule;
-    classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS;
+    serializersModule = prescriptionModule
+    classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS
     ignoreUnknownKeys = true
 }
 

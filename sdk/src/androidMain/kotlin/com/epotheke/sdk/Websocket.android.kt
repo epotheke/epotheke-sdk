@@ -22,11 +22,7 @@
 
 package com.epotheke.sdk
 
-import WebsocketCommon
-import WebsocketListenerCommon
-import WiredWSListener
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
 import org.openecard.mobile.activation.*
 
 private val logger = KotlinLogging.logger {}

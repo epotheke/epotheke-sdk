@@ -1,3 +1,5 @@
+package com.epotheke.sdk
+
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.engine.okhttp.*
@@ -10,11 +12,11 @@ actual fun getHttpClient(tenantToken: String?): HttpClient {
         install(WebSockets) {
             pingInterval = 15_000
         }
-        tenantToken?.let{
+        tenantToken?.let {
             install(Auth) {
                 bearer {
                     loadTokens {
-                        BearerTokens( it, "" )
+                        BearerTokens(it, "")
                     }
                 }
             }

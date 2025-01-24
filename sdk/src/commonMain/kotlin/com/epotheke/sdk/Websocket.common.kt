@@ -20,7 +20,8 @@
  *
  ***************************************************************************/
 
-import com.epotheke.sdk.ChannelDispatcher
+package com.epotheke.sdk
+
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
@@ -40,7 +41,7 @@ interface WiredWSListener {
 }
 
 open class WebsocketListenerCommon() : ChannelDispatcher {
-    private val channels: MutableList<Channel<String>> = ArrayList<Channel<String>>()
+    private val channels = mutableListOf<Channel<String>>()
 
     override fun addProtocolChannel(channel: Channel<String>) {
         channels.add(channel)

@@ -1,5 +1,5 @@
 [versions]
-agp = "8.2.+"
+agp = "8.5.+"
 kotlin = "2.0.21"
 kx-co = "1.9.+"
 kx-serde = "1.7.+"
@@ -29,7 +29,7 @@ libphonenumber = "8.13.36"
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-kotlin-logging = { module = "io.github.oshai:kotlin-logging", version = "6.0.+" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version = "7.0.+" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kx-co" }
 kotlin-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kx-co" }
 kotlin-jackson = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "kotlin-jackson" }

@@ -22,8 +22,6 @@
 
 package com.epotheke.sdk
 
-import WebsocketCommon
-import WebsocketListenerCommon
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
