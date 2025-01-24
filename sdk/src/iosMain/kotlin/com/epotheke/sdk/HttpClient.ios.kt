@@ -4,11 +4,12 @@ import io.ktor.client.*
 import io.ktor.client.plugins.auth.*
 import io.ktor.client.plugins.auth.providers.*
 import io.ktor.client.plugins.websocket.*
+import kotlin.time.Duration.Companion.microseconds
 
 actual fun getHttpClient(tenantToken: String?): HttpClient {
     return HttpClient() {
         install(WebSockets) {
-            pingInterval = 15_000
+            pingInterval = 15_000.microseconds
         }
         tenantToken?.let{
             install(Auth) {
