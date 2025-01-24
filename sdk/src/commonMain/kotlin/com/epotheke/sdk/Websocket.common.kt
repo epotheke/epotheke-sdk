@@ -67,8 +67,6 @@ open class WebsocketListenerCommon() : ChannelDispatcher {
     }
 }
 
-expect fun getHttpClient(tenantToken: String?): HttpClient
-
 class WebsocketCommon(
     private var url: String,
     private var tenantToken: String?,

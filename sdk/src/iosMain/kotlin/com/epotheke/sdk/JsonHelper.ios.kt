@@ -4,6 +4,7 @@ import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionListResponse
 import com.epotheke.erezept.model.prescriptionJsonFormatter
+import kotlinx.serialization.encodeToString
 
 class JsonHelper {
     fun getSelectedPrescriptionListFrom(jsonString: String): SelectedPrescriptionList {
@@ -11,7 +12,7 @@ class JsonHelper {
     }
 
     fun availablePrescriptionListsJsonToString(prescriptionLists: AvailablePrescriptionLists): String {
-        return prescriptionJsonFormatter.encodeToString(prescriptionLists);
+        return prescriptionJsonFormatter.encodeToString(prescriptionLists)
     }
 
     fun selectedPrescriptionListResponseJsonToString(selection: SelectedPrescriptionListResponse): String {

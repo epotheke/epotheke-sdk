@@ -5,6 +5,7 @@ plugins {
     id("epotheke.lib-android-conventions")
     id("epotheke.lib-ios-conventions")
     id("epotheke.publish-conventions")
+
     kotlin("plugin.serialization")
 }
 
