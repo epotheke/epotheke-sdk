@@ -30,7 +30,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.io.EOFException
 
 private val log = KotlinLogging.logger {}
 

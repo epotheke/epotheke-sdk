@@ -11,7 +11,7 @@ actual fun getHttpClient(tenantToken: String?): HttpClient {
 
     return HttpClient(OkHttp) {
         install(WebSockets) {
-            pingInterval = 15_000.microseconds
+            pingInterval = 15_000L
         }
         tenantToken?.let {
             install(Auth) {
