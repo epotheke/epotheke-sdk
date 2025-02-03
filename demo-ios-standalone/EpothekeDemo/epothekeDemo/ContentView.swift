@@ -88,12 +88,9 @@ struct ContentView: View {
 
     /* This implementation will handle errors whcih might occur within sdk or during processes the sdk handles.*/
     class SdkErrorHandlerImp :NSObject, SdkErrorHandler {
-        func hdl(error: NSObject?) {
-            if let e = error {
-                print((e as! any ServiceErrorResponseProtocol).getErrorMessage())
-            } else  {
-                print("error")
-            }
+        func hdl(code: String, error: String) {
+            print("error code:" + code)
+            print("error :" + error)
         }
     }
 
