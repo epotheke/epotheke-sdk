@@ -257,7 +257,7 @@ struct ContentView: View {
         let cardLinkController = CardLinkController()
         let sdkErrorHandler = SdkErrorHandlerImp()
         let cardLinkInteraction = CardLinkInteraction(v: self)
-        let url = "https://mock.test.epotheke.com/cardlink?token="+RandomUUID_iosKt.randomUUID()
+        let url = "https://service.dev.epotheke.com/cardlink"
         //if environment allows unauthenticated access tenantToken can be null
         let tenantToken : String? = nil
         let sdk = SdkCore(cardLinkUrl: url,
