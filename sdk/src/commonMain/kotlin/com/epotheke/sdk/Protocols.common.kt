@@ -56,5 +56,8 @@ interface PrescriptionProtocol : CardLinkProtocol {
     suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
 
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
+    suspend fun requestPrescriptions(iccsns: List<String>): AvailablePrescriptionLists
+
+    @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
 }

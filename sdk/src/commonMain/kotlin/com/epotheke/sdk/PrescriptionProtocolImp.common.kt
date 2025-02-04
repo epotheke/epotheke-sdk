@@ -36,6 +36,14 @@ class PrescriptionProtocolImp(
     private val ws: WebsocketCommon,
 ) : CardLinkProtocolBase(), PrescriptionProtocol {
 
+
+    @OptIn(ExperimentalStdlibApi::class)
+    override suspend fun requestPrescriptions(iccsns: List<String>): AvailablePrescriptionLists {
+        return requestPrescriptions(RequestPrescriptionList(
+            iccsns.map { s -> s.hexToByteArray() },
+            randomUUID()
+        ))
+    }
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
         logger.debug { "Sending data to request eReceipts." }
 
