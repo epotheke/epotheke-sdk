@@ -266,6 +266,7 @@ struct ContentView: View {
                       cardLinkInteractionProtocol: cardLinkInteraction,
                       sdkErrorHandler: sdkErrorHandler,
                       nfcOpts: IOSNFCOptions())
+        sdk.setDebugLogLevel()
         sdk.doInitCardLink()
 
     }

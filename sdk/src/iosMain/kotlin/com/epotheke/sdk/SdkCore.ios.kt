@@ -57,7 +57,6 @@ class SdkCore(
 
     @OptIn(ExperimentalForeignApi::class)
     fun initCardLink() {
-        logger.debug { cardLinkUrl }
         val oec = OpenEcardImp()
 
         if(dbgLogLevel){
@@ -74,7 +73,6 @@ class SdkCore(
         ctx = oec.context(nfcOpts as NSObject) as ContextManagerProtocol
         ctx?.initializeContext(object : StartServiceHandlerProtocol, NSObject() {
             override fun onFailure(response: NSObject?) {
-                println("Fail")
                 val resp = response as ServiceErrorResponseProtocol
                 sdkErrorHandler.hdl(resp.getStatusCode().name, resp.getErrorMessage() ?: "no message")
             }

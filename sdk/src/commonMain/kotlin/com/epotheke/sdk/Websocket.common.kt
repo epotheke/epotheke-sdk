@@ -58,7 +58,6 @@ open class WebsocketListenerCommon() : ChannelDispatcher {
     }
 
     fun onText(p1: String) {
-        log.debug { "Message from established link: $p1" }
         runBlocking {
             channels.map { c ->
                 c.send(p1)
@@ -81,7 +80,7 @@ class WebsocketCommon(
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
         try {
             for (msg in incoming) {
-                log.debug { "Socket receive received frame with type: ${msg.frameType}" }
+                log.debug { "Socket receive received frame with type" }
                 when (msg) {
                     is Frame.Text -> {
                         wsListener?.onText(msg.readText())
@@ -165,7 +164,7 @@ class WebsocketCommon(
                 }
             }
 
-            log.debug { "Websocket connected to ${getUrl()}" }
+            log.debug { "Websocket connected to" }
             wsListener?.onOpen()
         }
 
