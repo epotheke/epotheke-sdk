@@ -102,7 +102,7 @@
             NSString *code = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][0];
             NSString *msg = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][1];
             if([code rangeOfString:@"invalidSlotHandle"].location != NSNotFound){
-                self.onAuthenticationCompletionCB(@[ @"CARD_REMOVED", msg ] );
+                self.onAuthenticationCompletionCB(@[ @"CARD_REMOVED", msg ? msg : @"no msg" ] );
             }else{
                 self.onAuthenticationCompletionCB(@[ code, msg ] );
             }
