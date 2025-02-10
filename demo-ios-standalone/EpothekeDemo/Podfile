@@ -7,7 +7,6 @@ target 'epothekeDemo' do
 
   # Pod for epothekeDemo
   pod 'epotheke-sdk', :path => '/Users/florianotto/epoPod/'
-  pod 'open-ecard', :path => '/Users/florianotto/pod/'
 
   post_install do |installer|
     # Find bitcode_strip

@@ -1,22 +1,23 @@
 PODS:
   - epotheke-sdk (1.1.17-SNAPSHOT):
-    - open-ecard (= 2.3.7)
-  - open-ecard (2.3.7)
+    - open-ecard (= 2.3.9)
+  - open-ecard (2.3.9)
 
 DEPENDENCIES:
   - epotheke-sdk (from `/Users/florianotto/epoPod/`)
-  - open-ecard (from `/Users/florianotto/pod/`)
+
+SPEC REPOS:
+  trunk:
+    - open-ecard
 
 EXTERNAL SOURCES:
   epotheke-sdk:
     :path: "/Users/florianotto/epoPod/"
-  open-ecard:
-    :path: "/Users/florianotto/pod/"
 
 SPEC CHECKSUMS:
-  epotheke-sdk: c5b71aa6a459ddd38108335e9392323aec065d5a
-  open-ecard: 44a5b91c58898963a17efc0b60df9de15257344f
+  epotheke-sdk: 93b417424068f8cd22a2a5aac2ca1d4d15dd92c4
+  open-ecard: bd55a78f307acfd8a961abc9f0c8be57fce9eece
 
-PODFILE CHECKSUM: 06a30ce7aca6bbc9ffdcceb806f6cd934fffff86
+PODFILE CHECKSUM: f112b325e8fac0b5ad6f28f49446cab0581c8ab0
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

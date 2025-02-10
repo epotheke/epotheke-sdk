@@ -165,7 +165,6 @@ struct ContentView: View {
             withErrorMessage errorMessage: String!
         ) {
             print("onSmsCodeRetry due to")
-	    print(resultCode)
             self.v.cb = {
                 smsCode.confirmPassword(self.v.$tan.wrappedValue)
             }
@@ -213,7 +212,6 @@ struct ContentView: View {
                 DispatchQueue.main.sync {
                     p1.requestPrescriptions(req: req) { response,er in
                         if let iccsn = response?.availablePrescriptionLists.first?.iccsn {
-                            print(iccsn)
                             let selectAll = SelectedPrescriptionList(
                                 iccsn: iccsn,
                                 prescriptionIndexList: [""],
@@ -228,9 +226,9 @@ struct ContentView: View {
                                 messageId: "id"
                             )
                             DispatchQueue.main.sync {
-                                p1.selectPrescriptions(selection: selectAll) { responseSel, err in
-                                    print(responseSel!)
-                                }
+                                //p1.selectPrescriptions(selection: selectAll) { responseSel, err in
+                                //    print(responseSel!)
+                                //}
                             }
                         }
                     }
@@ -248,9 +246,6 @@ struct ContentView: View {
         }
 
     }
-
-
-//    lazy var sdk : SdkCore? = nil
 
     /*This function initialises the above implementations and starts the epotheke prescription process*/
     func performEpo() {
