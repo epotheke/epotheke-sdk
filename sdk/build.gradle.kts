@@ -51,10 +51,7 @@ kotlin {
         }
 
         pod("open-ecard") {
-
-            // TODO: use version from catalogue
-//            version = libs.versions.oec.get()
-            source = path("/Users/florianotto/pod")
+            version = libs.versions.oec.get()
             ios.deploymentTarget = "13.0"
             moduleName = "OpenEcard"
         }
