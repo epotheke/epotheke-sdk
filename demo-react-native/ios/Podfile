@@ -20,7 +20,6 @@ target 'demoReactNative' do
 
   # Pod for epothekeDemo
   pod 'epotheke-sdk', :path => '/Users/florianotto/epoPod/'
-  pod 'open-ecard', :path => '/Users/florianotto/pod/'
 
   use_react_native!(
     :path => config[:reactNativePath],
