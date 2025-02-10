@@ -207,30 +207,38 @@ struct ContentView: View {
                 let p = cardLinkProtocols.first
                 let p1 = p as! any PrescriptionProtocol
 
-                let req = RequestPrescriptionList(iccsns: [KotlinByteArray(size: 0)], messageId: RandomUUID_iosKt.randomUUID())
+		//Available prescriptions can be requested via the cardlinkProtocol instance
+		//one can either create a request object like in the following line
+		//let req = RequestPrescriptionList(iccsns: [KotlinByteArray(size: 0)], messageId: RandomUUID_iosKt.randomUUID())
+		//where an empty list means all available prescriptions for all cards in the session or is filtered by the given list
+		//and provide this to the requestPrescriptions() function
+
+		//one can also provide the iccsns for which the prescriptions should be requested provide directly as a list of strings as shown below. 
+		//available iccsns can be gathered after each card registration via the ActivationResultProtocol in the resultParameters
 
                 DispatchQueue.main.sync {
-                    p1.requestPrescriptions(req: req) { response,er in
-                        if let iccsn = response?.availablePrescriptionLists.first?.iccsn {
-                            let selectAll = SelectedPrescriptionList(
-                                iccsn: iccsn,
-                                prescriptionIndexList: [""],
-                                version: nil,
-                                supplyOptionsType: SupplyOptionsType.delivery,
-                                name: nil,
-                                address: nil,
-                                hint: nil,
-                                text: nil,
-                                phone: nil,
-                                mail: nil,
-                                messageId: "id"
-                            )
-                            DispatchQueue.main.sync {
-                                //p1.selectPrescriptions(selection: selectAll) { responseSel, err in
-                                //    print(responseSel!)
-                                //}
-                            }
-                        }
+                    p1.requestPrescriptions(iccsns: ["80276883110000156308"], messageId: RandomUUID_iosKt.randomUUID()) { response,er in
+			print(response)
+                        //if let iccsn = response?.availablePrescriptionLists.first?.iccsn {
+                        //    let selectAll = SelectedPrescriptionList(
+                        //        iccsn: iccsn,
+                        //        prescriptionIndexList: [""],
+                        //        version: nil,
+                        //        supplyOptionsType: SupplyOptionsType.delivery,
+                        //        name: nil,
+                        //        address: nil,
+                        //        hint: nil,
+                        //        text: nil,
+                        //        phone: nil,
+                        //        mail: nil,
+                        //        messageId: "id"
+                        //    )
+                        //    DispatchQueue.main.sync {
+                        //        p1.selectPrescriptions(selection: selectAll) { responseSel, err in
+                        //            print(responseSel!)
+                        //        }
+                        //    }
+                        //}
                     }
                 }
             } else {
