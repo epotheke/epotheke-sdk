@@ -38,10 +38,10 @@ class PrescriptionProtocolImp(
 
 
     @OptIn(ExperimentalStdlibApi::class)
-    override suspend fun requestPrescriptions(iccsns: List<String>): AvailablePrescriptionLists {
+    override suspend fun requestPrescriptions(iccsns: List<String>, messageId: String): AvailablePrescriptionLists {
         return requestPrescriptions(RequestPrescriptionList(
             iccsns.map { s -> s.hexToByteArray() },
-            randomUUID()
+            messageId
         ))
     }
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
