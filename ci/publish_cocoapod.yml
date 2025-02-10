@@ -51,8 +51,8 @@ publish-ios-pod-spec:
     - echo end >> epotheke-sdk.podspec
 
 
-    - pod spec lint epotheke-sdk.podspec --verbose
-    - pod trunk push epotheke-sdk.podspec
+    - /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
+    - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec
 
   dependencies:
     - "build-cocoapod"

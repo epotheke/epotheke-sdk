@@ -1,11 +1,3 @@
-package com.epotheke.sdk
-
-import WebsocketCommon
-import WebsocketListenerCommon
-import com.epotheke.erezept.model.*
-import kotlinx.coroutines.channels.Channel
-import kotlin.coroutines.cancellation.CancellationException
-
 /****************************************************************************
  * Copyright (C) 2024 ecsec GmbH.
  * All rights reserved.
@@ -28,6 +20,11 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  ***************************************************************************/
 
+package com.epotheke.sdk
+
+import com.epotheke.erezept.model.*
+import kotlinx.coroutines.channels.Channel
+import kotlin.coroutines.cancellation.CancellationException
 
 class PrescriptionProtocolException(val msg: GenericErrorMessage) : Exception()
 
@@ -57,6 +54,9 @@ interface CardLinkProtocol
 interface PrescriptionProtocol : CardLinkProtocol {
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
+
+    @Throws(PrescriptionProtocolException::class, CancellationException::class)
+    suspend fun requestPrescriptions(iccsns: List<String>, messageId: String): AvailablePrescriptionLists
 
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse

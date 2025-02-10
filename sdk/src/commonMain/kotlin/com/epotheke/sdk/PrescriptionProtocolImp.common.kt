@@ -22,13 +22,11 @@
 
 package com.epotheke.sdk
 
-import WebsocketCommon
 import com.epotheke.erezept.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
-import now
 import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
@@ -38,8 +36,16 @@ class PrescriptionProtocolImp(
     private val ws: WebsocketCommon,
 ) : CardLinkProtocolBase(), PrescriptionProtocol {
 
+
+    @OptIn(ExperimentalStdlibApi::class)
+    override suspend fun requestPrescriptions(iccsns: List<String>, messageId: String): AvailablePrescriptionLists {
+        return requestPrescriptions(RequestPrescriptionList(
+            iccsns.map { s -> s.hexToByteArray() },
+            messageId
+        ))
+    }
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
-        logger.debug { "Sending data to request ecreipts." }
+        logger.debug { "Sending data to request eReceipts." }
 
         ws.send(
             prescriptionJsonFormatter.encodeToString(req)

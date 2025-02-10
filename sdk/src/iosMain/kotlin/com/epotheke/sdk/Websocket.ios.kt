@@ -20,6 +20,8 @@
  *
  ***************************************************************************/
 
+package com.epotheke.sdk
+
 import cocoapods.open_ecard.ServiceErrorCode
 import cocoapods.open_ecard.ServiceErrorResponseProtocol
 import cocoapods.open_ecard.WebsocketProtocol

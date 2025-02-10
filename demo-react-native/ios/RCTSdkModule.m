@@ -11,6 +11,23 @@
 #import <OpenEcard/open-ecard.h>
 #import <React/RCTLog.h>
 
+@interface LogMsgHandler : NSObject <LogMessageHandler>
+@property NSMutableString* log;
+@end
+@implementation LogMsgHandler
+- (void)log:(NSString *)msg {
+    @synchronized (self){
+        //RCTLogInfo(@"bridgeLog: injected logger msg", msg);
+        if(!self.log){
+            self.log = [NSMutableString new];
+        }
+
+        [self.log appendString: msg];
+    }
+}
+
+@end
+
 @interface IOSNFCOptions : NSObject <NFCConfig>
 @end
 @implementation IOSNFCOptions
@@ -49,7 +66,7 @@
 
 @implementation SdkErroHandler
 - (void)hdlCode:(nonnull NSString *)code error:(nonnull NSString *)error {
-    RCTLogInfo(@"error code:%@ msg: %@", code, error);
+    RCTLogInfo(@"bridgeLog: error code:%@ msg: %@", code, error);
     self.onSdkErrorCB(@[ code, error ]);
 }
 
@@ -65,7 +82,7 @@
 @implementation CardLinkControllerCallback
 - (void)onAuthenticationCompletionP0:(id<ActivationResult> _Nullable)p0
                    cardLinkProtocols:(nonnull NSSet<id<EpothekeCardLinkProtocol>> *)cardLinkProtocols {
-    RCTLogInfo(@"onAuthComp");
+    RCTLogInfo(@"bridgeLog: onAuthComp");
     if([p0 getResultCode] == kActivationResultCodeOK){
         if (self.onAuthenticationCompletionCB) {
             for (NSObject *p in cardLinkProtocols) {
@@ -85,7 +102,7 @@
             NSString *code = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][0];
             NSString *msg = [[p0 getErrorMessage] componentsSeparatedByString:@" ==> "][1];
             if([code rangeOfString:@"invalidSlotHandle"].location != NSNotFound){
-                self.onAuthenticationCompletionCB(@[ @"CARD_REMOVED", msg ] );
+                self.onAuthenticationCompletionCB(@[ @"CARD_REMOVED", msg ? msg : @"no msg" ] );
             }else{
                 self.onAuthenticationCompletionCB(@[ code, msg ] );
             }
@@ -94,7 +111,7 @@
 }
 
 - (void)onStarted {
-    RCTLogInfo(@"onStarted");
+    RCTLogInfo(@"bridgeLog: onStarted");
     if (self.onStartedCB) {
         self.onStartedCB(@[ @[ @"onStarted" ] ]);
     }
@@ -120,37 +137,37 @@
 @implementation CardLinkInterActionImp
 
 - (void)onCardInteractionComplete {
-    RCTLogInfo(@"onCardInteractionComplete ");
+    RCTLogInfo(@"bridgeLog: onCardInteractionComplete ");
     if (self.onCardInteractionCompleteCB)
         self.onCardInteractionCompleteCB(nil);
 }
 
 - (void)onCardRecognized {
-    RCTLogInfo(@"onCardRecognized ");
+    RCTLogInfo(@"bridgeLog: onCardRecognized ");
     if (self.onCardRecognizedCB)
         self.onCardRecognizedCB(nil);
 }
 
 - (void)onCardRemoved {
-    RCTLogInfo(@"onCardRemoved");
+    RCTLogInfo(@"bridgeLog: onCardRemoved");
     if (self.onCardRemovedCB)
         self.onCardRemovedCB(nil);
 }
 
 - (void)requestCardInsertion {
-    RCTLogInfo(@"requestCardInsertion");
+    RCTLogInfo(@"bridgeLog: requestCardInsertion");
     if (self.requestCardInsertionCB)
         self.requestCardInsertionCB(nil);
 }
 
 - (void)requestCardInsertion:(NSObject<NFCOverlayMessageHandler> *)msgHandler {
-    RCTLogInfo(@"requestCardInsertion");
+    RCTLogInfo(@"bridgeLog: requestCardInsertion");
     if (self.requestCardInsertionCB)
         self.requestCardInsertionCB(nil);
 }
 
 - (void)onCanRequest:(NSObject<ConfirmPasswordOperation> *)enterCan {
-    RCTLogInfo(@"onCanRequest");
+    RCTLogInfo(@"bridgeLog: onCanRequest");
     if (enterCan && self.onCanRequestCB) {
         self.userInputDispatch = ^(NSString *input) {
           if ([enterCan conformsToProtocol:@protocol(ConfirmPasswordOperation)]) {
@@ -164,7 +181,7 @@
 - (void)onCanRetry:(NSObject<ConfirmPasswordOperation> *)enterCan 
 		   withResultCode:(NSString*)resultCode
 		   withErrorMessage:(NSString*)errorMessage {
-    RCTLogInfo(@"onCanRetry");
+    RCTLogInfo(@"bridgeLog: onCanRetry");
     if (enterCan && self.onCanRequestCB) {
         self.userInputDispatch = ^(NSString *input) {
           if ([enterCan conformsToProtocol:@protocol(ConfirmPasswordOperation)]) {
@@ -182,7 +199,7 @@
 }
 
 - (void)onPhoneNumberRequest:(NSObject<ConfirmTextOperation> *)enterPhoneNumber {
-    RCTLogInfo(@"onPhoneNumberRequest");
+    RCTLogInfo(@"bridgeLog: onPhoneNumberRequest");
     if (enterPhoneNumber && self.onPhoneNumberRequestCB) {
         self.userInputDispatch = ^(NSString *input) {
           if ([enterPhoneNumber conformsToProtocol:@protocol(ConfirmTextOperation)]) {
@@ -195,7 +212,7 @@
 - (void)onPhoneNumberRetry:(NSObject<ConfirmTextOperation> *)enterPhoneNumber 
 		   withResultCode:(NSString*)resultCode
 		   withErrorMessage:(NSString*)errorMessage {
-    RCTLogInfo(@"onPhoneNumberRetry");
+    RCTLogInfo(@"bridgeLog: onPhoneNumberRetry");
     if (enterPhoneNumber && self.onPhoneNumberRequestCB) {
         self.userInputDispatch = ^(NSString *input) {
           if ([enterPhoneNumber conformsToProtocol:@protocol(ConfirmTextOperation)]) {
@@ -213,7 +230,7 @@
 }
 
 - (void)onSmsCodeRequest:(NSObject<ConfirmPasswordOperation> *)smsCode {
-    RCTLogInfo(@"onSmsCodeRequest");
+    RCTLogInfo(@"bridgeLog: onSmsCodeRequest");
     if (smsCode && self.onSmsCodeRequestCB) {
         self.userInputDispatch = ^(NSString *input) {
           if ([smsCode conformsToProtocol:@protocol(ConfirmPasswordOperation)]) {
@@ -226,7 +243,7 @@
 - (void)onSmsCodeRetry:(NSObject<ConfirmPasswordOperation> *)smsCode 
 		   withResultCode:(NSString*)resultCode
 		   withErrorMessage:(NSString*)errorMessage {
-    RCTLogInfo(@"onSmsCodeRetry");
+    RCTLogInfo(@"bridgeLog: onSmsCodeRetry");
     if (smsCode && self.onSmsCodeRequestCB) {
         self.userInputDispatch = ^(NSString *input) {
           if ([smsCode conformsToProtocol:@protocol(ConfirmPasswordOperation)]) {
@@ -253,7 +270,7 @@ CardLinkInterActionImp *clInteraction;
 CardLinkControllerCallback *clCtrlCB;
 
 RCT_EXPORT_METHOD(setUserInput : (NSString *)val) {
-    RCTLogInfo(@"got UserInput %@", val);
+    RCTLogInfo(@"bridgeLog: got UserInput %@", val);
     if (clInteraction && clInteraction.userInputDispatch) {
         clInteraction.userInputDispatch(val);
     }
@@ -398,9 +415,22 @@ RCT_EXPORT_METHOD(selectPrescriptions: (NSString *)selection
     );
 }
 
+
 EpothekeSdkCore *sdk;
+LogMsgHandler *msgHandler;
+RCT_EXPORT_METHOD(getLog: (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            if (msgHandler) {
+                resolve(msgHandler.log);
+        } else {
+            resolve(@"no log");
+        }
+    });
+}
+
+
 RCT_EXPORT_METHOD(startCardLink : (NSString *)cardLinkUrl tenantToken: (NSString *) tenantToken) {
-    RCTLogInfo(@"onStarted: %@", cardLinkUrl);
+    RCTLogInfo(@"bridgeLog: onStarted: %@", cardLinkUrl);
 
     IOSNFCOptions *nfcOpts = [IOSNFCOptions new];
 
@@ -411,6 +441,9 @@ RCT_EXPORT_METHOD(startCardLink : (NSString *)cardLinkUrl tenantToken: (NSString
                                                         sdkErrorHandler:errHandler
                                                                 nfcOpts:nfcOpts];
 
+    msgHandler = [LogMsgHandler new];
+    [sdk setLogMessageHandlerHandler:msgHandler];
+    [sdk setDebugLogLevel];
     [sdk doInitCardLink];
 }
 

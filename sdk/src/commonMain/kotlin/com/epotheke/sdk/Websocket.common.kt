@@ -20,7 +20,8 @@
  *
  ***************************************************************************/
 
-import com.epotheke.sdk.ChannelDispatcher
+package com.epotheke.sdk
+
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
@@ -40,7 +41,7 @@ interface WiredWSListener {
 }
 
 open class WebsocketListenerCommon() : ChannelDispatcher {
-    private val channels: MutableList<Channel<String>> = ArrayList<Channel<String>>()
+    private val channels = mutableListOf<Channel<String>>()
 
     override fun addProtocolChannel(channel: Channel<String>) {
         channels.add(channel)
@@ -57,7 +58,6 @@ open class WebsocketListenerCommon() : ChannelDispatcher {
     }
 
     fun onText(p1: String) {
-        log.debug { "Message from established link: $p1" }
         runBlocking {
             channels.map { c ->
                 c.send(p1)
@@ -65,8 +65,6 @@ open class WebsocketListenerCommon() : ChannelDispatcher {
         }
     }
 }
-
-expect fun getHttpClient(tenantToken: String?): HttpClient
 
 class WebsocketCommon(
     private var url: String,
@@ -82,7 +80,7 @@ class WebsocketCommon(
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
         try {
             for (msg in incoming) {
-                log.debug { "Socket receive received frame with type: ${msg.frameType}" }
+                log.debug { "Socket receive received frame with type" }
                 when (msg) {
                     is Frame.Text -> {
                         wsListener?.onText(msg.readText())
@@ -166,7 +164,7 @@ class WebsocketCommon(
                 }
             }
 
-            log.debug { "Websocket connected to ${getUrl()}" }
+            log.debug { "Websocket connected to" }
             wsListener?.onOpen()
         }
 

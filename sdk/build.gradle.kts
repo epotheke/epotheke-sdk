@@ -5,6 +5,7 @@ plugins {
     id("epotheke.lib-android-conventions")
     id("epotheke.lib-ios-conventions")
     id("epotheke.publish-conventions")
+
     kotlin("plugin.serialization")
 }
 
@@ -13,10 +14,10 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(libs.kotlin.logging)
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.websocket)
                 implementation(libs.kotlin.coroutines.core)
                 implementation(libs.kotlin.serialization.json)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.websocket)
                 implementation(libs.ktor.client.auth)
             }
         }
@@ -28,7 +29,6 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 api(libs.oec.android)
-                implementation(libs.kotlin.coroutines.android)
                 implementation(libs.ktor.client.okhttp)
             }
         }
@@ -51,7 +51,6 @@ kotlin {
         }
 
         pod("open-ecard") {
-            // TODO: use version from catalogue
             version = libs.versions.oec.get()
             ios.deploymentTarget = "13.0"
             moduleName = "OpenEcard"
@@ -61,23 +60,19 @@ kotlin {
 
 android {
     namespace = "com.epotheke"
-    compileSdk = 34
-    defaultConfig {
-        minSdk = 21
-    }
 
     packaging {
         resources.excludes.add("cif-repo/repo-config.properties")
     }
 
-    publishing {
-        singleVariant("release") {
-            // if you don't want sources/javadoc, remove these lines
-            withSourcesJar()
-            withJavadocJar()
+    buildTypes {
+        defaultConfig {
+            consumerProguardFiles("./consumer-proguard.txt")
         }
     }
+
 }
+
 publishing {
     publications {
         register<MavenPublication>("release") {

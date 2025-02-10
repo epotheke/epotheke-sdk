@@ -20,8 +20,9 @@
  *
  ***************************************************************************/
 
+package com.epotheke.sdk
+
 import cocoapods.open_ecard.ActivationResultProtocol
-import com.epotheke.sdk.CardLinkProtocol
 import kotlinx.cinterop.ExperimentalForeignApi
 
 interface CardLinkControllerCallback {

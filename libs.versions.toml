@@ -1,11 +1,12 @@
 [versions]
-agp = "8.2.+"
 kotlin = "2.0.21"
 kx-co = "1.9.+"
 kx-serde = "1.7.+"
 
+
 ktor = "2.3.+"
 
+agp = "8.6+"
 androidx-activityCompose = "1.9.+"
 androidx-appcompat = "1.6.+"
 androidx-constraintlayout = "2.1.+"
@@ -14,12 +15,12 @@ androidx-espresso-core = "3.5.+"
 androidx-material = "1.11.+"
 androidx-test-junit = "1.1.+"
 
-compose = "1.7.4"
+compose = "1.7.6"
 compose-plugin = "1.7.0"
 
 kotlin-jackson = "2.17.0"
 
-oec = "2.3.7"
+oec = "2.3.9"
 
 quarkus = "3.10.1"
 
@@ -29,7 +30,7 @@ libphonenumber = "8.13.36"
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-kotlin-logging = { module = "io.github.oshai:kotlin-logging", version = "6.0.+" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version = "7.0.+" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kx-co" }
 kotlin-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kx-co" }
 kotlin-jackson = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "kotlin-jackson" }

@@ -104,7 +104,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             p0: ActivationResult?,
             cardLinkProtocols: Set<CardLinkProtocol>
         ) {
-            logger.debug { "onAuthenticationCompletion ${p0?.errorMessage}" }
+            logger.debug { "rn-bridge: onAuthenticationCompletion ${p0?.errorMessage}" }
             erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
             ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
 
@@ -126,7 +126,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
 
         override fun onStarted() {
-            logger.debug { "onStarted" }
+            logger.debug { "rn-bridge: onStarted" }
             onStartedCB?.invoke()
         }
     }
@@ -203,36 +203,36 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
 
     private val cardLinkInteraction = object : CardLinkInteraction {
         override fun requestCardInsertion() {
-            logger.debug { "requestCardInsertion" }
+            logger.debug { "rn-bridge: requestCardInsertion" }
             requestCardInsertionCB?.invoke()
         }
 
         override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) {
-            logger.debug { "requestCardInsertion" }
+            logger.debug { "rn-bridge: requestCardInsertion" }
             requestCardInsertionCB?.invoke()
         }
 
         override fun onCardInteractionComplete() {
-            logger.debug { "onCardInteractionComplete" }
+            logger.debug { "rn-bridge: onCardInteractionComplete" }
             onCardInteractionCompleteCB?.invoke()
 
         }
 
         override fun onCardRecognized() {
-            logger.debug { "onCardRecognized" }
+            logger.debug { "rn-bridge: onCardRecognized" }
             onCardRecognizedCB?.invoke()
         }
 
         override fun onCardRemoved() {
-            logger.debug { "onCardRemoved" }
+            logger.debug { "rn-bridge: onCardRemoved" }
             onCardRemovedCB?.invoke()
         }
 
         override fun onCanRequest(p0: ConfirmPasswordOperation?) {
-            logger.debug { "onCanRequest" }
+            logger.debug { "rn-bridge: onCanRequest" }
             p0?.let {
                 userInputDispatch = { s ->
-                    logger.debug { "confirming number $s with framework interaction" }
+                    logger.debug { "rn-bridge: confirming number $s with framework interaction" }
                     p0.confirmPassword(s)
                 }
             }
@@ -240,10 +240,10 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
 
         override fun onCanRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
-            logger.debug { "onCanRetry" }
+            logger.debug { "rn-bridge: onCanRetry" }
             p0?.let {
                 userInputDispatch = { s ->
-                    logger.debug { "confirming number $s with framework interaction" }
+                    logger.debug { "rn-bridge: confirming number $s with framework interaction" }
                     p0.confirmPassword(s)
                 }
             }
@@ -251,10 +251,10 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
 
         override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) {
-            logger.debug { "onPhoneNumberRequest" }
+            logger.debug { "rn-bridge: onPhoneNumberRequest" }
             p0?.let {
                 userInputDispatch = { s ->
-                    logger.debug { "confirming number $s with framework interaction" }
+                    logger.debug { "rn-bridge: confirming number $s with framework interaction" }
                     p0.confirmText(s)
                 }
             }
@@ -262,10 +262,10 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
 
         override fun onPhoneNumberRetry(p0: ConfirmTextOperation?, p1: String?, p2: String?) {
-            logger.debug { "onPhoneNumberRetry" }
+            logger.debug { "rn-bridge: onPhoneNumberRetry" }
             p0?.let {
                 userInputDispatch = { s ->
-                    logger.debug { "confirming number $s with framework interaction" }
+                    logger.debug { "rn-bridge: confirming number $s with framework interaction" }
                     p0.confirmText(s)
                 }
             }
@@ -273,10 +273,10 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
 
         override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) {
-            logger.debug { "onSmsCodeRequest" }
+            logger.debug { "rn-bridge: onSmsCodeRequest" }
             p0?.let {
                 userInputDispatch = { s ->
-                    logger.debug { "confirming tan $s with framework interaction" }
+                    logger.debug { "rn-bridge: confirming tan $s with framework interaction" }
                     p0.confirmPassword(s)
                 }
             }
@@ -284,10 +284,10 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
 
         override fun onSmsCodeRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
-            logger.debug { "onSmsCodeRetry" }
+            logger.debug { "rn-bridge: onSmsCodeRetry" }
             p0?.let {
                 userInputDispatch = { s ->
-                    logger.debug { "confirming tan $s with framework interaction" }
+                    logger.debug { "rn-bridge: confirming tan $s with framework interaction" }
                     p0.confirmPassword(s)
                 }
             }
@@ -304,7 +304,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
 
     private val errorHandler = object : SdkErrorHandler {
         override fun onError(error: ServiceErrorResponse) {
-            logger.debug { "SdkModule onError will call registered RN callback with: ${error.errorMessage}" }
+            logger.debug { "rn-bridge: SdkModule onError will call registered RN callback with: ${error.errorMessage}" }
             onErrorCB?.invoke(error.statusCode.name, error.errorMessage)
         }
     }
@@ -313,22 +313,22 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun setUserInput(input: String) {
-        logger.debug { "Got user input: $input" }
+        logger.debug { "rn-bridge: Got user input: $input" }
         userInputDispatch.invoke(input)
     }
 
     var epothekeInstance : SdkCore? = null
     @ReactMethod
     fun abortCardLink() {
-        logger.debug { "SdkModule abort called $epothekeInstance" }
+        logger.debug { "rn-bridge: SdkModule abort called $epothekeInstance" }
         epothekeInstance?.let {
             it.destroyOecContext()
         }
     }
     @ReactMethod
     fun startCardLink(cardLinkUrl: String, tenantToken: String?) {
-        logger.debug { "SdkModule called with url : $cardLinkUrl" }
-        logger.debug { "SdkModule called with tenantToken: $tenantToken" }
+        logger.debug { "rn-bridge: SdkModule called with url : $cardLinkUrl" }
+        logger.debug { "rn-bridge: SdkModule called with tenantToken: $tenantToken" }
 
         epothekeInstance?.let {
             it.destroyOecContext()
