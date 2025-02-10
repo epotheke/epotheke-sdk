@@ -6,7 +6,8 @@ target 'epothekeDemo' do
   use_frameworks!
 
   # Pod for epothekeDemo
-  pod 'epotheke-sdk', :path => '/Users/florianotto/epoPod/'
+  pod 'epotheke-sdk','>= 1.1.17'
+
 
   post_install do |installer|
     # Find bitcode_strip
