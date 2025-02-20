@@ -87,9 +87,17 @@ class PrescriptionProtocolImp(
                             )
                         )
                     }
+                    else -> {
+                        logger.error (e) { "Unspecified error" }
+                        throw PrescriptionProtocolException(
+                            GenericErrorMessage(
+                                errorCode = GenericErrorResultType.UNKNOWN_ERROR,
+                                errorMessage = "Unspecified error",
+                                correlationId = req.messageId
+                            )
+                        )
+                    }
                 }
-                logger.error(e) { "Exception during receive" }
-                throw e
             }
         }
     }
@@ -99,7 +107,6 @@ class PrescriptionProtocolImp(
         ws.send(
             prescriptionJsonFormatter.encodeToString(selection)
         )
-
 
         val lastTimestampUntilTimeout = now() + ReceiveTimeoutSeconds
         var duration = ReceiveTimeoutSeconds.seconds
@@ -138,9 +145,17 @@ class PrescriptionProtocolImp(
                             )
                         )
                     }
+                    else -> {
+                        logger.error (e) { "Unspecified error" }
+                        throw PrescriptionProtocolException(
+                            GenericErrorMessage(
+                                errorCode = GenericErrorResultType.UNKNOWN_ERROR,
+                                errorMessage = "Unspecified error",
+                                correlationId = selection.messageId
+                            )
+                        )
+                    }
                 }
-                logger.error(e) { "Exception during receive" }
-                throw e
             }
         }
     }
