@@ -184,7 +184,6 @@ function App(): React.JSX.Element {
 
     async function doCL() {
 
-        setFetchPrescriptionsEnabled(false)
         /*
           Register callbacks for CardLink interaction.
           These are called by the framework during CardLink establishment, to inform app and user about the current state of the process and

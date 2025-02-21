@@ -217,6 +217,12 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onCardInteractionCompleteCB?.invoke()
 
         }
+        override fun onCardInserted() {
+            logger.debug { "rn-bridge: onCardInserted" }
+        }
+        override fun onCardInsufficient() {
+            logger.debug { "rn-bridge: onCardInsufficient" }
+        }
 
         override fun onCardRecognized() {
             logger.debug { "rn-bridge: onCardRecognized" }
