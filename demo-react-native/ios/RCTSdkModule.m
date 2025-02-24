@@ -83,17 +83,16 @@
 - (void)onAuthenticationCompletionP0:(id<ActivationResult> _Nullable)p0
                    cardLinkProtocols:(nonnull NSSet<id<EpothekeCardLinkProtocol>> *)cardLinkProtocols {
     RCTLogInfo(@"bridgeLog: onAuthComp");
+
+    for (NSObject *p in cardLinkProtocols) {
+        if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
+            self.prescriptionProtocol = p;
+        }
+    }
     if([p0 getResultCode] == kActivationResultCodeOK){
         if (self.onAuthenticationCompletionCB) {
-            for (NSObject *p in cardLinkProtocols) {
-                if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
-                    // found prescriptionProto
-                    self.prescriptionProtocol = p;
-                    self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
+                   self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
                     self.onAuthenticationCompletionCB(@[ [NSNull null], [NSNull null] ] );
-                    break;
-                }
-            }
         }
     } else {
         if ([[p0 getErrorMessage] rangeOfString:@"==>"].location == NSNotFound){
