@@ -124,6 +124,8 @@
 
 @property RCTResponseSenderBlock requestCardInsertionCB;
 @property RCTResponseSenderBlock onCardInteractionCompleteCB;
+@property RCTResponseSenderBlock onCardInsertedCB;
+@property RCTResponseSenderBlock onCardInsufficientCB;
 @property RCTResponseSenderBlock onCardRecognizedCB;
 @property RCTResponseSenderBlock onCardRemovedCB;
 @property RCTResponseSenderBlock onCanRequestCB;
@@ -147,7 +149,16 @@
     if (self.onCardRecognizedCB)
         self.onCardRecognizedCB(nil);
 }
-
+- (void)onCardInserted {
+    RCTLogInfo(@"bridgeLog: onCardInserted");
+    if (self.onCardInsertedCB)
+        self.onCardInsertedCB(nil);
+}
+- (void)onCardInsufficient {
+    RCTLogInfo(@"bridgeLog: onCardInserted");
+    if (self.onCardInsufficientCB)
+        self.onCardInsufficientCB(nil);
+}
 - (void)onCardRemoved {
     RCTLogInfo(@"bridgeLog: onCardRemoved");
     if (self.onCardRemovedCB)

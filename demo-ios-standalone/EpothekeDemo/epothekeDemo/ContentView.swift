@@ -186,6 +186,13 @@ struct ContentView: View {
             print("onCardInteractionComplete")
         }
 
+	func onCardInserted() {
+            print("onCardInserted")
+        }
+
+        func onCardInsufficient() {
+            print("onCardInsufficient")
+        }
         func onCardRecognized() {
             print("onCardRecognized")
         }
