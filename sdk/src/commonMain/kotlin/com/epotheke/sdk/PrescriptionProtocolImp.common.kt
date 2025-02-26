@@ -26,6 +26,7 @@ import com.epotheke.erezept.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlin.time.Duration.Companion.seconds
 
@@ -80,6 +81,9 @@ class PrescriptionProtocolImp(
                         duration = (lastTimestampUntilTimeout - now()).seconds
                     }
                 }
+            // this might happen on reconnect since server sends session information as a hello
+            } catch (e: SerializationException) {
+                logger.warn { "Invalid message type received - Ignoring" }
             } catch (e: TimeoutCancellationException) {
                 logger.error { "Timeout during receive" }
                 throw PrescriptionProtocolException(
@@ -97,6 +101,9 @@ class PrescriptionProtocolImp(
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
         logger.debug { "Sending data to request eReceipts." }
         try {
+            if(!ws.isOpen()){
+                ws.connect()
+            }
             ws.send(prescriptionJsonFormatter.encodeToString(req))
             val resp = receive<AvailablePrescriptionLists>(reqMessageId = req.messageId)
             checkCorrelation(req.messageId, resp.correlationId)
@@ -121,6 +128,9 @@ class PrescriptionProtocolImp(
     override suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse {
         logger.debug { "Sending data to select prescriptions." }
         try {
+            if(!ws.isOpen()){
+                ws.connect()
+            }
             ws.send(prescriptionJsonFormatter.encodeToString(selection))
             val resp = receive<SelectedPrescriptionListResponse>(reqMessageId = selection.messageId)
             checkCorrelation(selection.messageId, resp.correlationId)
