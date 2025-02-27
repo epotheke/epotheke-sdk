@@ -214,6 +214,18 @@ function App(): React.JSX.Element {
         };
         SdkModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB);
 
+        let onCardInsertedCB = () => {
+            log('onCardInserted');
+            SdkModule.set_cardlinkInteractionCB_onCardInserted(onCardInsertedCB);
+        };
+        SdkModule.set_cardlinkInteractionCB_onCardInserted(onCardInsertedCB);
+
+        let onCardInsufficientCB = () => {
+            log('onCardInsufficient');
+            SdkModule.set_cardlinkInteractionCB_onCardInsufficient(onCardInsufficientCB);
+        };
+        SdkModule.set_cardlinkInteractionCB_onCardInsufficient(onCardInsufficientCB);
+
         let onCardRemovedCB = () => {
             log('onCardRemoved');
             SdkModule.set_cardlinkInteractionCB_onCardRemoved(onCardRemovedCB);

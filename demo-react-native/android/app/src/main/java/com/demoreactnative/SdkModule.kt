@@ -152,6 +152,20 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         onCardRecognizedCB = cb
     }
 
+    var onCardInsertedCB: Callback? = null
+
+    @ReactMethod
+    fun set_cardlinkInteractionCB_onCardInserted(cb: Callback) {
+        onCardInsertedCB = cb
+    }
+
+    var onCardInsufficientCB: Callback? = null
+
+    @ReactMethod
+    fun set_cardlinkInteractionCB_onCardInsufficient(cb: Callback) {
+        onCardInsufficientCB = cb
+    }
+
     var onCardRemovedCB: Callback? = null
 
     @ReactMethod
@@ -219,9 +233,11 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         }
         override fun onCardInserted() {
             logger.debug { "rn-bridge: onCardInserted" }
+            onCardInsertedCB?.invoke()
         }
         override fun onCardInsufficient() {
             logger.debug { "rn-bridge: onCardInsufficient" }
+            onCardInsufficientCB?.invoke()
         }
 
         override fun onCardRecognized() {

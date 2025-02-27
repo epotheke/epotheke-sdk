@@ -40,7 +40,7 @@
 }
 
 - (NSString *)getDefaultNFCCardRecognizedMessage {
-    return @"Please wait. A card has been detected";
+    return @"Please wait. Card has been recognized.";
 }
 
 - (NSString *)getDefaultNFCErrorMessage {
@@ -48,16 +48,21 @@
 }
 
 - (NSString *)getNFCCompletionMessage {
-    return @"Finished communicating with the card";
+    return @"Finished communicating with the card.";
 }
 
 - (NSString *)getProvideCardMessage {
-    return @"Please hold card to your phone";
+    return @"Please hold card to your phone.";
 }
 
 - (NSString *)getTagLostErrorMessage {
     return @"An error occurred communicating with the card.";
 }
+
+- (NSString *)getDefaultCardInsertedMessage {
+    return @"Please wait. A card has been inserted.";
+}
+
 @end
 
 @interface SdkErroHandler : NSObject <EpothekeSdkErrorHandler>
@@ -154,7 +159,7 @@
         self.onCardInsertedCB(nil);
 }
 - (void)onCardInsufficient {
-    RCTLogInfo(@"bridgeLog: onCardInserted");
+    RCTLogInfo(@"bridgeLog: onCardInsufficient");
     if (self.onCardInsufficientCB)
         self.onCardInsufficientCB(nil);
 }
@@ -317,6 +322,20 @@ RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardRecognized : (RCTResponseSende
         clInteraction = [CardLinkInterActionImp new];
     }
     clInteraction.onCardRecognizedCB = cb;
+}
+
+RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardInserted : (RCTResponseSenderBlock)cb) {
+    if (!clInteraction) {
+        clInteraction = [CardLinkInterActionImp new];
+    }
+    clInteraction.onCardInsertedCB = cb;
+}
+
+RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardInsufficient : (RCTResponseSenderBlock)cb) {
+    if (!clInteraction) {
+        clInteraction = [CardLinkInterActionImp new];
+    }
+    clInteraction.onCardInsufficientCB = cb;
 }
 
 RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardRemoved : (RCTResponseSenderBlock)cb) {
