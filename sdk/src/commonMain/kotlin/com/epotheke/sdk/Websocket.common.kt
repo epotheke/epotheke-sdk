@@ -151,6 +151,7 @@ class WebsocketCommon(
         this.receiveJob?.cancel()
         runBlocking {
             val uri = Url(url)
+            log.debug { "Connecting websocket to: $uri" }
 
             wsSession = client.webSocketSession(
                 method = HttpMethod.Get,
@@ -164,7 +165,7 @@ class WebsocketCommon(
                 }
             }
 
-            log.debug { "Websocket connected to" }
+            log.debug { "Websocket connected" }
             wsListener?.onOpen()
         }
 

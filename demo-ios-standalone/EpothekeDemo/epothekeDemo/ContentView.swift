@@ -61,6 +61,14 @@ struct ContentView: View {
 
     /* This implementation allows to configure messages which are shown by iOS during nfc interaction*/
     class IOSNFCOptions: NSObject, NFCConfigProtocol {
+        func getDefaultCardInsertedMessage() -> String! {
+            return "Card was inserted"
+        }
+
+        func getDefaultCardInsufficientMessage() -> String! {
+            return "Card is not sufficient"
+        }
+
         func getProvideCardMessage() -> String! {
             return "Please hold card to your phone"
         }
@@ -186,6 +194,13 @@ struct ContentView: View {
             print("onCardInteractionComplete")
         }
 
+	func onCardInserted() {
+            print("onCardInserted")
+        }
+
+        func onCardInsufficient() {
+            print("onCardInsufficient")
+        }
         func onCardRecognized() {
             print("onCardRecognized")
         }

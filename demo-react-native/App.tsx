@@ -184,7 +184,6 @@ function App(): React.JSX.Element {
 
     async function doCL() {
 
-        setFetchPrescriptionsEnabled(false)
         /*
           Register callbacks for CardLink interaction.
           These are called by the framework during CardLink establishment, to inform app and user about the current state of the process and
@@ -214,6 +213,18 @@ function App(): React.JSX.Element {
             SdkModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB);
         };
         SdkModule.set_cardlinkInteractionCB_onCardRecognized(onCardRecognizedCB);
+
+        let onCardInsertedCB = () => {
+            log('onCardInserted');
+            SdkModule.set_cardlinkInteractionCB_onCardInserted(onCardInsertedCB);
+        };
+        SdkModule.set_cardlinkInteractionCB_onCardInserted(onCardInsertedCB);
+
+        let onCardInsufficientCB = () => {
+            log('onCardInsufficient');
+            SdkModule.set_cardlinkInteractionCB_onCardInsufficient(onCardInsufficientCB);
+        };
+        SdkModule.set_cardlinkInteractionCB_onCardInsufficient(onCardInsufficientCB);
 
         let onCardRemovedCB = () => {
             log('onCardRemoved');

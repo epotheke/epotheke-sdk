@@ -40,7 +40,7 @@
 }
 
 - (NSString *)getDefaultNFCCardRecognizedMessage {
-    return @"Please wait. A card has been detected";
+    return @"Please wait. Card has been recognized.";
 }
 
 - (NSString *)getDefaultNFCErrorMessage {
@@ -48,16 +48,21 @@
 }
 
 - (NSString *)getNFCCompletionMessage {
-    return @"Finished communicating with the card";
+    return @"Finished communicating with the card.";
 }
 
 - (NSString *)getProvideCardMessage {
-    return @"Please hold card to your phone";
+    return @"Please hold card to your phone.";
 }
 
 - (NSString *)getTagLostErrorMessage {
     return @"An error occurred communicating with the card.";
 }
+
+- (NSString *)getDefaultCardInsertedMessage {
+    return @"Please wait. A card has been inserted.";
+}
+
 @end
 
 @interface SdkErroHandler : NSObject <EpothekeSdkErrorHandler>
@@ -83,17 +88,16 @@
 - (void)onAuthenticationCompletionP0:(id<ActivationResult> _Nullable)p0
                    cardLinkProtocols:(nonnull NSSet<id<EpothekeCardLinkProtocol>> *)cardLinkProtocols {
     RCTLogInfo(@"bridgeLog: onAuthComp");
+
+    for (NSObject *p in cardLinkProtocols) {
+        if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
+            self.prescriptionProtocol = p;
+        }
+    }
     if([p0 getResultCode] == kActivationResultCodeOK){
         if (self.onAuthenticationCompletionCB) {
-            for (NSObject *p in cardLinkProtocols) {
-                if ([p conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
-                    // found prescriptionProto
-                    self.prescriptionProtocol = p;
-                    self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
+                   self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
                     self.onAuthenticationCompletionCB(@[ [NSNull null], [NSNull null] ] );
-                    break;
-                }
-            }
         }
     } else {
         if ([[p0 getErrorMessage] rangeOfString:@"==>"].location == NSNotFound){
@@ -124,6 +128,8 @@
 
 @property RCTResponseSenderBlock requestCardInsertionCB;
 @property RCTResponseSenderBlock onCardInteractionCompleteCB;
+@property RCTResponseSenderBlock onCardInsertedCB;
+@property RCTResponseSenderBlock onCardInsufficientCB;
 @property RCTResponseSenderBlock onCardRecognizedCB;
 @property RCTResponseSenderBlock onCardRemovedCB;
 @property RCTResponseSenderBlock onCanRequestCB;
@@ -147,7 +153,16 @@
     if (self.onCardRecognizedCB)
         self.onCardRecognizedCB(nil);
 }
-
+- (void)onCardInserted {
+    RCTLogInfo(@"bridgeLog: onCardInserted");
+    if (self.onCardInsertedCB)
+        self.onCardInsertedCB(nil);
+}
+- (void)onCardInsufficient {
+    RCTLogInfo(@"bridgeLog: onCardInsufficient");
+    if (self.onCardInsufficientCB)
+        self.onCardInsufficientCB(nil);
+}
 - (void)onCardRemoved {
     RCTLogInfo(@"bridgeLog: onCardRemoved");
     if (self.onCardRemovedCB)
@@ -307,6 +322,20 @@ RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardRecognized : (RCTResponseSende
         clInteraction = [CardLinkInterActionImp new];
     }
     clInteraction.onCardRecognizedCB = cb;
+}
+
+RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardInserted : (RCTResponseSenderBlock)cb) {
+    if (!clInteraction) {
+        clInteraction = [CardLinkInterActionImp new];
+    }
+    clInteraction.onCardInsertedCB = cb;
+}
+
+RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardInsufficient : (RCTResponseSenderBlock)cb) {
+    if (!clInteraction) {
+        clInteraction = [CardLinkInterActionImp new];
+    }
+    clInteraction.onCardInsufficientCB = cb;
 }
 
 RCT_EXPORT_METHOD(set_cardlinkInteractionCB_onCardRemoved : (RCTResponseSenderBlock)cb) {
