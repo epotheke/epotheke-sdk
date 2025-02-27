@@ -6,7 +6,7 @@ target 'epothekeDemo' do
   use_frameworks!
 
   # Pod for epothekeDemo
-  pod 'epotheke-sdk','>= 1.1.18'
+  pod 'epotheke-sdk','>= 1.1.19'
 
 
   post_install do |installer|
