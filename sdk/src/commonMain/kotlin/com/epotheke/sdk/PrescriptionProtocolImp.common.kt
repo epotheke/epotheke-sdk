@@ -102,6 +102,7 @@ class PrescriptionProtocolImp(
         logger.debug { "Sending data to request eReceipts." }
         try {
             if(!ws.isOpen()){
+                logger.debug { "Cannot send since ws is closed - reconnecting." }
                 ws.connect()
             }
             ws.send(prescriptionJsonFormatter.encodeToString(req))
@@ -129,6 +130,7 @@ class PrescriptionProtocolImp(
         logger.debug { "Sending data to select prescriptions." }
         try {
             if(!ws.isOpen()){
+                logger.debug { "Cannot send since ws is closed - reconnecting." }
                 ws.connect()
             }
             ws.send(prescriptionJsonFormatter.encodeToString(selection))
