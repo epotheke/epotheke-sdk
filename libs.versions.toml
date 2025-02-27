@@ -20,7 +20,7 @@ compose-plugin = "1.7.0"
 
 kotlin-jackson = "2.17.0"
 
-oec = "2.3.10-SNAPSHOT"
+oec = "2.3.10"
 
 quarkus = "3.10.1"
 
