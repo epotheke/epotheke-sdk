@@ -268,6 +268,18 @@ class SdkActivityImp : SdkActivity() {
             LOG.debug { "epotheke implementation onCardInteractionComplete" }
         }
 
+        override fun onCardInserted() {
+            LOG.debug { "epotheke implementation onCardInserted" }
+        }
+
+        override fun onCardInsufficient() {
+            LOG.debug { "epotheke implementation onCardInsufficient" }
+            runOnUiThread {
+                setBusy(false)
+                showInfo("Card was insufficient")
+            }
+        }
+
         /**
          * Gets called, when the intent from android of a detected card, is consumed by the SDK.
          * The app may inform the user, that the card was detected.
