@@ -67,8 +67,20 @@ const tenantTokens = {
 
 function App(): React.JSX.Element {
     const [status, setStatus] = useState('Status: not started yet');
+    const [authenticationOngoing, setAuthtenticationOngoing] = useState(false);
     const [modalTxt, setmodalTxt] = useState('Text');
     const [logFromSdk, setLogFromSdk] = useState('no log yet');
+
+    const updateAuthStatus = useEffect(() => {
+        async function get() {
+            return await SdkModule.activationActive();
+        }
+        const intervalId = setInterval(async ()=>{
+            var v = await get();
+            setAuthtenticationOngoing(v);
+        }, 500);
+        return () => { clearInterval(intervalId) }
+    },[]);
 
     // This is to manage Modal State
     const [isModalVisible, setModalVisible] = useState(false);
@@ -497,7 +509,22 @@ function App(): React.JSX.Element {
                         }}
                     />
                     <View style={styles.space} />
-                    <Button title="Establish Cardlink" onPress={doCL} />
+                    <Button title="Establish Cardlink"
+                        disabled={authenticationOngoing}
+                        onPress={
+                           () => {
+                               setAuthtenticationOngoing(true);
+                               doCL();
+                           }
+                    } />
+                    <Button title="Cancel"
+                                        disabled={!authenticationOngoing}
+                                        onPress={
+                                           () => {
+                                               SdkModule.abortCardLink()
+                                           }
+                                    } />
+                    <Text style={styles.txtblack}>Authentication: {authenticationOngoing ? 'is ongoing' : 'is not active' }</Text>
                     <View style={styles.space} />
                     <Button
                         title="Fetch prescriptions"
