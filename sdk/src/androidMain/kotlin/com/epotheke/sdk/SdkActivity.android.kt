@@ -44,13 +44,15 @@ abstract class SdkActivity : Activity() {
 
         epotheke = SdkCore(
             this,
-            getCardLinkUrl(),
-            getTenantToken(),
             getControllerCallback(),
             getCardLinkInteraction(),
             getSdkErrorHandler(),
         ).apply {
-            initOecContext()
+            activate(
+                false,
+                getCardLinkUrl(),
+                getTenantToken(),
+            )
         }
     }
 
