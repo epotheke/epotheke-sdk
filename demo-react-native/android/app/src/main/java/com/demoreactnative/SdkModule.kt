@@ -344,60 +344,71 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         userInputDispatch.invoke(input)
     }
 
-    var epothekeInstance : SdkCore? = null
+    var epothekeInstance: SdkCore? = null
+
     @ReactMethod
     fun abortCardLink() {
         logger.debug { "rn-bridge: SdkModule abort called $epothekeInstance" }
-        epothekeInstance?.let {
-            it.destroyOecContext()
-        }
+        epothekeInstance?.cancelOngoingActivation()
     }
+
     @ReactMethod
-    fun startCardLink(cardLinkUrl: String, tenantToken: String?) {
+    fun activationActive(p: Promise) {
+        val res = epothekeInstance?.activationsActive()?.equals(true) ?: false
+        p.resolve(res)
+    }
+
+    @ReactMethod
+    fun destroyCardlinkResources() {
+        logger.debug { "rn-bridge: SdkModule desctroy $epothekeInstance" }
+        epothekeInstance?.destroyOecContext()
+        epothekeInstance = null
+    }
+
+    @ReactMethod
+    fun startCardLink(cardLinkUrl: String, tenantToken: String) {
         logger.debug { "rn-bridge: SdkModule called with url : $cardLinkUrl" }
         logger.debug { "rn-bridge: SdkModule called with tenantToken: $tenantToken" }
 
-        epothekeInstance?.let {
-            it.destroyOecContext()
-        }
-
         currentActivity?.let { activity ->
-            val epotheke = SdkCore(
-                activity,
-                cardLinkUrl,
-                tenantToken,
-                cardLinkControllerCallback,
-                cardLinkInteraction,
-                errorHandler,
-            )
-            epothekeInstance = epotheke
+            if (epothekeInstance == null) {
+                val epotheke: SdkCore =
+                    SdkCore(
+                        activity,
+                        cardLinkControllerCallback,
+                        cardLinkInteraction,
+                        errorHandler,
+                    )
 
-            reactContext.addActivityEventListener(object : ActivityEventListener {
-                override fun onActivityResult(p0: Activity?, p1: Int, p2: Int, p3: Intent?) {
-                    //ignore
-                }
+                epothekeInstance = epotheke
 
-                override fun onNewIntent(p0: Intent?) {
-                    p0?.let {
-                        epotheke.onNewIntent(p0)
+                reactContext.addActivityEventListener(object : ActivityEventListener {
+                    override fun onActivityResult(p0: Activity?, p1: Int, p2: Int, p3: Intent?) {
+                        //ignore
                     }
-                }
-            })
-            reactContext.addLifecycleEventListener(object : LifecycleEventListener {
-                override fun onHostResume() {
-                    epotheke.onResume()
-                }
 
-                override fun onHostPause() {
-                    epotheke.onPause()
-                }
+                    override fun onNewIntent(p0: Intent?) {
+                        p0?.let {
+                            epotheke.onNewIntent(p0)
+                        }
+                    }
+                })
+                reactContext.addLifecycleEventListener(object : LifecycleEventListener {
+                    override fun onHostResume() {
+                        epotheke.onResume()
+                    }
 
-                override fun onHostDestroy() {
-                    epotheke.destroyOecContext()
-                }
-            })
+                    override fun onHostPause() {
+                        epotheke.onPause()
+                    }
 
-            epotheke.initOecContext()
+                    override fun onHostDestroy() {
+                        epotheke.destroyOecContext()
+                    }
+                })
+
+            }
+            epothekeInstance?.activate(false, cardLinkUrl, tenantToken)
         }
     }
 
