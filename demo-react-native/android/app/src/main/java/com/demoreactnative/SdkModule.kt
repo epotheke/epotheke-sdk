@@ -107,7 +107,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         ) {
             logger.debug { "rn-bridge: onAuthenticationCompletion ${p0?.errorMessage}" }
             erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
-            ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
+
 
             //hotfix
             if (p0?.errorMessage?.contains("==>") == true) {
@@ -120,6 +120,8 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             } else if (p0?.errorMessage != null) {
                 onAuthenticationCompletionCB?.invoke(p0.resultCode?.name, p0.errorMessage)
             } else {
+                ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
+                logger.debug { "rn-bridge: wsession_id set to: ${ws_sessionId}" }
                 onAuthenticationCompletionCB?.invoke(null, null)
             }
 //            onAuthenticationCompletionCB?.invoke(p0?.processResultMinor, p0?.errorMessage)
