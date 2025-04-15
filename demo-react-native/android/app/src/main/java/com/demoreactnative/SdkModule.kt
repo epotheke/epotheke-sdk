@@ -22,7 +22,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import org.openecard.mobile.activation.ActivationResult
-import org.openecard.mobile.activation.CardLinkErrorCodes
 import org.openecard.mobile.activation.CardLinkInteraction
 import org.openecard.mobile.activation.ConfirmPasswordOperation
 import org.openecard.mobile.activation.ConfirmTextOperation
@@ -62,7 +61,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p.resolve(
                         prescriptionJsonFormatter.encodeToString(availablePrescriptions)
                     )
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     p.reject(e)
                 }
             }
@@ -74,18 +73,20 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         runBlocking {
             callPrescriptionProtocolNullChecked(p) {
                 try {
-                    val confirmation = selectPrescriptions(prescriptionJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
+                    val confirmation = selectPrescriptions(
+                        prescriptionJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection)
+                    )
                     p.resolve(
                         prescriptionJsonFormatter.encodeToString(confirmation)
                     )
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     p.reject(e)
                 }
             }
         }
     }
 
-    private suspend fun callPrescriptionProtocolNullChecked(p: Promise, call: suspend PrescriptionProtocol.() -> Unit){
+    private suspend fun callPrescriptionProtocolNullChecked(p: Promise, call: suspend PrescriptionProtocol.() -> Unit) {
         when (val proto = erezeptProtocol) {
             null -> {
                 p.reject("Protocol not available, is CardLink established?")
@@ -109,15 +110,15 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
 
             //hotfix
-            if(p0?.errorMessage?.contains("==>") == true){
-                var minor = p0?.errorMessage?.split("==>")?.get(0)?.trim()
-                var msg = p0?.errorMessage?.split("==>")?.get(1)?.trim()
-                if(minor?.contains("invalidSlotHandle") == true){
-                    minor="CARD_REMOVED"
+            if (p0?.errorMessage?.contains("==>") == true) {
+                var minor = p0.errorMessage?.split("==>")?.get(0)?.trim()
+                val msg = p0.errorMessage?.split("==>")?.get(1)?.trim()
+                if (minor?.contains("invalidSlotHandle") == true) {
+                    minor = "CARD_REMOVED"
                 }
                 onAuthenticationCompletionCB?.invoke(minor, msg)
-            } else if (p0?.errorMessage != null){
-                onAuthenticationCompletionCB?.invoke(p0?.resultCode?.name, p0?.errorMessage)
+            } else if (p0?.errorMessage != null) {
+                onAuthenticationCompletionCB?.invoke(p0.resultCode?.name, p0.errorMessage)
             } else {
                 onAuthenticationCompletionCB?.invoke(null, null)
             }
@@ -231,10 +232,12 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onCardInteractionCompleteCB?.invoke()
 
         }
+
         override fun onCardInserted() {
             logger.debug { "rn-bridge: onCardInserted" }
             onCardInsertedCB?.invoke()
         }
+
         override fun onCardInsufficient() {
             logger.debug { "rn-bridge: onCardInsufficient" }
             onCardInsufficientCB?.invoke()
@@ -291,7 +294,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p0.confirmText(s)
                 }
             }
-            onPhoneNumberRetryCB?.invoke(p1,p2)
+            onPhoneNumberRetryCB?.invoke(p1, p2)
         }
 
         override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) {
@@ -313,7 +316,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p0.confirmPassword(s)
                 }
             }
-            onSmsCodeRetryCB?.invoke(p1,p2)
+            onSmsCodeRetryCB?.invoke(p1, p2)
         }
 
     }
