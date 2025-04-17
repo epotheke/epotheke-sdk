@@ -97,14 +97,13 @@ class SdkCore(
                 initOecContext(activationSession, cardLinkUrl, tenantToken)
             } else {
                 activationSource?.let {
-                    doActivation(activationSession, cardLinkUrl, tenantToken)
+                    doActivation(it, activationSession, cardLinkUrl, tenantToken)
                 }
             }
         }
     }
 
-    //TODO do this the other way again? with the activationSource as parameter
-    private fun doActivation(activationSession: Any, cardLinkUrl: String, tenantToken: String?){
+    private fun doActivation(activationSource: ActivationSource, activationSession: Any, cardLinkUrl: String, tenantToken: String?){
 
         val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
         val wsListener = WebsocketListenerCommon()
@@ -131,7 +130,7 @@ class SdkCore(
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
-                doActivation(activationSession, cardLinkUrl, tenantToken)
+                doActivation(actSource, activationSession, cardLinkUrl, tenantToken)
             }
 
             override fun onFailure(ex: ServiceErrorResponse) {

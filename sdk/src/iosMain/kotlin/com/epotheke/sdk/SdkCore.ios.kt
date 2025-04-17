@@ -92,7 +92,7 @@ class SdkCore(
             initOecContext(activationSession, cardLinkUrl, tenantToken)
         }else {
             activationSource?.let {
-                doActivation(activationSession, cardLinkUrl, tenantToken)
+                doActivation(it, activationSession, cardLinkUrl, tenantToken)
             }
         }
         sdkLock.unlock()
@@ -103,15 +103,11 @@ class SdkCore(
     }
 
 
-    private fun doActivation(activationSession: Any, cardLinkUrl: String, tenantToken: String?){
+    private fun doActivation(activationSource: ActivationSourceProtocol, activationSession: Any, cardLinkUrl: String, tenantToken: String?){
         val ws = WebsocketCommon(cardLinkUrl, tenantToken)
         val wsListener = WebsocketListenerCommon()
         val protocols = buildProtocols(ws, wsListener)
-        //TODO do this the other way again?
-        if(activationSource == null){
-            throw IllegalStateException("Lost activation source")
-        } else {
-        val factory = activationSource!!.cardLinkFactory() as CardLinkControllerFactoryProtocol
+        val factory = activationSource.cardLinkFactory() as CardLinkControllerFactoryProtocol
         currentActivation = factory.create(
             WebsocketIos(ws, overridingSdkErrorHandler(sdkErrorHandler, activationSession)),
             withActivation = OverridingControllerCallback(this@SdkCore, protocols, cardLinkControllerCallback, activationSession) as NSObject,
@@ -119,7 +115,7 @@ class SdkCore(
             withInteraction = cardLinkInteractionProtocol as NSObject,
             withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,
         ) as ActivationControllerProtocol
-    }}
+    }
 
     @OptIn(ExperimentalForeignApi::class)
     private fun initOecContext(activationSession: Any, cardLinkUrl: String, tenantToken: String?) {
