@@ -84,6 +84,7 @@ class SdkCore(
                 if(waitForSlot) {
                     sdkLock.wait()
                 }else {
+                    waitingActivations = waitingActivations.dec()
                     return
                 }
             }
@@ -96,13 +97,14 @@ class SdkCore(
                 initOecContext(activationSession, cardLinkUrl, tenantToken)
             } else {
                 activationSource?.let {
-                    doActivation(it, activationSession, cardLinkUrl, tenantToken)
+                    doActivation(activationSession, cardLinkUrl, tenantToken)
                 }
             }
         }
     }
 
-    private fun doActivation(activationSource: ActivationSource, activationSession: Any, cardLinkUrl: String, tenantToken: String?){
+    //TODO do this the other way again? with the activationSource as parameter
+    private fun doActivation(activationSession: Any, cardLinkUrl: String, tenantToken: String?){
 
         val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
         val wsListener = WebsocketListenerCommon()
@@ -110,6 +112,7 @@ class SdkCore(
         currentActivation = activationSource.cardLinkFactory().create(
             WebsocketAndroid(websocket, overridingSdkErrorHandler(sdkErrorHandler, activationSession)),
             overridingControllerCallback(protocols, activationSession),
+            //TODO secure interaction with session binding
             OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
             WebsocketListenerAndroid(wsListener)
         )
@@ -128,13 +131,15 @@ class SdkCore(
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
-                doActivation(actSource, activationSession, cardLinkUrl, tenantToken)
+                doActivation(activationSession, cardLinkUrl, tenantToken)
             }
 
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
                 overridingSdkErrorHandler(sdkErrorHandler, activationSession)
 
+                //TODO we can do this in errorhandler cause we hav to do it anyway
+                //TODO prevent auth callback can most probably go then, because we change session in sdkErrorHandler
                 synchronized(sdkLock) {
                    if(activationSession == currentActivationSession){
                        nfcIntentHelper = null
@@ -151,6 +156,9 @@ class SdkCore(
         logger.debug { "SdkCore.android - destroying oecContext." }
 
         synchronized(sdkLock){
+            //cancelling here leads to a authcompletion with cancel
+            //the handler however is synced so it will be called after this block here
+            //and its session guard will prevent to call the app
             cancelOngoingActivation()
             val ctxManagerToBeDestroyed = ctxManager ?: return
 
@@ -191,6 +199,7 @@ class SdkCore(
     private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler, activationSession: Any): SdkErrorHandler {
         return object : SdkErrorHandler {
             override fun onError(error: ServiceErrorResponse) {
+                //TODO don't we have to end the session and free the lock here?
                 if(activationSession == currentActivationSession) {
                     //prevent onAuthCompletion since we don't want two callbacks if process is already failed
                     preventAuthCallbackOnFail = true
@@ -227,12 +236,12 @@ class SdkCore(
                         }
                         currentActivation = null
                         currentActivationSession = null
+                        sdkLock.notify()
 
                     } else {
                         logger.warn { "Controllercallback onAuthenticationCompletion-handler called from invalid/old activation session $activationSession (current is $currentActivationSession). Don't notify current handler." }
                     }
 
-                    sdkLock.notify()
                 }
 
             }
