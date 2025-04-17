@@ -19,6 +19,7 @@ compose = "1.7.6"
 compose-plugin = "1.7.0"
 
 kotlin-jackson = "2.17.0"
+kotlin-logging= "7.0.6"
 
 oec = "2.3.10"
 
@@ -30,7 +31,7 @@ libphonenumber = "8.13.36"
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-kotlin-logging = { module = "io.github.oshai:kotlin-logging", version = "7.0.+" }
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kx-co" }
 kotlin-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kx-co" }
 kotlin-jackson = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "kotlin-jackson" }
