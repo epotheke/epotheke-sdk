@@ -1,25 +1,25 @@
 [versions]
 kotlin = "2.0.21"
-kx-co = "1.9.+"
-kx-serde = "1.7.+"
+kx-co = "1.9.0"
+kx-serde = "1.7.3"
 
 
-ktor = "2.3.+"
+ktor = "2.3.13"
 
-agp = "8.6+"
-androidx-activityCompose = "1.9.+"
-androidx-appcompat = "1.6.+"
-androidx-constraintlayout = "2.1.+"
-androidx-core-ktx = "1.13.+"
-androidx-espresso-core = "3.5.+"
-androidx-material = "1.11.+"
-androidx-test-junit = "1.1.+"
+agp = "8.6.1"
+androidx-activityCompose = "1.9.3"
+androidx-appcompat = "1.6.1"
+androidx-constraintlayout = "2.1.4"
+androidx-core-ktx = "1.13.1"
+androidx-espresso-core = "3.5.1"
+androidx-material = "1.11.0"
+androidx-test-junit = "1.1.5"
 
 compose = "1.7.6"
 compose-plugin = "1.7.0"
 
 kotlin-jackson = "2.17.0"
-kotlin-logging= "7.0.6"
+kotlin-logging= {strictly = "7.0.6"}
 
 oec = "2.3.10"
 
