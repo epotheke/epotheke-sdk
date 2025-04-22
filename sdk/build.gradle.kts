@@ -13,6 +13,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(libs.kotlin.stdlib)
+                implementation(libs.kotlin.stdlib.common)
                 implementation(libs.kotlin.logging)
                 implementation(libs.kotlin.coroutines.core)
                 implementation(libs.kotlin.serialization.json)

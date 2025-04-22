@@ -1,6 +1,6 @@
 [versions]
-kotlin = "2.0.21"
-kx-co = "1.9.+"
+kotlin = {strictly = "2.0.21"}
+kx-co = {strictly = "1.9.0"}
 kx-serde = "1.7.+"
 
 
@@ -29,6 +29,8 @@ libphonenumber = "8.13.36"
 
 
 [libraries]
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-stdlib-common = { module = "org.jetbrains.kotlin:kotlin-stdlib-common", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
