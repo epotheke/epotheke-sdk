@@ -135,15 +135,14 @@ class SdkCore(
 
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
-                overridingSdkErrorHandler(sdkErrorHandler, activationSession)
 
-                //TODO we can do this in errorhandler cause we hav to do it anyway
                 //TODO prevent auth callback can most probably go then, because we change session in sdkErrorHandler
                 synchronized(sdkLock) {
                    if(activationSession == currentActivationSession){
                        nfcIntentHelper = null
                        ctxManager = null
                        currentActivationSession = null
+                       sdkErrorHandler.onError(ex)
                        sdkLock.notify()
                    }
                 }
@@ -198,12 +197,16 @@ class SdkCore(
     private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler, activationSession: Any): SdkErrorHandler {
         return object : SdkErrorHandler {
             override fun onError(error: ServiceErrorResponse) {
-                //TODO don't we have to end the session and free the lock here?
                 if(activationSession == currentActivationSession) {
-                    //prevent onAuthCompletion since we don't want two callbacks if process is already failed
-                    preventAuthCallbackOnFail = true
-                    sdkErrorHandler.onError(error)
-                    currentActivation = null
+                    synchronized(sdkLock){
+                        //prevent onAuthCompletion since we don't want two callbacks if process is already failed
+                        cancelOngoingActivation()
+                        preventAuthCallbackOnFail = true
+                        currentActivation = null
+                        currentActivationSession = null
+                        sdkErrorHandler.onError(error)
+                        sdkLock.notify()
+                    }
                 } else {
                     logger.warn { "SdkError handler called from invalid/old activation session $activationSession (current is $currentActivationSession). Don't notify current handler." }
                 }
