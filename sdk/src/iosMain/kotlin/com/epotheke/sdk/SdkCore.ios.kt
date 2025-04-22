@@ -45,7 +45,6 @@ class SdkCore(
     private var currentActivation: ActivationControllerProtocol? = null
     private var activationSource: ActivationSourceProtocol? = null
     private var dbgLogLevel = false
-    private var preventAuthCallbackOnFail = false
     private var logMessageHandler: LogMessageHandlerProtocol? = null
 
     fun setDebugLogLevel() {
@@ -59,18 +58,8 @@ class SdkCore(
     private var currentActivationSession: Any? = null
     private var waitingActivations = 0
 
-    private fun deletemesinceiamforsyntaxtests(){
-        val flag = false
-        sdkLock.lock()
-            while(flag){
-                sdkLock.wait()
-            }
-        run {
-           //stuff
-        }
-
-        sdkLock.unlock()
-        //also there is sdkLock.signal() for wakeup
+    fun activationIsActive(): Boolean {
+        return currentActivationSession != null || waitingActivations > 0
     }
 
     fun activate(waitForSlot: Boolean, cardLinkUrl: String, tenantToken: String?) {
@@ -92,18 +81,15 @@ class SdkCore(
             initOecContext(activationSession, cardLinkUrl, tenantToken)
         }else {
             activationSource?.let {
-                doActivation(it, activationSession, cardLinkUrl, tenantToken)
+                doActivation( activationSession,it, cardLinkUrl, tenantToken)
             }
         }
         sdkLock.unlock()
     }
 
-    fun activationIsActive(): Boolean {
-        return currentActivationSession != null || waitingActivations > 0
-    }
 
 
-    private fun doActivation(activationSource: ActivationSourceProtocol, activationSession: Any, cardLinkUrl: String, tenantToken: String?){
+    private fun doActivation(activationSession: Any, activationSource: ActivationSourceProtocol,  cardLinkUrl: String, tenantToken: String?){
         val ws = WebsocketCommon(cardLinkUrl, tenantToken)
         val wsListener = WebsocketListenerCommon()
         val protocols = buildProtocols(ws, wsListener)
@@ -112,9 +98,13 @@ class SdkCore(
             WebsocketIos(ws, overridingSdkErrorHandler(sdkErrorHandler, activationSession)),
             withActivation = OverridingControllerCallback(this@SdkCore, protocols, cardLinkControllerCallback, activationSession) as NSObject,
             //TODO secure interaction with sessionbinding
-            withInteraction = cardLinkInteractionProtocol as NSObject,
+            withInteraction = OverridingCardLinkInteraction(activationSession, this@SdkCore, cardLinkInteractionProtocol),
             withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,
         ) as ActivationControllerProtocol
+    }
+
+    fun cancelOngoingActivation() {
+        currentActivation?.cancelOngoingAuthentication()
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -138,25 +128,23 @@ class SdkCore(
             override fun onSuccess(source: NSObject?) {
                 (source as? ActivationSourceProtocol)?.let {
                     activationSource = source
-                    doActivation(activationSession, cardLinkUrl, tenantToken)
+                    doActivation(activationSession, source, cardLinkUrl, tenantToken)
                 }
             }
 
             override fun onFailure(response: NSObject?) {
-                val serviceError = response as? ServiceErrorResponseProtocol ?: object : NSObject() {
-                    fun getErrorMessage() = "internal error"
-                    fun getStatusCode() = ServiceErrorCode.kServiceErrorCodeINTERNAL_ERROR
-                } as ServiceErrorResponseProtocol
+
+                val serviceError = response as ServiceErrorResponseProtocol
+
                 logger.error { "Failed to initialize Open eCard (code=${serviceError.getStatusCode()}): ${serviceError.getErrorMessage()}" }
-                //TODO: probably free and delete session in errorhandler and don't do it here
-                overridingSdkErrorHandler(sdkErrorHandler, activationSession).hdl(
-                    serviceError.getStatusCode().name,
-                    serviceError.getErrorMessage() ?: "no message"
-                )
                 sdkLock.lock()
                 if(activationSession == currentActivationSession){
                     ctxManager = null
                     currentActivationSession = null
+                    sdkErrorHandler.hdl(
+                        serviceError.getStatusCode().name,
+                        serviceError.getErrorMessage() ?: "no message"
+                    )
                     sdkLock.signal()
                 }
                 sdkLock.unlock()
@@ -166,9 +154,6 @@ class SdkCore(
 
     }
 
-    fun cancelOngoingActivation() {
-        currentActivation?.cancelOngoingAuthentication()
-    }
 
     fun destroyOecContext() {
         logger.debug { "SdkCore - destroying oecContext." }
@@ -190,15 +175,76 @@ class SdkCore(
         } as NSObject)
         sdkLock.unlock()
     }
+    private class OverridingCardLinkInteraction(val activationSession: Any, val ctx: SdkCore, val delegate: CardLinkInteractionProtocol) :
+        NSObject(), CardLinkInteractionProtocol {
+        override fun requestCardInsertion() {
+            if (activationSession == ctx.currentActivationSession) {
+                delegate.requestCardInsertion()
+            }
+        }
+
+        override fun requestCardInsertion(msgHandler: NSObject?) {
+            if (activationSession == ctx.currentActivationSession) {
+                delegate.requestCardInsertion(msgHandler)
+            }
+        }
+
+        override fun onCardInteractionComplete() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInteractionComplete()
+        }
+
+        override fun onCardInserted() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInserted()
+        }
+
+        override fun onCardInsufficient() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInsufficient()
+        }
+
+        override fun onCardRecognized() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardRecognized()
+        }
+
+        override fun onCardRemoved() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardRemoved()
+        }
+
+        override fun onCanRequest(enterCan: NSObject?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onCanRequest(enterCan)
+        }
+
+        override fun onCanRetry(enterCan: NSObject?, withResultCode: String?, withErrorMessage: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onCanRetry(enterCan,withResultCode,withErrorMessage)
+        }
+
+        override fun onPhoneNumberRequest(enterPhoneNumber: NSObject?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onPhoneNumberRequest(enterPhoneNumber)
+        }
+
+        override fun onPhoneNumberRetry(enterPhoneNumber: NSObject?, withResultCode: String?, withErrorMessage: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onPhoneNumberRetry(enterPhoneNumber,withResultCode,withErrorMessage)
+        }
+
+        override fun onSmsCodeRequest(smsCode: NSObject?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onSmsCodeRequest(smsCode)
+        }
+
+        override fun onSmsCodeRetry(smsCode: NSObject?, withResultCode: String?, withErrorMessage: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onSmsCodeRetry(smsCode,withResultCode,withErrorMessage)
+        }
+    }
 
     private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler, activationSession: Any): SdkErrorHandler{
         return object : SdkErrorHandler {
             override fun hdl(code: String, error: String) {
-                //TODO don't we have to end the session and free the lock here?
                 if(activationSession == currentActivationSession){
-                    preventAuthCallbackOnFail = true
-                    sdkErrorHandler.hdl(code, error)
+                    sdkLock.lock()
+                    cancelOngoingActivation()
                     currentActivation = null
+                    currentActivationSession = null
+                    sdkErrorHandler.hdl(code, error)
+                    sdkLock.signal()
+                    sdkLock.unlock()
                 } else {
                     logger.warn { "SdkError handler called from invalid/old activation session $activationSession (current is $currentActivationSession). Don't notify current handler." }
                 }
@@ -217,7 +263,6 @@ class SdkCore(
 
         override fun onStarted() {
             if(activationSession == sdk.currentActivationSession) {
-                sdk.preventAuthCallbackOnFail = false
                 cardLinkControllerCallback.onStarted()
             } else {
                 logger.warn { "Controllercallback onStarted-handler called from invalid/old activation session $activationSession (current is $sdk.currentActivationSession). Don't notify current handler." }
@@ -226,10 +271,8 @@ class SdkCore(
 
         override fun onAuthenticationCompletion(result: NSObject?) {
             sdk.sdkLock.lock()
-            if(activationSession ==sdk.currentActivationSession){
-                if(!sdk.preventAuthCallbackOnFail) {
-                    cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
-                }
+            if(activationSession == sdk.currentActivationSession){
+                cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
                 sdk.currentActivation = null
                 sdk.currentActivationSession = null
                 sdk.sdkLock.signal()
