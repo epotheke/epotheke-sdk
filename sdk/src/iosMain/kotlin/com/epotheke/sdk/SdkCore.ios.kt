@@ -97,7 +97,6 @@ class SdkCore(
         currentActivation = factory.create(
             WebsocketIos(ws, overridingSdkErrorHandler(sdkErrorHandler, activationSession)),
             withActivation = OverridingControllerCallback(this@SdkCore, protocols, cardLinkControllerCallback, activationSession) as NSObject,
-            //TODO secure interaction with sessionbinding
             withInteraction = OverridingCardLinkInteraction(activationSession, this@SdkCore, cardLinkInteractionProtocol),
             withListenerSuccessor = WebsocketListenerIos(wsListener) as NSObject,
         ) as ActivationControllerProtocol
