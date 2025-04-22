@@ -96,13 +96,13 @@ class SdkCore(
                 initOecContext(activationSession, cardLinkUrl, tenantToken)
             } else {
                 activationSource?.let {
-                    doActivation(it, activationSession, cardLinkUrl, tenantToken)
+                    doActivation( activationSession,it, cardLinkUrl, tenantToken)
                 }
             }
         }
     }
 
-    private fun doActivation(activationSource: ActivationSource, activationSession: Any, cardLinkUrl: String, tenantToken: String?){
+    private fun doActivation(activationSession: Any, activationSource: ActivationSource, cardLinkUrl: String, tenantToken: String?){
 
         val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
         val wsListener = WebsocketListenerCommon()
@@ -128,13 +128,12 @@ class SdkCore(
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
                 activationSource = actSource
-                doActivation(actSource, activationSession, cardLinkUrl, tenantToken)
+                doActivation(activationSession,actSource,  cardLinkUrl, tenantToken)
             }
 
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
 
-                //TODO prevent auth callback can most probably go then, because we change session in sdkErrorHandler
                 synchronized(sdkLock) {
                    if(activationSession == currentActivationSession){
                        nfcIntentHelper = null
