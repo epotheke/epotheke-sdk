@@ -46,7 +46,6 @@ class SdkCore(
     private var nfcIntentHelper: NfcIntentHelper? = null
     private var needNfc = false
     private var currentActivation: ActivationController? = null
-    private var preventAuthCallbackOnFail = false
 
     private var activationSource: ActivationSource? = null
 
@@ -111,7 +110,6 @@ class SdkCore(
         currentActivation = activationSource.cardLinkFactory().create(
             WebsocketAndroid(websocket, overridingSdkErrorHandler(sdkErrorHandler, activationSession)),
             overridingControllerCallback(protocols, activationSession),
-            //TODO secure interaction with session binding
             OverridingCardLinkInteraction(activationSession,this@SdkCore, cardLinkInteraction),
             WebsocketListenerAndroid(wsListener)
         )
@@ -252,7 +250,6 @@ class SdkCore(
                     synchronized(sdkLock){
                         //prevent onAuthCompletion since we don't want two callbacks if process is already failed
                         cancelOngoingActivation()
-                        preventAuthCallbackOnFail = true
                         currentActivation = null
                         currentActivationSession = null
                         sdkErrorHandler.onError(error)
@@ -270,7 +267,6 @@ class SdkCore(
 
             override fun onStarted() {
                 if(activationSession == currentActivationSession) {
-                    preventAuthCallbackOnFail = false
                     cardLinkControllerCallback.onStarted()
                 } else {
                     logger.warn { "Controllercallback onStarted-handler called from invalid/old activation session $activationSession (current is $currentActivationSession). Don't notify current handler." }
@@ -282,11 +278,8 @@ class SdkCore(
                         if (!ctx.isDestroyed) {
                             nfcIntentHelper?.disableNFCDispatch()
                         }
+                        cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
                         needNfc = false
-                        if (!preventAuthCallbackOnFail) {
-                            logger.debug { "sdkcore: calling onAuthenticationCompletion" }
-                            cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
-                        }
                         currentActivation = null
                         currentActivationSession = null
                         sdkLock.notify()
