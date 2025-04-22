@@ -112,7 +112,7 @@ class SdkCore(
             WebsocketAndroid(websocket, overridingSdkErrorHandler(sdkErrorHandler, activationSession)),
             overridingControllerCallback(protocols, activationSession),
             //TODO secure interaction with session binding
-            OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
+            OverridingCardLinkInteraction(activationSession,this@SdkCore, cardLinkInteraction),
             WebsocketListenerAndroid(wsListener)
         )
     }
@@ -185,12 +185,63 @@ class SdkCore(
         }
     }
 
-    private class OverridingCardLinkInteraction(val ctx: SdkCore, val delegate: CardLinkInteraction) :
-        CardLinkInteraction by delegate {
+    private class OverridingCardLinkInteraction(val activationSession: Any, val ctx: SdkCore, val delegate: CardLinkInteraction) :
+        CardLinkInteraction {
         override fun requestCardInsertion() {
-            ctx.nfcIntentHelper?.enableNFCDispatch()
-            ctx.needNfc = true
-            delegate.requestCardInsertion()
+            if (activationSession == ctx.currentActivationSession) {
+                ctx.nfcIntentHelper?.enableNFCDispatch()
+                ctx.needNfc = true
+                delegate.requestCardInsertion()
+            }
+        }
+
+        override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) {
+            //ont used in android
+            //if (activationSession == ctx.currentActivationSession) delegate.requestCardInsertion()
+        }
+
+        override fun onCardInteractionComplete() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInteractionComplete()
+        }
+
+        override fun onCardInserted() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInserted()
+        }
+
+        override fun onCardInsufficient() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInsufficient()
+        }
+
+        override fun onCardRecognized() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardRecognized()
+        }
+
+        override fun onCardRemoved() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardRemoved()
+        }
+
+        override fun onCanRequest(p0: ConfirmPasswordOperation?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onCanRequest(p0)
+        }
+
+        override fun onCanRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onCanRetry(p0,p1,p2)
+        }
+
+        override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onPhoneNumberRequest(p0)
+        }
+
+        override fun onPhoneNumberRetry(p0: ConfirmTextOperation?, p1: String?, p2: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onPhoneNumberRetry(p0,p1,p2)
+        }
+
+        override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onSmsCodeRequest(p0)
+        }
+
+        override fun onSmsCodeRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onSmsCodeRetry(p0,p1,p2)
         }
     }
 
