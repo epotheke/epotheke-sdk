@@ -67,8 +67,20 @@ const tenantTokens = {
 
 function App(): React.JSX.Element {
     const [status, setStatus] = useState('Status: not started yet');
-    const [modalTxt, setmodalTxt] = useState('Text');
+    const [authenticationOngoing, setAuthenticationOngoing] = useState(false);
+    const [modalTxt, setModalTxt] = useState('Text');
     const [logFromSdk, setLogFromSdk] = useState('no log yet');
+
+    useEffect(() => {
+        async function get() {
+            return await SdkModule.activationActive();
+        }
+        const intervalId = setInterval(async ()=>{
+            var v = await get();
+            setAuthenticationOngoing(v);
+        }, 500);
+        return () => { clearInterval(intervalId) }
+    },[]);
 
     // This is to manage Modal State
     const [isModalVisible, setModalVisible] = useState(false);
@@ -250,7 +262,7 @@ function App(): React.JSX.Element {
             log(`onCanRequest - stored: `);
             setInputValueStorageKey("CAN");
             setInputValue(can);
-            setmodalTxt('Provide CAN');
+            setModalTxt('Provide CAN');
 
             toggleModalVisibility();
             SdkModule.set_cardlinkInteractionCB_onCanRequest(canRequestCB);
@@ -260,7 +272,7 @@ function App(): React.JSX.Element {
         let canRetryCB = (code: String | undefined, msg: String | undefined) => {
             log(`canRetryCB`);
             setInputValue('123123');
-            setmodalTxt('CAN WRONG - Provide correct CAN');
+            setModalTxt('CAN WRONG - Provide correct CAN');
             setInputValueStorageKey("CAN");
             toggleModalVisibility();
             SdkModule.set_cardlinkInteractionCB_onCanRetry(canRetryCB);
@@ -286,7 +298,7 @@ function App(): React.JSX.Element {
             }
             setInputValueStorageKey("PHONE");
             setInputValue(phone);
-            setmodalTxt('Provide phone number');
+            setModalTxt('Provide phone number');
             toggleModalVisibility();
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRequest(onPhoneNumberRequestCB);
         };
@@ -295,7 +307,7 @@ function App(): React.JSX.Element {
         let onPhoneNumberRetryCB = (code: String | undefined, msg: String | undefined) => {
             log('onPhoneNumberRetryCB');
             SdkModule.set_cardlinkInteractionCB_onPhoneNumberRetry(onPhoneNumberRetryCB);
-            setmodalTxt('Retry Number due to: ' + code + ' - ' + msg);
+            setModalTxt('Retry Number due to: ' + code + ' - ' + msg);
             setInputValue('+49');
             setInputValueStorageKey("PHONE");
             toggleModalVisibility();
@@ -305,7 +317,7 @@ function App(): React.JSX.Element {
         let onSmsCodeRequestCB = () => {
             log('onSmsCodeRequest');
             SdkModule.set_cardlinkInteractionCB_onSmsCodeRequest(onSmsCodeRequestCB);
-            setmodalTxt('Provide TAN');
+            setModalTxt('Provide TAN');
             setInputValue('');
             toggleModalVisibility();
         };
@@ -314,7 +326,7 @@ function App(): React.JSX.Element {
         let onSmsCodeRetryCB = (code: String | undefined, msg: String | undefined) => {
             log('onSmsCodeRetryCB');
             SdkModule.set_cardlinkInteractionCB_onSmsCodeRetry(onSmsCodeRetryCB);
-            setmodalTxt('Retry TAN due to: ' + code + ' - ' + msg);
+            setModalTxt('Retry TAN due to: ' + code + ' - ' + msg);
             setInputValue('');
             toggleModalVisibility();
         };
@@ -497,7 +509,22 @@ function App(): React.JSX.Element {
                         }}
                     />
                     <View style={styles.space} />
-                    <Button title="Establish Cardlink" onPress={doCL} />
+                    <Button title="Establish Cardlink"
+                        disabled={authenticationOngoing}
+                        onPress={
+                           () => {
+                               setAuthenticationOngoing(true);
+                               doCL();
+                           }
+                    } />
+                    <Button title="Cancel"
+                                        disabled={!authenticationOngoing}
+                                        onPress={
+                                           () => {
+                                               SdkModule.abortCardLink()
+                                           }
+                                    } />
+                    <Text style={styles.txtblack}>Authentication: {authenticationOngoing ? 'is ongoing' : 'is not active' }</Text>
                     <View style={styles.space} />
                     <Button
                         title="Fetch prescriptions"

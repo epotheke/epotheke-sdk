@@ -22,7 +22,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import org.openecard.mobile.activation.ActivationResult
-import org.openecard.mobile.activation.CardLinkErrorCodes
 import org.openecard.mobile.activation.CardLinkInteraction
 import org.openecard.mobile.activation.ConfirmPasswordOperation
 import org.openecard.mobile.activation.ConfirmTextOperation
@@ -62,7 +61,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p.resolve(
                         prescriptionJsonFormatter.encodeToString(availablePrescriptions)
                     )
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     p.reject(e)
                 }
             }
@@ -74,18 +73,20 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         runBlocking {
             callPrescriptionProtocolNullChecked(p) {
                 try {
-                    val confirmation = selectPrescriptions(prescriptionJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection))
+                    val confirmation = selectPrescriptions(
+                        prescriptionJsonFormatter.decodeFromString<SelectedPrescriptionList>(selection)
+                    )
                     p.resolve(
                         prescriptionJsonFormatter.encodeToString(confirmation)
                     )
-                } catch (e: Exception){
+                } catch (e: Exception) {
                     p.reject(e)
                 }
             }
         }
     }
 
-    private suspend fun callPrescriptionProtocolNullChecked(p: Promise, call: suspend PrescriptionProtocol.() -> Unit){
+    private suspend fun callPrescriptionProtocolNullChecked(p: Promise, call: suspend PrescriptionProtocol.() -> Unit) {
         when (val proto = erezeptProtocol) {
             null -> {
                 p.reject("Protocol not available, is CardLink established?")
@@ -106,19 +107,21 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         ) {
             logger.debug { "rn-bridge: onAuthenticationCompletion ${p0?.errorMessage}" }
             erezeptProtocol = cardLinkProtocols.filterIsInstance<PrescriptionProtocol>().first()
-            ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
+
 
             //hotfix
-            if(p0?.errorMessage?.contains("==>") == true){
-                var minor = p0?.errorMessage?.split("==>")?.get(0)?.trim()
-                var msg = p0?.errorMessage?.split("==>")?.get(1)?.trim()
-                if(minor?.contains("invalidSlotHandle") == true){
-                    minor="CARD_REMOVED"
+            if (p0?.errorMessage?.contains("==>") == true) {
+                var minor = p0.errorMessage?.split("==>")?.get(0)?.trim()
+                val msg = p0.errorMessage?.split("==>")?.get(1)?.trim()
+                if (minor?.contains("invalidSlotHandle") == true) {
+                    minor = "CARD_REMOVED"
                 }
                 onAuthenticationCompletionCB?.invoke(minor, msg)
-            } else if (p0?.errorMessage != null){
-                onAuthenticationCompletionCB?.invoke(p0?.resultCode?.name, p0?.errorMessage)
+            } else if (p0?.errorMessage != null) {
+                onAuthenticationCompletionCB?.invoke(p0.resultCode?.name, p0.errorMessage)
             } else {
+                ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
+                logger.debug { "rn-bridge: wsession_id set to: ${ws_sessionId}" }
                 onAuthenticationCompletionCB?.invoke(null, null)
             }
 //            onAuthenticationCompletionCB?.invoke(p0?.processResultMinor, p0?.errorMessage)
@@ -231,10 +234,12 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             onCardInteractionCompleteCB?.invoke()
 
         }
+
         override fun onCardInserted() {
             logger.debug { "rn-bridge: onCardInserted" }
             onCardInsertedCB?.invoke()
         }
+
         override fun onCardInsufficient() {
             logger.debug { "rn-bridge: onCardInsufficient" }
             onCardInsufficientCB?.invoke()
@@ -291,7 +296,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p0.confirmText(s)
                 }
             }
-            onPhoneNumberRetryCB?.invoke(p1,p2)
+            onPhoneNumberRetryCB?.invoke(p1, p2)
         }
 
         override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) {
@@ -313,7 +318,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                     p0.confirmPassword(s)
                 }
             }
-            onSmsCodeRetryCB?.invoke(p1,p2)
+            onSmsCodeRetryCB?.invoke(p1, p2)
         }
 
     }
@@ -339,60 +344,71 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
         userInputDispatch.invoke(input)
     }
 
-    var epothekeInstance : SdkCore? = null
+    var epothekeInstance: SdkCore? = null
+
     @ReactMethod
     fun abortCardLink() {
         logger.debug { "rn-bridge: SdkModule abort called $epothekeInstance" }
-        epothekeInstance?.let {
-            it.destroyOecContext()
-        }
+        epothekeInstance?.cancelOngoingActivation()
     }
+
     @ReactMethod
-    fun startCardLink(cardLinkUrl: String, tenantToken: String?) {
+    fun activationActive(p: Promise) {
+        val res = epothekeInstance?.activationsActive()?.equals(true) ?: false
+        p.resolve(res)
+    }
+
+    @ReactMethod
+    fun destroyCardlinkResources() {
+        logger.debug { "rn-bridge: SdkModule desctroy $epothekeInstance" }
+        epothekeInstance?.destroyOecContext()
+        epothekeInstance = null
+    }
+
+    @ReactMethod
+    fun startCardLink(cardLinkUrl: String, tenantToken: String) {
         logger.debug { "rn-bridge: SdkModule called with url : $cardLinkUrl" }
         logger.debug { "rn-bridge: SdkModule called with tenantToken: $tenantToken" }
 
-        epothekeInstance?.let {
-            it.destroyOecContext()
-        }
-
         currentActivity?.let { activity ->
-            val epotheke = SdkCore(
-                activity,
-                cardLinkUrl,
-                tenantToken,
-                cardLinkControllerCallback,
-                cardLinkInteraction,
-                errorHandler,
-            )
-            epothekeInstance = epotheke
+            if (epothekeInstance == null) {
+                val epotheke: SdkCore =
+                    SdkCore(
+                        activity,
+                        cardLinkControllerCallback,
+                        cardLinkInteraction,
+                        errorHandler,
+                    )
 
-            reactContext.addActivityEventListener(object : ActivityEventListener {
-                override fun onActivityResult(p0: Activity?, p1: Int, p2: Int, p3: Intent?) {
-                    //ignore
-                }
+                epothekeInstance = epotheke
 
-                override fun onNewIntent(p0: Intent?) {
-                    p0?.let {
-                        epotheke.onNewIntent(p0)
+                reactContext.addActivityEventListener(object : ActivityEventListener {
+                    override fun onActivityResult(p0: Activity?, p1: Int, p2: Int, p3: Intent?) {
+                        //ignore
                     }
-                }
-            })
-            reactContext.addLifecycleEventListener(object : LifecycleEventListener {
-                override fun onHostResume() {
-                    epotheke.onResume()
-                }
 
-                override fun onHostPause() {
-                    epotheke.onPause()
-                }
+                    override fun onNewIntent(p0: Intent?) {
+                        p0?.let {
+                            epotheke.onNewIntent(p0)
+                        }
+                    }
+                })
+                reactContext.addLifecycleEventListener(object : LifecycleEventListener {
+                    override fun onHostResume() {
+                        epotheke.onResume()
+                    }
 
-                override fun onHostDestroy() {
-                    epotheke.destroyOecContext()
-                }
-            })
+                    override fun onHostPause() {
+                        epotheke.onPause()
+                    }
 
-            epotheke.initOecContext()
+                    override fun onHostDestroy() {
+                        epotheke.destroyOecContext()
+                    }
+                })
+
+            }
+            epothekeInstance?.activate(false, cardLinkUrl, tenantToken)
         }
     }
 

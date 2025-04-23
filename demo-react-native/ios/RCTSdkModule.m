@@ -462,23 +462,41 @@ RCT_EXPORT_METHOD(startCardLink : (NSString *)cardLinkUrl tenantToken: (NSString
     RCTLogInfo(@"bridgeLog: onStarted: %@", cardLinkUrl);
 
     IOSNFCOptions *nfcOpts = [IOSNFCOptions new];
-
-    sdk = [[EpothekeSdkCore alloc] initWithCardLinkUrl:cardLinkUrl
-                                                            tenantToken:tenantToken
-                                             cardLinkControllerCallback:clCtrlCB
+    
+    if(!sdk){
+        sdk = [[EpothekeSdkCore alloc] initWithCardLinkControllerCallback:clCtrlCB
                                             cardLinkInteractionProtocol:clInteraction
                                                         sdkErrorHandler:errHandler
                                                                 nfcOpts:nfcOpts];
+    }
 
     msgHandler = [LogMsgHandler new];
     [sdk setLogMessageHandlerHandler:msgHandler];
     [sdk setDebugLogLevel];
-    [sdk doInitCardLink];
+    [sdk activateWaitForSlot:false cardLinkUrl:cardLinkUrl tenantToken:tenantToken];
+}
+
+RCT_EXPORT_METHOD(activationActive: (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        if(sdk){
+            if([sdk activationsActive]) {
+                resolve(@TRUE);
+                return;
+            }
+        }
+        resolve(@FALSE);
+    });
+}
+RCT_EXPORT_METHOD(destroyCardlinkResources) {
+    if(sdk){
+        [sdk destroyOecContext];
+        sdk = nil;
+    }
 }
 
 RCT_EXPORT_METHOD(abortCardLink) {
     if(sdk){
-        [sdk terminateContext];
+        [sdk cancelOngoingActivation];
     }
 }
 

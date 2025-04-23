@@ -37,8 +37,6 @@ private val logger = KotlinLogging.logger {}
 
 class SdkCore(
     private val ctx: Activity,
-    private val cardLinkUrl: String,
-    private val tenantToken: String?,
     private val cardLinkControllerCallback: CardLinkControllerCallback,
     private val cardLinkInteraction: CardLinkInteraction,
     private val sdkErrorHandler: SdkErrorHandler
@@ -47,9 +45,9 @@ class SdkCore(
     private var ctxManager: AndroidContextManager? = null
     private var nfcIntentHelper: NfcIntentHelper? = null
     private var needNfc = false
-    private var activation: ActivationController? = null
-    private var preventAuthCallbackOnFail = false
+    private var currentActivation: ActivationController? = null
 
+    private var activationSource: ActivationSource? = null
 
     fun onPause() {
         nfcIntentHelper?.disableNFCDispatch();
@@ -61,51 +59,118 @@ class SdkCore(
         }
     }
 
-    fun initOecContext() {
+    private val sdkLock = Object()
+    @Volatile
+    private var currentActivationSession: Any? = null
+    @Volatile
+    private var waitingActivations = 0
+
+    fun activationsActive(): Boolean {
+        return currentActivationSession != null || waitingActivations > 0
+    }
+    /**
+     * if there is an activation ongoing:
+     * if wait for slot is true activation will start when previous activation finishes
+     * else will return immediately
+     *
+     * if none is ongoing it starts an activation
+     *
+     */
+    fun activate(waitForSlot: Boolean, cardLinkUrl: String, tenantToken: String?) {
+        synchronized(sdkLock) {
+            waitingActivations = waitingActivations.inc()
+            while (currentActivationSession != null) {
+                if(waitForSlot) {
+                    sdkLock.wait()
+                }else {
+                    waitingActivations = waitingActivations.dec()
+                    return
+                }
+            }
+            waitingActivations = waitingActivations.dec()
+
+            val activationSession = object {}
+            currentActivationSession = activationSession
+
+            if (activationSource == null) {
+                initOecContext(activationSession, cardLinkUrl, tenantToken)
+            } else {
+                activationSource?.let {
+                    doActivation( activationSession,it, cardLinkUrl, tenantToken)
+                }
+            }
+        }
+    }
+
+    private fun doActivation(activationSession: Any, activationSource: ActivationSource, cardLinkUrl: String, tenantToken: String?){
+
+        val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
+        val wsListener = WebsocketListenerCommon()
+        val protocols = buildProtocols(websocket, wsListener)
+        currentActivation = activationSource.cardLinkFactory().create(
+            WebsocketAndroid(websocket, overridingSdkErrorHandler(sdkErrorHandler, activationSession)),
+            overridingControllerCallback(protocols, activationSession),
+            OverridingCardLinkInteraction(activationSession,this@SdkCore, cardLinkInteraction),
+            WebsocketListenerAndroid(wsListener)
+        )
+    }
+
+    fun cancelOngoingActivation(){
+        currentActivation?.cancelOngoingAuthentication()
+    }
+
+    private fun initOecContext(activationSession: Any, cardLinkUrl: String, tenantToken: String?) {
+
         val oec = OpeneCard.createInstance()
         nfcIntentHelper = NfcIntentHelper.create(ctx)
-        ctxManager = oec?.context(ctx)
+        ctxManager = oec.context(ctx)
+
         ctxManager?.initializeContext(object : StartServiceHandler {
             override fun onSuccess(actSource: ActivationSource) {
-                val websocket = WebsocketCommon(cardLinkUrl, tenantToken)
-                val wsListener = WebsocketListenerCommon()
-                val protocols = buildProtocols(websocket, wsListener)
-                activation = actSource.cardLinkFactory().create(
-                    WebsocketAndroid(websocket, overridingSdkErrorHandler(sdkErrorHandler)),
-                    overridingControllerCallback(protocols),
-                    OverridingCardLinkInteraction(this@SdkCore, cardLinkInteraction),
-                    WebsocketListenerAndroid(wsListener)
-                )
+                activationSource = actSource
+                doActivation(activationSession,actSource,  cardLinkUrl, tenantToken)
             }
 
             override fun onFailure(ex: ServiceErrorResponse) {
                 logger.error { "Failed to initialize Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
-                cleanupOecInstances()
-                sdkErrorHandler.onError(ex)
+
+                synchronized(sdkLock) {
+                   if(activationSession == currentActivationSession){
+                       nfcIntentHelper = null
+                       ctxManager = null
+                       currentActivationSession = null
+                       sdkErrorHandler.onError(ex)
+                       sdkLock.notify()
+                   }
+                }
             }
         })
     }
 
     fun destroyOecContext() {
-        activation?.cancelOngoingAuthentication()
-        ctxManager?.terminateContext(object : StopServiceHandler {
-            override fun onSuccess() {
-                // do nothing
-                logger.debug { "Open eCard stopped successfully." }
-                cleanupOecInstances()
-            }
+        logger.debug { "SdkCore.android - destroying oecContext." }
 
-            override fun onFailure(ex: ServiceErrorResponse) {
-                logger.error { "Failed to stop Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
-                cleanupOecInstances()
-                sdkErrorHandler.onError(ex)
-            }
-        })
-    }
+        synchronized(sdkLock){
+            //cancelling here leads to a authcompletion with cancel
+            //the handler however is synced so it will be called after this block here
+            //and its session guard will prevent to call the app
+            cancelOngoingActivation()
+            val ctxManagerToBeDestroyed = ctxManager ?: return
 
-    private fun cleanupOecInstances() {
-        ctxManager = null
-        activation = null
+            nfcIntentHelper = null
+            activationSource = null
+            ctxManager = null
+
+            ctxManagerToBeDestroyed.terminateContext(object : StopServiceHandler {
+                override fun onSuccess() {
+                    logger.debug { "Open eCard stopped successfully." }
+                }
+
+                override fun onFailure(ex: ServiceErrorResponse) {
+                    logger.error { "Failed to stop Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
+                }
+            })
+        }
     }
 
     @SuppressLint("NewApi")
@@ -117,37 +182,113 @@ class SdkCore(
         }
     }
 
-    private class OverridingCardLinkInteraction(val ctx: SdkCore, val delegate: CardLinkInteraction) :
-        CardLinkInteraction by delegate {
+    private class OverridingCardLinkInteraction(val activationSession: Any, val ctx: SdkCore, val delegate: CardLinkInteraction) :
+        CardLinkInteraction {
         override fun requestCardInsertion() {
-            ctx.nfcIntentHelper?.enableNFCDispatch()
-            ctx.needNfc = true
-            delegate.requestCardInsertion()
+            if (activationSession == ctx.currentActivationSession) {
+                ctx.nfcIntentHelper?.enableNFCDispatch()
+                ctx.needNfc = true
+                delegate.requestCardInsertion()
+            }
+        }
+
+        override fun requestCardInsertion(p0: NFCOverlayMessageHandler?) {
+            //ont used in android
+            //if (activationSession == ctx.currentActivationSession) delegate.requestCardInsertion()
+        }
+
+        override fun onCardInteractionComplete() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInteractionComplete()
+        }
+
+        override fun onCardInserted() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInserted()
+        }
+
+        override fun onCardInsufficient() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardInsufficient()
+        }
+
+        override fun onCardRecognized() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardRecognized()
+        }
+
+        override fun onCardRemoved() {
+            if (activationSession == ctx.currentActivationSession) delegate.onCardRemoved()
+        }
+
+        override fun onCanRequest(p0: ConfirmPasswordOperation?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onCanRequest(p0)
+        }
+
+        override fun onCanRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onCanRetry(p0,p1,p2)
+        }
+
+        override fun onPhoneNumberRequest(p0: ConfirmTextOperation?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onPhoneNumberRequest(p0)
+        }
+
+        override fun onPhoneNumberRetry(p0: ConfirmTextOperation?, p1: String?, p2: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onPhoneNumberRetry(p0,p1,p2)
+        }
+
+        override fun onSmsCodeRequest(p0: ConfirmPasswordOperation?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onSmsCodeRequest(p0)
+        }
+
+        override fun onSmsCodeRetry(p0: ConfirmPasswordOperation?, p1: String?, p2: String?) {
+            if (activationSession == ctx.currentActivationSession) delegate.onSmsCodeRetry(p0,p1,p2)
         }
     }
 
-    private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler): SdkErrorHandler {
-       return object : SdkErrorHandler {
-           override fun onError(error: ServiceErrorResponse) {
-               //prevent onAuthCompletion since we don't want two callbacks if process is already failed
-               preventAuthCallbackOnFail = true
-               sdkErrorHandler.onError(error)
-           }
-       }
+    private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler, activationSession: Any): SdkErrorHandler {
+        return object : SdkErrorHandler {
+            override fun onError(error: ServiceErrorResponse) {
+                if(activationSession == currentActivationSession) {
+                    synchronized(sdkLock){
+                        //prevent onAuthCompletion since we don't want two callbacks if process is already failed
+                        cancelOngoingActivation()
+                        currentActivation = null
+                        currentActivationSession = null
+                        sdkErrorHandler.onError(error)
+                        sdkLock.notify()
+                    }
+                } else {
+                    logger.warn { "SdkError handler called from invalid/old activation session $activationSession (current is $currentActivationSession). Don't notify current handler." }
+                }
+            }
+        }
     }
 
-    private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>): ControllerCallback {
+    private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>, activationSession: Any): ControllerCallback {
         return object : ControllerCallback {
-            override fun onStarted() = cardLinkControllerCallback.onStarted()
+
+            override fun onStarted() {
+                if(activationSession == currentActivationSession) {
+                    cardLinkControllerCallback.onStarted()
+                } else {
+                    logger.warn { "Controllercallback onStarted-handler called from invalid/old activation session $activationSession (current is $currentActivationSession). Don't notify current handler." }
+                }
+            }
             override fun onAuthenticationCompletion(p0: ActivationResult?) {
-                if(!ctx.isDestroyed) {
-                    nfcIntentHelper?.disableNFCDispatch()
+                synchronized(sdkLock) {
+                    if (activationSession == currentActivationSession) {
+                        if (!ctx.isDestroyed) {
+                            nfcIntentHelper?.disableNFCDispatch()
+                        }
+                        cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+                        needNfc = false
+                        currentActivation = null
+                        currentActivationSession = null
+                        sdkLock.notify()
+
+                    } else {
+                        logger.warn { "Controllercallback onAuthenticationCompletion-handler called from invalid/old activation session $activationSession (current is $currentActivationSession). Don't notify current handler." }
+                    }
+
                 }
-                needNfc = false
-                if(!preventAuthCallbackOnFail) {
-                    cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
-                }
-                destroyOecContext()
+
             }
         }
     }
