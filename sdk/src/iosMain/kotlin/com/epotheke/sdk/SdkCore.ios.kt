@@ -58,7 +58,7 @@ class SdkCore(
     private var currentActivationSession: Any? = null
     private var waitingActivations = 0
 
-    fun activationIsActive(): Boolean {
+    fun activationsActive(): Boolean {
         return currentActivationSession != null || waitingActivations > 0
     }
 
