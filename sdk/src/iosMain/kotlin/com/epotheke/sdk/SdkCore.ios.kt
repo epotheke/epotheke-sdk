@@ -26,7 +26,7 @@ import cocoapods.open_ecard.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSCondition
-import platform.darwin.NSObject
+import platform.darwin.*
 
 private val logger = KotlinLogging.logger {}
 
@@ -103,7 +103,9 @@ class SdkCore(
     }
 
     fun cancelOngoingActivation() {
-        currentActivation?.cancelOngoingAuthentication()
+        dispatch_async(dispatch_get_main_queue()) {
+            currentActivation?.cancelOngoingAuthentication()
+        }
     }
 
     @OptIn(ExperimentalForeignApi::class)
