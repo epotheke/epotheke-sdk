@@ -73,7 +73,6 @@ function App(): React.JSX.Element {
 
     useEffect(() => {
         async function get() {
-            log(`rn-code: getActiveState`);
             return await SdkModule.activationActive();
         }
         const intervalId = setInterval(async ()=>{
