@@ -162,6 +162,10 @@ function App(): React.JSX.Element {
     // Reusable session to cardlink which allows reusing a validated phonenumber for 15 minutes
     const [wsSession, setWsSession] = useState(null);
     const [reUseWsSession, setReUseWsSession] = useState(true);
+
+    const [lastICCSN, setlastICCSN] = useState(null);
+    const [filterForLastICCSN, setfilterForLastICCSN] = useState(true);
+
     const [useStoredInput, setUseStoredInput ] = useState(false);
     const [loopOnSuccess, setLoopOnSuccess] = useState(false);
 
@@ -172,13 +176,20 @@ function App(): React.JSX.Element {
 
     const [fetchPrescriptionsEnabled, setFetchPrescriptionsEnabled] = useState<boolean>(false);
     async function fetchPrescriptions() {
-          //get available prescriptions
-          try{
-            let availPrescriptions = await SdkModule.getPrescriptions();
-            log(`prescriptions: ${availPrescriptions}`);
-          } catch (e) {
-            log(`error during fetch: ${e}`);
-          }
+        //TODO write comments here
+        //get available prescriptions
+        // y exception ? - filtering for unknown leads to error which is ok
+        try{
+            if(filterForLastICCSN){
+                let availPrescriptions = await SdkModule.getPrescriptions([lastICCSN]);
+                log(`prescriptions: ${availPrescriptions}`);
+            } else {
+                let availPrescriptions = await SdkModule.getPrescriptions([]);
+                log(`prescriptions: ${availPrescriptions}`);
+            }
+        } catch (e) {
+          log(`error during fetch: ${e}`);
+        }
     }
 
     async function copyLogsToClipboard() {
@@ -375,8 +386,12 @@ function App(): React.JSX.Element {
 
                     //store wsSession for later reuse
                     let wsSession = await SdkModule.getWsSessionId()
-                    log(`wsSessionID: ${wsSession}`);
                     setWsSession(wsSession);
+
+                    let iccsn = await SdkModule.getLastICCSN()
+                    setlastICCSN(iccsn);
+
+                    log(`wsSessionID: ${wsSession} - iccsn: ${iccsn}`);
 
                     setFetchPrescriptionsEnabled(true)
 
@@ -479,6 +494,7 @@ function App(): React.JSX.Element {
                             setReUseWsSession(v)
                         }}
                     />
+
                     <View style={styles.space} />
                     <Text style={styles.txtblack}>Use tenantToken:</Text>
                     <RadioGroup
@@ -526,6 +542,15 @@ function App(): React.JSX.Element {
                                     } />
                     <Text style={styles.txtblack}>Authentication: {authenticationOngoing ? 'is ongoing' : 'is not active' }</Text>
                     <View style={styles.space} />
+                    <Text style={styles.txtblack}>Filter for ICCSN (last card). Value: {lastICCSN}</Text>
+                                        <CheckBox
+                                            style={styles.cb}
+                                            disabled={false}
+                                            value={filterForLastICCSN}
+                                            onValueChange={(v) => {
+                                                setfilterForLastICCSN(v)
+                                            }}
+                                        />
                     <Button
                         title="Fetch prescriptions"
                         disabled={!fetchPrescriptionsEnabled}
