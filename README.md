@@ -14,14 +14,24 @@ The latest documentation can be found at https://mvn.ecsec.de/repository/data-pu
 The epotheke SDK provides an API which can be integrated directly using the `SdkCore` class.
 
 This class needs to be instantiated and given the following: 
-- `cardLinkUrl` the url of the CardLink service to use
-- `tenantToken` a JWT provided by the service provider, for environments allowing non-authenticated acces it can be null
 - implementation of `CardLinkControllerCallback` for providing the CardLink result and protocols for subsequent processes (e.i. Prescription retrieval/selection)
 - implementation of `CardLinkInteraction` for exchanging data between the user and the CardLink service
 - implementation of `SdkErrorHandler` for handling errors related to the SDK initialisation
 - iosOnly: implementation of `IOSNFCOptions` for defining messages during NFC communications
 
-After the initialisation the method `initOecContext()` on android or `doInitCardLink()` can be called to start the process.
+After the initialisation the method `activate()` can be called to start a cardlink process.
+The call needs the parameters: 
+- `waitForSlot` determines if the call should enqueue a activation or return immediately if one is allready running.
+- `cardLinkUrl` the url of the CardLink service to use
+- `tenantToken` a JWT provided by the service provider, for environments allowing non-authenticated acces it can be null
+
+The proceses are thread-safe and gurantee that only one process is running. 
+Given callback handlers will only be called by the ongoing session.
+
+An ongoing process can be cancelled calling `cancelOngoingActivation()`
+
+To cleanup all resources `destroyOecContext()` should be called.
+
 
 On android, it is possible to extend the abstract SdkActivity class as it is done in [demo-android-standalone](demo-android-standalone). The abstract class already handles life-cycle hooks needed for NFC communications.
 If this class is not used, please refer to its implementation which hooks have to be called. 
