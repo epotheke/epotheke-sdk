@@ -12,6 +12,7 @@ build-cocoapod:
     script:
         - !reference [.versioning, script]
         - /opt/homebrew/bin/pod repo update
+        - echo 'kotlin.apple.cocoapods.bin=/opt/homebrew/bin/pod' >> local.properties
         - ./gradlew podPublishReleaseXCFramework
         - mv sdk/build/cocoapods/publish/release/epotheke.xcframework epotheke.xcframework
         - mv sdk/build/cocoapods/publish/release/epotheke-sdk.podspec epotheke-sdk.podspec

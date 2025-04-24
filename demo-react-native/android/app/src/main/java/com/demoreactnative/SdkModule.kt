@@ -18,6 +18,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableArray
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
@@ -50,14 +51,17 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
 
     private var erezeptProtocol: PrescriptionProtocol? = null
     private var ws_sessionId: String? = null
+    private var lastICCSN: String? = null
 
     @ReactMethod
-    fun getPrescriptions(p: Promise) {
+    fun getPrescriptions(filter: ReadableArray, p: Promise) {
         runBlocking {
             callPrescriptionProtocolNullChecked(p) {
                 try {
                     val availablePrescriptions: AvailablePrescriptionLists =
-                        requestPrescriptions(RequestPrescriptionList())
+                       requestPrescriptions(
+                            iccsns = filter.toArrayList().mapNotNull { it as? String }
+                       )
                     p.resolve(
                         prescriptionJsonFormatter.encodeToString(availablePrescriptions)
                     )
@@ -99,7 +103,10 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     fun getWsSessionId(p: Promise) {
         p.resolve(ws_sessionId)
     }
-
+    @ReactMethod
+    fun getLastICCSN(p: Promise) {
+        p.resolve(lastICCSN)
+    }
     private val cardLinkControllerCallback = object : CardLinkControllerCallback {
         override fun onAuthenticationCompletion(
             p0: ActivationResult?,
@@ -121,7 +128,9 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
                 onAuthenticationCompletionCB?.invoke(p0.resultCode?.name, p0.errorMessage)
             } else {
                 ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
+                lastICCSN = p0?.getResultParameter("CardLink::ICCSN")
                 logger.debug { "rn-bridge: wsession_id set to: ${ws_sessionId}" }
+                logger.debug { "rn-bridge: lastISSCN set to: ${lastICCSN}" }
                 onAuthenticationCompletionCB?.invoke(null, null)
             }
 //            onAuthenticationCompletionCB?.invoke(p0?.processResultMinor, p0?.errorMessage)

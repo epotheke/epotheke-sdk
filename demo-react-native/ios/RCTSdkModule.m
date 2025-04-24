@@ -82,6 +82,7 @@
 @property RCTResponseSenderBlock onAuthenticationCompletionCB;
 @property EpothekePrescriptionProtocolImp *prescriptionProtocol;
 @property NSString *wsSessionID;
+@property NSString *lastIccsn;
 @end
 
 @implementation CardLinkControllerCallback
@@ -96,7 +97,8 @@
     }
     if([p0 getResultCode] == kActivationResultCodeOK){
         if (self.onAuthenticationCompletionCB) {
-                   self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
+                    self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
+                    self.lastIccsn= [p0 getResultParameter:@"CardLink::ICCSN"];
                     self.onAuthenticationCompletionCB(@[ [NSNull null], [NSNull null] ] );
         }
     } else {
@@ -402,14 +404,26 @@ RCT_EXPORT_METHOD(getWsSessionId : (RCTPromiseResolveBlock)resolve  : (RCTPromis
         }
     });
 }
-
-RCT_EXPORT_METHOD(getPrescriptions : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
-
+RCT_EXPORT_METHOD(getLastICCSN: (RCTPromiseResolveBlock)resolve  : (RCTPromiseRejectBlock)reject) {
+    
     dispatch_sync(dispatch_get_main_queue(), ^{
+        if (clCtrlCB && clCtrlCB.lastIccsn) {
+            resolve(clCtrlCB.lastIccsn);
+        } else {
+            resolve(nil);
+        }
+    });
+}
+
+RCT_EXPORT_METHOD(getPrescriptions : (NSArray*)filter: (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+
+    dispatch_sync(dispatch_get_main_queue(),
+ ^{
       if (clCtrlCB && clCtrlCB.prescriptionProtocol) {
           if ([clCtrlCB.prescriptionProtocol conformsToProtocol:@protocol(EpothekePrescriptionProtocol)]) {
               [clCtrlCB.prescriptionProtocol
-                  requestPrescriptionsReq:[[EpothekeRequestPrescriptionList alloc] initWithIccsns:[NSArray new] messageId:@""]
+               requestPrescriptionsIccsns:filter
+               messageId:@""
                         completionHandler:^(EpothekeAvailablePrescriptionLists *res, NSError *err) {
                           if (err) {
                               reject(@"", @"", err);
