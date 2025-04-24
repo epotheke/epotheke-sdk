@@ -19,7 +19,7 @@ target 'demoReactNative' do
   config = use_native_modules!
 
   # Pod for epothekeDemo
-  pod 'epotheke-sdk', :path => '/Users/florianotto/epoPod/'
+  pod 'epotheke-sdk','>= 1.1.20'
 
   use_react_native!(
     :path => config[:reactNativePath],
