@@ -176,9 +176,8 @@ function App(): React.JSX.Element {
 
     const [fetchPrescriptionsEnabled, setFetchPrescriptionsEnabled] = useState<boolean>(false);
     async function fetchPrescriptions() {
-        //TODO write comments here
-        //get available prescriptions
-        // y exception ? - filtering for unknown leads to error which is ok
+        //on can filter the fetched prescriptions by iccsns providing theme as list
+        //note: providing a iccsn which is not registered in current session leads to an error for the whole fetch operation
         try{
             if(filterForLastICCSN){
                 let availPrescriptions = await SdkModule.getPrescriptions([lastICCSN]);
