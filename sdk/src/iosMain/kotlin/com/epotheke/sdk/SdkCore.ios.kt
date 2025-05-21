@@ -174,6 +174,7 @@ class SdkCore(
                 logger.warn { "Cardlink sdk stopped with error: ${(response as ServiceErrorResponseProtocol).getErrorMessage()}" }
             }
         } as NSObject)
+        sdkLock.signal()
         sdkLock.unlock()
     }
     private class OverridingCardLinkInteraction(val activationSession: Any, val ctx: SdkCore, val delegate: CardLinkInteractionProtocol) :
