@@ -45,9 +45,6 @@ publish-ios-pod-spec:
 
     - echo "spec.source            = { :http => 'https://github.com/epotheke/epotheke-sdk/releases/download/"${CI_COMMIT_TAG}"/epotheke-CocoaPod.zip' }" >> epotheke-sdk.podspec
 
-    - echo "spec.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }" >> epotheke-sdk.podspec
-    - echo "spec.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }" >> epotheke-sdk.podspec
-
     - echo end >> epotheke-sdk.podspec
 
 
