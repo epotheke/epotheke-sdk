@@ -170,6 +170,7 @@ class SdkCore(
                     logger.error { "Failed to stop Open eCard (code=${ex.statusCode}): ${ex.errorMessage}" }
                 }
             })
+            sdkLock.notify()
         }
     }
 
