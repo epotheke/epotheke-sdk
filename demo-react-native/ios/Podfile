@@ -41,27 +41,6 @@ target 'demoReactNative' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
-
-    # Find bitcode_strip
-    bitcode_strip_path = `xcrun -sdk iphoneos --find bitcode_strip`.chop!
- 
-    # Find path to TwilioVideo dependency
-    path = Dir.pwd
-    framework_path = "#{path}/Pods/epotheke-sdk/epotheke.xcframework/ios-arm64/epotheke.framework/epotheke"
- 
-    # Strip Bitcode sections from the framework
-    strip_command = "#{bitcode_strip_path} #{framework_path} -r -o #{framework_path}"
-    puts "About to strip: #{strip_command}"
-    system(strip_command)
-
-    framework_path = "#{path}/Pods/open-ecard/OpenEcard.xcframework/armv7_arm64/OpenEcard.framework/OpenEcard"
- 
-    # Strip Bitcode sections from the framework
-    strip_command = "#{bitcode_strip_path} #{framework_path} -r -o #{framework_path}"
-    puts "About to strip: #{strip_command}"
-    system(strip_command)
-
-
-
+    
   end
 end
