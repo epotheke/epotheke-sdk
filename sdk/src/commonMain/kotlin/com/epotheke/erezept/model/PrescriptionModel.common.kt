@@ -44,6 +44,7 @@ const val REQUEST_PRESCRIPTION_LIST = "requestPrescriptionList"
 const val AVAILABLE_PRESCRIPTION_LISTS = "availablePrescriptionLists"
 const val AVAILABLE_PRESCRIPTION_LIST = "availablePrescriptionList"
 const val SELECTED_PRESCRIPTION_LIST = "selectedPrescriptionList"
+const val PRESCRIPTION_FETCH_ERROR = "prescriptionFetchError"
 const val GENERIC_ERROR = "genericError"
 const val MEDICATION_PZN = "medicationPZN"
 const val MEDICATION_FREE_TEXT = "medicationFreeText"
@@ -128,7 +129,29 @@ data class AvailablePrescriptionList(
     @SerialName("ICCSN")
     val iccsn: ByteArrayAsBase64,
     val prescriptionBundleList: List<PrescriptionBundle>,
+    val fetchErrors: List<PrescriptionFetchError>? = null,
 )
+
+@Serializable
+@SerialName(PRESCRIPTION_FETCH_ERROR)
+data class PrescriptionFetchError(
+    val prescriptionId: String,
+    val errorCode: PrescriptionFetchErrorCode,
+    val errorMessage: String,
+)
+
+enum class PrescriptionFetchErrorCode(
+    val value: String,
+) {
+    TI_FORBIDDEN("TI_FORBIDDEN"),
+    TI_PRESCRIPTION_NOT_FOUND("TI_PRESCRIPTION_NOT_FOUND"),
+    TI_TOO_MANY_REQUESTS_SENT("TI_TOO_MANY_REQUESTS_SENT"),
+    TI_INTERNAL_SERVER_ERROR("TI_INTERNAL_SERVER_ERROR"),
+    TI_UNKNOWN_ERROR("TI_UNKNOWN_ERROR"),
+    CONNECT_TIMEOUT_ERROR("CONNECT_TIMEOUT_ERROR"),
+    SERIALIZATION_ERROR("SERIALIZATION_ERROR"),
+    UNKNOWN_ERROR("UNKNOWN_ERROR"),
+}
 
 @Serializable
 @SerialName(PRESCRIPTION_BUNDLE)
@@ -137,14 +160,14 @@ data class PrescriptionBundle(
     val accessCode: String? = null,
     val erstellungszeitpunkt: String,
     val status: String,
-    val krankenversicherung: Coverage,
+    val krankenversicherung: Coverage?,
     val pkvTarif: String? = null,
-    val patient: Patient,
+    val patient: Patient?,
     val arzt: Practitioner,
     val pruefnummer: String? = null,
     val organisation: Organization,
     val asvTn: String? = null,
-    val verordnung: PrescriptionInterface,
+    val verordnung: PrescriptionInterface?,
     val arzneimittel: Medication,
 )
 
@@ -322,6 +345,7 @@ sealed interface PrescriptionInterface
 data class PracticeSupply(
     val datum: String,
     val anzahl: Int,
+    val anzahlEinheit: String? = null,
     val kostentraegertyp: String,
     val ikNummer: String,
     val name: String,
@@ -332,11 +356,14 @@ data class PracticeSupply(
 data class Prescription(
     val ausstellungsdatum: String? = null,
     val noctu: Boolean? = null,
+    val serKennzeichen: Boolean? = null,
     val bvg: Boolean? = null,
+    val verschreiberID: String? = null,
     val zuzahlungsstatus: String? = null,
     val autidem: Boolean? = null,
     val abgabehinweis: String? = null,
     val anzahl: Int? = null,
+    val anzahlEinheit: String? = null,
     val dosierung: Boolean? = null,
     val dosieranweisung: String? = null,
     val gebrauchsanweisung: String? = null,
@@ -403,6 +430,9 @@ val prescriptionJsonFormatter = Json {
     serializersModule = prescriptionModule
     classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS
     ignoreUnknownKeys = true
+    // convert missing values to null and do not emit null values
+    explicitNulls = false
+    encodeDefaults = true
 }
 
 typealias ByteArrayAsBase64 = @Serializable(ByteArrayAsBase64Serializer::class) ByteArray
