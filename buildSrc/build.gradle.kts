@@ -1,19 +1,30 @@
+import org.jetbrains.kotlin.konan.properties.loadProperties
+
+val propsFile = buildFile.parentFile.parentFile.resolve("gradle.properties")
+val props = loadProperties(propsFile.absolutePath)
+
+val javaToolchain: String by props
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(javaToolchain))
+    }
+}
+
 plugins {
     // Support convention plugins written in Kotlin. Convention plugins are build scripts in 'src/main' that automatically become available as plugins in the main build.
     `kotlin-dsl`
 }
 
-
 dependencies {
-    implementation(libs.plugins.kotlinMultiplatform)
-    implementation(libs.plugins.kotlinCocoapods)
-    implementation(libs.plugins.androidLibrary)
-    implementation(libs.plugins.androidApplication)
-    implementation(libs.plugins.jetbrainsCompose)
-
+    implementation(libs.plugins.ktlint)
     implementation(libs.plugins.kotlinJvm)
     implementation(libs.plugins.kotlinAllOpen)
+    implementation(libs.plugins.kotlinMultiplatform)
+    implementation(libs.plugins.kotlinKover)
     implementation(libs.plugins.kotlinSerialization)
+    implementation(libs.plugins.mokkery)
+
+    implementation(libs.plugins.androidKmpLibrary)
 }
 
 fun DependencyHandlerScope.implementation(pluginProv: Provider<PluginDependency>) {
