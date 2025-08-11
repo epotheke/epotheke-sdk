@@ -10,32 +10,29 @@ plugins {
 
 kotlin {
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                //         implementation(libs.kotlin.stdlib)
-                //         implementation(libs.kotlin.stdlib.common)
-                implementation(libs.kotlin.logging)
-                implementation(libs.kotlin.coroutines.core)
-                implementation(libs.kotlin.serialization.json)
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.websocket)
-                implementation(libs.ktor.client.auth)
 
-                implementation(libs.xmlutil.core)
-                implementation(libs.xmlutil.ser)
-                implementation(libs.fleeksoft.charset)
-            }
+        commonMain.dependencies {
+            //         implementation(libs.kotlin.stdlib)
+            //         implementation(libs.kotlin.stdlib.common)
+            implementation(libs.kotlin.logging)
+            implementation(libs.kotlin.coroutines.core)
+            implementation(libs.kotlin.serialization.json)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.websocket)
+            implementation(libs.ktor.client.auth)
+
+            implementation(libs.xmlutil.core)
+            implementation(libs.xmlutil.ser)
+            implementation(libs.fleeksoft.charset)
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.bundles.test.basics.kotlin)
-            }
+
+        commonTest.dependencies {
+            implementation(libs.bundles.test.basics.kotlin)
         }
-        val androidMain by getting {
-            dependencies {
+
+        androidMain.dependencies {
 //                api(libs.oec.android)
-                implementation(libs.ktor.client.okhttp)
-            }
+            implementation(libs.ktor.client.okhttp)
         }
 
         // TODO reactivate ios
