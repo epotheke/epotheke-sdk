@@ -23,24 +23,44 @@
 package com.epotheke.sdk
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.http.*
-import io.ktor.utils.io.core.*
-import io.ktor.websocket.*
-import kotlinx.coroutines.*
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.webSocketSession
+import io.ktor.http.HttpMethod
+import io.ktor.http.URLProtocol
+import io.ktor.http.Url
+import io.ktor.http.fullPath
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.Frame
+import io.ktor.websocket.close
+import io.ktor.websocket.readReason
+import io.ktor.websocket.readText
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.io.EOFException
 
 private val log = KotlinLogging.logger {}
 
 interface WiredWSListener {
     fun onOpen()
-    fun onClose(code: Int, reason: String?)
+
+    fun onClose(
+        code: Int,
+        reason: String?,
+    )
+
     fun onError(error: String)
+
     fun onText(msg: String)
 }
 
-open class WebsocketListenerCommon() : ChannelDispatcher {
+open class WebsocketListenerCommon : ChannelDispatcher {
     private val channels = mutableListOf<Channel<String>>()
 
     override fun addProtocolChannel(channel: Channel<String>) {
@@ -50,7 +70,10 @@ open class WebsocketListenerCommon() : ChannelDispatcher {
     fun onOpen() {
     }
 
-    fun onClose(p1: Int, p2: String?) {
+    fun onClose(
+        p1: Int,
+        p2: String?,
+    ) {
     }
 
     fun onError(p1: String) {
@@ -70,7 +93,6 @@ class WebsocketCommon(
     private var url: String,
     private var tenantToken: String?,
 ) {
-
     private var receiveJob: Job? = null
     private var wsListener: WiredWSListener? = null
     private val client: HttpClient = getHttpClient(tenantToken)
@@ -89,7 +111,9 @@ class WebsocketCommon(
                     is Frame.Close -> {
                         // only used when websocket raw is used
                         val reason: CloseReason? = msg.readReason()
-                        val code = reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code.toInt()
+                        val code =
+                            reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code
+                                .toInt()
                         val reasonMsg = reason?.message ?: "No reason"
 
                         wsListener?.onClose(code, reasonMsg)
@@ -127,9 +151,7 @@ class WebsocketCommon(
         this.wsListener = null
     }
 
-    fun getUrl(): String {
-        return this.url
-    }
+    fun getUrl(): String = this.url
 
     fun setUrl(url: String) {
         this.url = url
@@ -153,35 +175,35 @@ class WebsocketCommon(
             val uri = Url(url)
             log.debug { "Connecting websocket to: $uri" }
 
-            wsSession = client.webSocketSession(
-                method = HttpMethod.Get,
-                host = uri.host,
-                port = uri.port,
-                path = uri.fullPath,
-            ) {
-                url {
-                    url.protocol = URLProtocol.WSS
-                    url.port = uri.port
+            wsSession =
+                client.webSocketSession(
+                    method = HttpMethod.Get,
+                    host = uri.host,
+                    port = uri.port,
+                    path = uri.fullPath,
+                ) {
+                    url {
+                        url.protocol = URLProtocol.WSS
+                        url.port = uri.port
+                    }
                 }
-            }
 
             log.debug { "Websocket connected" }
             wsListener?.onOpen()
         }
 
-        this.receiveJob = CoroutineScope(Dispatchers.IO).launch {
-            log.debug { "Entering websocket receive loop." }
-            wsSession?.receiveLoop()
-        }
+        this.receiveJob =
+            CoroutineScope(Dispatchers.IO).launch {
+                log.debug { "Entering websocket receive loop." }
+                wsSession?.receiveLoop()
+            }
     }
 
     /**
      * Get open state of the connection.
      * @return true if the connection is open, false otherwise.
      */
-    fun isOpen(): Boolean {
-        return wsSession?.isActive ?: false
-    }
+    fun isOpen(): Boolean = wsSession?.isActive ?: false
 
     /**
      * Get failed state of the connection.
@@ -197,14 +219,17 @@ class WebsocketCommon(
      * @param statusCode the status code to send.
      * @param reason the reason for closing the connection, or null if none should be given.
      */
-    fun close(statusCode: Int, reason: String?) {
+    fun close(
+        statusCode: Int,
+        reason: String?,
+    ) {
         log.debug { "Close was called. Close frame will be send." }
         runBlocking {
             wsSession?.close(
                 CloseReason(
                     statusCode.toShort(),
-                    reason ?: ""
-                )
+                    reason ?: "",
+                ),
             )
         }
     }
@@ -221,4 +246,3 @@ class WebsocketCommon(
         }
     }
 }
-

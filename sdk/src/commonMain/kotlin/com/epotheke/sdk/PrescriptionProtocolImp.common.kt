@@ -22,55 +22,69 @@
 
 package com.epotheke.sdk
 
-import com.epotheke.erezept.model.*
+import com.epotheke.erezept.model.AvailablePrescriptionLists
+import com.epotheke.erezept.model.GenericErrorMessage
+import com.epotheke.erezept.model.GenericErrorResultType
+import com.epotheke.erezept.model.PrescriptionMessage
+import com.epotheke.erezept.model.RequestPrescriptionList
+import com.epotheke.erezept.model.SelectedPrescriptionList
+import com.epotheke.erezept.model.SelectedPrescriptionListResponse
+import com.epotheke.erezept.model.prescriptionJsonFormatter
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.encodeToString
 import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
-private const val ReceiveTimeoutSeconds = 30L
+private const val RECEIVE_TIMEOUT_SECONDS = 30L
 
 class PrescriptionProtocolImp(
     private val ws: WebsocketCommon,
-) : CardLinkProtocolBase(), PrescriptionProtocol {
-
+) : CardLinkProtocolBase(),
+    PrescriptionProtocol {
     @OptIn(ExperimentalStdlibApi::class)
-    override suspend fun requestPrescriptions(iccsns: List<String>, messageId: String): AvailablePrescriptionLists {
-        return requestPrescriptions(
+    override suspend fun requestPrescriptions(
+        iccsns: List<String>,
+        messageId: String,
+    ): AvailablePrescriptionLists =
+        requestPrescriptions(
             RequestPrescriptionList(
                 iccsns.map { s -> s.hexToByteArray() },
-                messageId
-            )
+                messageId,
+            ),
         )
-    }
 
-    private fun checkCorrelation(messageId: String, correlationId: String) {
+    private fun checkCorrelation(
+        messageId: String,
+        correlationId: String,
+    ) {
         if (messageId != correlationId) {
             throw PrescriptionProtocolException(
                 GenericErrorMessage(
                     errorCode = GenericErrorResultType.INVALID_MESSAGE_DATA,
                     errorMessage = "The received message was not valid.",
-                    correlationId = messageId
-                )
+                    correlationId = messageId,
+                ),
             )
         }
     }
 
     private suspend inline fun <reified T : PrescriptionMessage> receive(reqMessageId: String): T {
-        val lastTimestampUntilTimeout = now() + ReceiveTimeoutSeconds
-        var duration = ReceiveTimeoutSeconds.seconds
+        val lastTimestampUntilTimeout = now() + RECEIVE_TIMEOUT_SECONDS
+        var duration = RECEIVE_TIMEOUT_SECONDS.seconds
         while (true) {
             try {
-                val response = withTimeout(
-                    timeout = duration
+                val response =
+                    withTimeout(
+                        timeout = duration,
+                    ) {
+                        inputChannel.receive()
+                    }
+                when (
+                    val prescriptionMessage =
+                        prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(response)
                 ) {
-                    inputChannel.receive()
-                }
-                when (val prescriptionMessage =
-                    prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(response)) {
                     is T -> return prescriptionMessage
                     is GenericErrorMessage -> {
                         logger.debug { "Received generic error: ${prescriptionMessage.errorMessage}" }
@@ -81,7 +95,7 @@ class PrescriptionProtocolImp(
                         duration = (lastTimestampUntilTimeout - now()).seconds
                     }
                 }
-            // this might happen on reconnect since server sends session information as a hello
+                // this might happen on reconnect since server sends session information as a hello
             } catch (e: SerializationException) {
                 logger.warn { "Invalid message type received - Ignoring" }
             } catch (e: TimeoutCancellationException) {
@@ -90,10 +104,9 @@ class PrescriptionProtocolImp(
                     GenericErrorMessage(
                         errorCode = GenericErrorResultType.UNKNOWN_ERROR,
                         errorMessage = "Timeout",
-                        correlationId = reqMessageId
-                    )
+                        correlationId = reqMessageId,
+                    ),
                 )
-
             }
         }
     }
@@ -101,7 +114,7 @@ class PrescriptionProtocolImp(
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
         logger.debug { "Sending data to request eReceipts." }
         try {
-            if(!ws.isOpen()){
+            if (!ws.isOpen()) {
                 logger.debug { "Cannot send since ws is closed - reconnecting." }
                 ws.connect()
             }
@@ -118,8 +131,8 @@ class PrescriptionProtocolImp(
                         GenericErrorMessage(
                             errorCode = GenericErrorResultType.UNKNOWN_ERROR,
                             errorMessage = "Unspecified error",
-                            correlationId = req.messageId
-                        )
+                            correlationId = req.messageId,
+                        ),
                     )
                 }
             }
@@ -129,7 +142,7 @@ class PrescriptionProtocolImp(
     override suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse {
         logger.debug { "Sending data to select prescriptions." }
         try {
-            if(!ws.isOpen()){
+            if (!ws.isOpen()) {
                 logger.debug { "Cannot send since ws is closed - reconnecting." }
                 ws.connect()
             }
@@ -146,13 +159,11 @@ class PrescriptionProtocolImp(
                         GenericErrorMessage(
                             errorCode = GenericErrorResultType.UNKNOWN_ERROR,
                             errorMessage = "Unspecified error",
-                            correlationId = selection.messageId
-                        )
+                            correlationId = selection.messageId,
+                        ),
                     )
                 }
             }
         }
     }
-
 }
-

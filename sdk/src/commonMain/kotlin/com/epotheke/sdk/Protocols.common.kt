@@ -22,18 +22,23 @@
 
 package com.epotheke.sdk
 
-import com.epotheke.erezept.model.*
+import com.epotheke.erezept.model.AvailablePrescriptionLists
+import com.epotheke.erezept.model.GenericErrorMessage
+import com.epotheke.erezept.model.RequestPrescriptionList
+import com.epotheke.erezept.model.SelectedPrescriptionList
+import com.epotheke.erezept.model.SelectedPrescriptionListResponse
 import kotlinx.coroutines.channels.Channel
 import kotlin.coroutines.cancellation.CancellationException
 
-class PrescriptionProtocolException(val msg: GenericErrorMessage) : Exception()
+class PrescriptionProtocolException(
+    val msg: GenericErrorMessage,
+) : Exception()
 
 interface ChannelDispatcher {
     fun addProtocolChannel(channel: Channel<String>)
 }
 
-open class CardLinkProtocolBase(
-) : CardLinkProtocol {
+open class CardLinkProtocolBase : CardLinkProtocol {
     protected val inputChannel = Channel<String>()
 
     fun registerListener(channelDispatcher: ChannelDispatcher) {
@@ -41,13 +46,15 @@ open class CardLinkProtocolBase(
     }
 }
 
-fun buildProtocols(websocket: WebsocketCommon, wsListener: WebsocketListenerCommon): Set<CardLinkProtocol> {
-    return setOf(
-        PrescriptionProtocolImp(websocket)
+fun buildProtocols(
+    websocket: WebsocketCommon,
+    wsListener: WebsocketListenerCommon,
+): Set<CardLinkProtocol> =
+    setOf(
+        PrescriptionProtocolImp(websocket),
     ).onEach { p ->
-        p.registerListener(wsListener);
+        p.registerListener(wsListener)
     }
-}
 
 interface CardLinkProtocol
 
@@ -56,7 +63,10 @@ interface PrescriptionProtocol : CardLinkProtocol {
     suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
 
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
-    suspend fun requestPrescriptions(iccsns: List<String> = emptyList(), messageId : String = randomUUID()): AvailablePrescriptionLists
+    suspend fun requestPrescriptions(
+        iccsns: List<String> = emptyList(),
+        messageId: String = randomUUID(),
+    ): AvailablePrescriptionLists
 
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
