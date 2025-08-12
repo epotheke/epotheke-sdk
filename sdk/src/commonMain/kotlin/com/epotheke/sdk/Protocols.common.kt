@@ -22,52 +22,39 @@
 
 package com.epotheke.sdk
 
-import com.epotheke.erezept.model.AvailablePrescriptionLists
-import com.epotheke.erezept.model.GenericErrorMessage
-import com.epotheke.erezept.model.RequestPrescriptionList
-import com.epotheke.erezept.model.SelectedPrescriptionList
-import com.epotheke.erezept.model.SelectedPrescriptionListResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.Channel
-import kotlin.coroutines.cancellation.CancellationException
 
-class PrescriptionProtocolException(
-    val msg: GenericErrorMessage,
-) : Exception()
+private val logger = KotlinLogging.logger { }
+
+interface CardLinkProtocol {
+    fun filterMessage(msg: String): Boolean
+}
+
+class FilteringChannel(
+    val protocol: CardLinkProtocol,
+    val inputChannel: Channel<String> = Channel(),
+) : Channel<String> by inputChannel {
+    /**
+     * Put msg to channel if it passes filter
+     */
+    override suspend fun send(element: String) {
+        if (protocol.filterMessage(element)) {
+            inputChannel.send(element)
+        }
+    }
+}
 
 interface ChannelDispatcher {
-    fun addProtocolChannel(channel: Channel<String>)
+    fun addProtocolChannel(channel: FilteringChannel)
 }
 
-open class CardLinkProtocolBase : CardLinkProtocol {
-    protected val inputChannel = Channel<String>()
+abstract class CardLinkProtocolBase(
+    ws: WebsocketCommon,
+) : CardLinkProtocol {
+    protected val inputChannel = FilteringChannel(this)
 
-    fun registerListener(channelDispatcher: ChannelDispatcher) {
-        channelDispatcher.addProtocolChannel(inputChannel)
+    init {
+        ws.addProtocolChannel(inputChannel)
     }
-}
-
-fun buildProtocols(
-    websocket: WebsocketCommon,
-    wsListener: WebsocketListenerCommon,
-): Set<CardLinkProtocol> =
-    setOf(
-        PrescriptionProtocolImp(websocket),
-    ).onEach { p ->
-        p.registerListener(wsListener)
-    }
-
-interface CardLinkProtocol
-
-interface PrescriptionProtocol : CardLinkProtocol {
-    @Throws(PrescriptionProtocolException::class, CancellationException::class)
-    suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
-
-    @Throws(PrescriptionProtocolException::class, CancellationException::class)
-    suspend fun requestPrescriptions(
-        iccsns: List<String> = emptyList(),
-        messageId: String = randomUUID(),
-    ): AvailablePrescriptionLists
-
-    @Throws(PrescriptionProtocolException::class, CancellationException::class)
-    suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
 }

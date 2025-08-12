@@ -22,7 +22,7 @@ android {
 
     buildTypes {
         release {
-            //shrinkResources true
+            // shrinkResources true
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -54,10 +54,9 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // the actual epotheke library
-    implementation("com.epotheke:sdk:${epothekeSdkVersion}")
+    implementation("com.epotheke:sdk:$epothekeSdkVersion")
 
     // logging library, use whatever you like to output the slf4j log statements
     implementation("io.github.oshai:kotlin-logging:6.0.9")
     implementation("com.github.tony19:logback-android:3.0.0")
-
 }

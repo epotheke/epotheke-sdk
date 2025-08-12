@@ -20,7 +20,7 @@
  *
  ***************************************************************************/
 
-package com.epotheke.sdk
+package com.epotheke.erezept.protocol
 
 import com.epotheke.erezept.model.AvailablePrescriptionLists
 import com.epotheke.erezept.model.GenericErrorMessage
@@ -30,19 +30,52 @@ import com.epotheke.erezept.model.RequestPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionList
 import com.epotheke.erezept.model.SelectedPrescriptionListResponse
 import com.epotheke.erezept.model.prescriptionJsonFormatter
+import com.epotheke.sdk.CardLinkProtocol
+import com.epotheke.sdk.CardLinkProtocolBase
+import com.epotheke.sdk.WebsocketCommon
+import com.epotheke.sdk.now
+import com.epotheke.sdk.randomUUID
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jdk.internal.org.jline.utils.Colors.s
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerializationException
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
 private const val RECEIVE_TIMEOUT_SECONDS = 30L
 
+class PrescriptionProtocolException(
+    val msg: GenericErrorMessage,
+) : Exception()
+
+interface PrescriptionProtocol : CardLinkProtocol {
+    @Throws(PrescriptionProtocolException::class, CancellationException::class)
+    suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
+
+    @Throws(PrescriptionProtocolException::class, CancellationException::class)
+    suspend fun requestPrescriptions(
+        iccsns: List<String> = emptyList(),
+        messageId: String = randomUUID(),
+    ): AvailablePrescriptionLists
+
+    @Throws(PrescriptionProtocolException::class, CancellationException::class)
+    suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
+}
+
 class PrescriptionProtocolImp(
     private val ws: WebsocketCommon,
-) : CardLinkProtocolBase(),
+) : CardLinkProtocolBase(ws),
     PrescriptionProtocol {
+    override fun filterMessage(msg: String) =
+        try {
+            prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(msg)
+            true
+        } catch (e: Exception) {
+            false
+        }
+
     @OptIn(ExperimentalStdlibApi::class)
     override suspend fun requestPrescriptions(
         iccsns: List<String>,
@@ -114,10 +147,6 @@ class PrescriptionProtocolImp(
     override suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists {
         logger.debug { "Sending data to request eReceipts." }
         try {
-            if (!ws.isOpen()) {
-                logger.debug { "Cannot send since ws is closed - reconnecting." }
-                ws.connect()
-            }
             ws.send(prescriptionJsonFormatter.encodeToString(req))
             val resp = receive<AvailablePrescriptionLists>(reqMessageId = req.messageId)
             checkCorrelation(req.messageId, resp.correlationId)
@@ -142,10 +171,6 @@ class PrescriptionProtocolImp(
     override suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse {
         logger.debug { "Sending data to select prescriptions." }
         try {
-            if (!ws.isOpen()) {
-                logger.debug { "Cannot send since ws is closed - reconnecting." }
-                ws.connect()
-            }
             ws.send(prescriptionJsonFormatter.encodeToString(selection))
             val resp = receive<SelectedPrescriptionListResponse>(reqMessageId = selection.messageId)
             checkCorrelation(selection.messageId, resp.correlationId)

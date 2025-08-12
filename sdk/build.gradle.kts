@@ -2,9 +2,9 @@ description = "epotheke SDK Package"
 
 plugins {
     id("epotheke.kmp-lib-conventions")
-    id("epotheke.kmp-jvm-lib-conventions")
+  //  id("epotheke.kmp-jvm-lib-conventions")
     id("epotheke.kmp-android-lib-conventions")
-    id("epotheke.kmp-ios-lib-conventions")
+//    id("epotheke.kmp-ios-lib-conventions")
     id("epotheke.publish-conventions")
 }
 
@@ -12,8 +12,8 @@ kotlin {
     sourceSets {
 
         commonMain.dependencies {
-            //         implementation(libs.kotlin.stdlib)
-            //         implementation(libs.kotlin.stdlib.common)
+            // implementation(libs.kotlin.stdlib)
+            // implementation(libs.kotlin.stdlib.common)
             implementation(libs.kotlin.logging)
             implementation(libs.kotlin.coroutines.core)
             implementation(libs.kotlin.serialization.json)
@@ -24,6 +24,9 @@ kotlin {
             implementation(libs.xmlutil.core)
             implementation(libs.xmlutil.ser)
             implementation(libs.fleeksoft.charset)
+            implementation(libs.oec.pace)
+            implementation(libs.oec.smartcard.sal)
+            implementation(libs.oec.bundled.cifs)
         }
 
         commonTest.dependencies {
@@ -31,10 +34,18 @@ kotlin {
         }
 
         androidMain.dependencies {
-//                api(libs.oec.android)
             implementation(libs.ktor.client.okhttp)
+
+            api(libs.oec.smartcard.pcsc.android)
+
+            //    implementation(project(":smartcard:pcsc-android"))
+            //    implementation(project(":smartcard:pace"))
         }
 
+        androidHostTest.dependencies { }
+        androidDeviceTest.dependencies {
+            implementation(libs.bundles.test.android.kotlin)
+        }
         // TODO reactivate ios
 
         // val iosMain by getting {

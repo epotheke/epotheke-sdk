@@ -54,7 +54,8 @@ private val LOG = KotlinLogging.logger {}
 /**
  * The address of the service to connect to is set to a mock service for this demo app.
  */
-private const val serviceUrl = "https://mock.test.epotheke.com/cardlink"
+//private const val serviceUrl = "https://mock.test.epotheke.com/cardlink"
+private const val serviceUrl = "https://service.dev.epotheke.com/cardlink"
 
 
 /**
@@ -155,7 +156,7 @@ class SdkActivityImp : SdkActivity() {
         </CANVALUE> */
         override fun onCanRequest(confirmPasswordOperation: ConfirmPasswordOperation) {
             LOG.debug { "epotheke implementation onCanRequest" }
-            getValueFromUser("Please provide CAN of card", "000000") { value ->
+            getValueFromUser("Please provide CAN of card", "123123") { value ->
                 confirmPasswordOperation.confirmPassword(value)
             }
         }

@@ -25,6 +25,7 @@ package com.epotheke.sdk
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
@@ -35,6 +36,7 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readReason
 import io.ktor.websocket.readText
+import io.ktor.websocket.send
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -43,31 +45,19 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.io.EOFException
+import okio.Timeout
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-interface WiredWSListener {
-    fun onOpen()
+class WebsocketListenerCommon : ChannelDispatcher {
+    private val channels = mutableListOf<FilteringChannel>()
 
-    fun onClose(
-        code: Int,
-        reason: String?,
-    )
-
-    fun onError(error: String)
-
-    fun onText(msg: String)
-}
-
-open class WebsocketListenerCommon : ChannelDispatcher {
-    private val channels = mutableListOf<Channel<String>>()
-
-    override fun addProtocolChannel(channel: Channel<String>) {
+    override fun addProtocolChannel(channel: FilteringChannel) {
         channels.add(channel)
-    }
-
-    fun onOpen() {
     }
 
     fun onClose(
@@ -82,7 +72,7 @@ open class WebsocketListenerCommon : ChannelDispatcher {
 
     fun onText(p1: String) {
         runBlocking {
-            channels.map { c ->
+            channels.forEach { c ->
                 c.send(p1)
             }
         }
@@ -91,21 +81,24 @@ open class WebsocketListenerCommon : ChannelDispatcher {
 
 class WebsocketCommon(
     private var url: String,
-    private var tenantToken: String?,
+    tenantToken: String?,
 ) {
     private var receiveJob: Job? = null
-    private var wsListener: WiredWSListener? = null
+    private var wsListener: WebsocketListenerCommon = WebsocketListenerCommon()
     private val client: HttpClient = getHttpClient(tenantToken)
 
     private var wsSession: DefaultClientWebSocketSession? = null
 
+    fun addProtocolChannel(protoChannel: FilteringChannel) {
+        wsListener.addProtocolChannel(protoChannel)
+    }
+
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
         try {
             for (msg in incoming) {
-                log.debug { "Socket receive received frame with type" }
                 when (msg) {
                     is Frame.Text -> {
-                        wsListener?.onText(msg.readText())
+                        wsListener.onText(msg.readText())
                     }
 
                     is Frame.Close -> {
@@ -116,12 +109,12 @@ class WebsocketCommon(
                                 .toInt()
                         val reasonMsg = reason?.message ?: "No reason"
 
-                        wsListener?.onClose(code, reasonMsg)
+                        wsListener.onClose(code, reasonMsg)
                     }
 
                     else -> {
                         log.warn { "Unhandled frame type received." }
-                        wsListener?.onError("Invalid data received")
+                        wsListener.onError("Invalid data received")
                     }
                 }
             }
@@ -129,26 +122,10 @@ class WebsocketCommon(
             log.debug { "Websocket channel closed by receiving EOFException." }
             val reasonMsg = e.message
             val code = CloseReason.Codes.NORMAL
-            wsListener?.onClose(code.code.toInt(), reasonMsg)
+            wsListener.onClose(code.code.toInt(), reasonMsg)
         } catch (e: Exception) {
             log.debug(e) { "Exception during websocket receive." }
         }
-    }
-
-    /**
-     * Set the listener for the websocket events.
-     * This method replaces an existing listener, if one is already set.
-     * @param wsListener the listener to set.
-     */
-    fun setListener(wsListener: WiredWSListener) {
-        this.wsListener = wsListener
-    }
-
-    /**
-     * Remove the listener for the websocket events, if one is set.
-     */
-    fun removeListener() {
-        this.wsListener = null
     }
 
     fun getUrl(): String = this.url
@@ -169,34 +146,37 @@ class WebsocketCommon(
      * Connect to the server.
      * This method can also be used to reestablish a lost connection.
      */
-    fun connect() {
+    suspend fun connect() {
         this.receiveJob?.cancel()
-        runBlocking {
-            val uri = Url(url)
-            log.debug { "Connecting websocket to: $uri" }
+        val uri = Url(url)
+        log.debug { "Connecting websocket to: $uri" }
 
-            wsSession =
-                client.webSocketSession(
-                    method = HttpMethod.Get,
-                    host = uri.host,
-                    port = uri.port,
-                    path = uri.fullPath,
-                ) {
-                    url {
-                        url.protocol = URLProtocol.WSS
-                        url.port = uri.port
-                    }
+        wsSession =
+            client.webSocketSession(
+                method = HttpMethod.Get,
+                host = uri.host,
+                port = uri.port,
+                path = uri.fullPath,
+            ) {
+                url {
+                    url.protocol = URLProtocol.WSS
+                    url.port = uri.port
                 }
+            }
 
-            log.debug { "Websocket connected" }
-            wsListener?.onOpen()
-        }
+        log.debug { "Websocket connected" }
 
         this.receiveJob =
             CoroutineScope(Dispatchers.IO).launch {
                 log.debug { "Entering websocket receive loop." }
                 wsSession?.receiveLoop()
             }
+    }
+
+    suspend fun connectWithTimeout(duration: Duration = 10.seconds) {
+        withTimeout(duration) {
+            connect()
+        }
     }
 
     /**
@@ -238,11 +218,20 @@ class WebsocketCommon(
      * Send a text frame.
      * @param data the data to send.
      */
-    fun send(data: String) {
+    fun send(
+        data: String,
+        reconnectIfNeeded: Boolean = true,
+        reconnectTimeoutDuration: Duration? = 10.seconds,
+    ) {
         runBlocking {
-            wsSession?.apply {
-                send(data)
+            if (reconnectIfNeeded && !isOpen()) {
+                if (reconnectTimeoutDuration != null) {
+                    connectWithTimeout(reconnectTimeoutDuration)
+                } else {
+                    connect()
+                }
             }
+            wsSession?.send(data)
         }
     }
 }
