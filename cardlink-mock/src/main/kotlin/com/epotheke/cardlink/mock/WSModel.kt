@@ -9,11 +9,7 @@
 
 package com.epotheke.cardlink.mock
 
-import com.epotheke.serialization.ByteArrayAsBase64
-import com.epotheke.serialization.ByteArrayOfHex
-import com.epotheke.serialization.ByteArrayOfHexAsBase64Serializer
-import com.epotheke.serialization.ByteArrayOfHexAsHexSerializer
-import com.epotheke.serialization.InstantSerde
+
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer

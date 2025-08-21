@@ -1,4 +1,4 @@
-package com.epotheke.serialization
+package com.epotheke.cardlink.mock
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.KSerializer
