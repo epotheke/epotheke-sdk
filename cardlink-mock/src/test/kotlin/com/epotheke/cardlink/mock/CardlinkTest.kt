@@ -201,7 +201,7 @@ class CardlinkTest {
             [
                 {
                     "type": "confirmSMSCode",
-                    "payload": "eyJ0YW4iOiAiNDYxOTE0In0"
+                    "payload": "eyJzbXNDb2RlIjogIjQ2MTkxNCJ9"
                 },
                 "25b739dd-f94c-4687-b978-1b4a8246eb35",
                 "a7e35054-e095-4341-aa0e-c42349875c29"
