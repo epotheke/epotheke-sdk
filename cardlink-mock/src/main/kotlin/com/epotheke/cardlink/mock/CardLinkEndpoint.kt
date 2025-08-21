@@ -239,7 +239,13 @@ class CardLinkEndpoint {
         if (! isGermanNumber) {
             val errorMsg = "Not a German phone number."
             logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            val msg = GematikEnvelope(ConfirmPhoneNumber(ResultCode.NUMBER_FROM_WRONG_COUNTRY, errorMsg), correlationId, cardSessionId)
+            session.asyncRemote.sendObject(msg) {
+                if (it.exception != null) {
+                    logger.debug(it.exception) { "Unable to send message." }
+                }
+            }
+
             return
         }
 
