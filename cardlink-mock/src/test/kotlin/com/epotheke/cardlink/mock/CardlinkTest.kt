@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import java.net.URI
-import java.util.*
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.TimeUnit
 
@@ -60,6 +59,30 @@ class CardlinkTest {
             .thenCallRealMethod()
         `when`(smsSender.phoneNumberToInternationalFormat(any(String::class.java), any(String::class.java)))
             .thenCallRealMethod()
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testNumberFromWrongCountry() {
+        ContainerProvider.getWebSocketContainer().connectToServer(Client::class.java, uri).use {
+            Assertions.assertEquals("CONNECT", MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+            exceptSessionInformationMessageAndSendNumberFromWrongCountry(it)
+            expectNumberFromWrongCountry()
+
+        }
+    }
+
+    //TODO - To test blocked numbers the mock service shall assume the following number to be blocked: "+49 15172612342"
+    // which is sent here to the service.
+    @Test
+    @Throws(Exception::class)
+    fun testBlockedNumber() {
+        ContainerProvider.getWebSocketContainer().connectToServer(Client::class.java, uri).use {
+            Assertions.assertEquals("CONNECT", MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+            exceptSessionInformationMessageAndSendBlockedNumber(it)
+            expectBlockedNumber()
+
+        }
     }
 
     @Test
@@ -101,12 +124,28 @@ class CardlinkTest {
         Assertions.assertEquals(SELECTED_PRESCRIPTION_LIST_RESPONSE, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
     }
 
+    private fun exceptSessionInformationMessageAndSendBlockedNumber(session: Session) {
+        EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(SESSION_INFO, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+
+        // Request SMS Code
+        val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE_BLOCKED_NUMBER, CARD_SESSION_ID)
+        session.asyncRemote.sendText(requestSmsCodeEnvelope)
+    }
+    private fun exceptSessionInformationMessageAndSendNumberFromWrongCountry(session: Session) {
+        EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(SESSION_INFO, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+
+        // Request SMS Code
+        val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE_WRONG_COUNTRY, CARD_SESSION_ID)
+        session.asyncRemote.sendText(requestSmsCodeEnvelope)
+    }
     private fun exceptSessionInformationMessage(session: Session) {
         EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
         Assertions.assertEquals(SESSION_INFO, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
 
         // Request SMS Code
-        val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE, CARD_SESSION_ID)
+        val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE_VALID, CARD_SESSION_ID)
         session.asyncRemote.sendText(requestSmsCodeEnvelope)
 
         // Now we wait a little bit, and we will receive an SMS code what we will confirm
@@ -122,6 +161,20 @@ class CardlinkTest {
         // Send a register eGK Message after connecting
         val registerEgkEnvelope = String.format(REGISTER_EGK_MESSAGE, CARD_SESSION_ID)
         session.asyncRemote.sendText(registerEgkEnvelope)
+    }
+
+    private fun expectNumberFromWrongCountry() {
+        val response = MESSAGES_TYPES.poll(10, TimeUnit.SECONDS)
+        val payload = EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)?.payload
+        Assertions.assertEquals(REQUEST_SMS_TAN_RESPONSE, response)
+        Assertions.assertEquals(ResultCode.NUMBER_FROM_WRONG_COUNTRY, (payload as ConfirmPhoneNumber).resultCode)
+    }
+
+    private fun expectBlockedNumber() {
+        val response = MESSAGES_TYPES.poll(10, TimeUnit.SECONDS)
+        val payload = EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)?.payload
+        Assertions.assertEquals(REQUEST_SMS_TAN_RESPONSE, response)
+        Assertions.assertEquals(ResultCode.NUMBER_BLOCKED, (payload as ConfirmPhoneNumber).resultCode)
     }
 
     private fun exceptConfirmSmsCodeResponseMessage() {
@@ -186,11 +239,31 @@ class CardlinkTest {
         private val EGK_ENVELOPE_MESSAGES = LinkedBlockingDeque<GematikEnvelope>()
         private val PRESCRIPTION_ENVELOPE_MESSAGES = LinkedBlockingDeque<PrescriptionMessage>()
 
-        private const val REQUEST_SMS_CODE = """
+        private const val REQUEST_SMS_CODE_VALID = """
             [
                 {
                     "type": "requestSMSCode",
                     "payload": "ewoicGhvbmVOdW1iZXIiOiAiKzQ5IDE1MTcyNjEyMTkxIgogICAgfQ"
+                },
+                "%s",
+                "0f78c24a-eeeb-4a5b-b37d-01c0e0788c4e"
+            ]
+        """
+        private const val REQUEST_SMS_CODE_BLOCKED_NUMBER= """
+            [
+                {
+                    "type": "requestSMSCode",
+                    "payload": "ewoicGhvbmVOdW1iZXIiOiAiKzQ5IDE1MTcyNjEyMzQyIgp9"
+                },
+                "%s",
+                "0f78c24a-eeeb-4a5b-b37d-01c0e0788c4e"
+            ]
+        """
+        private const val REQUEST_SMS_CODE_WRONG_COUNTRY= """
+            [
+                {
+                    "type": "requestSMSCode",
+                    "payload": "ewoicGhvbmVOdW1iZXIiOiAiKzQxIDQ0NjY4MTgwMCIKICAgIH0"
                 },
                 "%s",
                 "0f78c24a-eeeb-4a5b-b37d-01c0e0788c4e"
