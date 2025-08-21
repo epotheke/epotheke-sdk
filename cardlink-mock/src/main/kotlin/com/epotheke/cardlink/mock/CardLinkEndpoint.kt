@@ -187,6 +187,8 @@ class CardLinkEndpoint {
                     logger.error { error }
                     resultCode = ResultCode.TAN_INCORRECT
                     errorMsg = error
+                } else {
+                    resultCode= ResultCode.SUCCESS
                 }
             } catch (ex: MaxTriesReached) {
                 val error = "Reached max tries for SMS-Code confirmation."

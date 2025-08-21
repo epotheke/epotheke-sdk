@@ -72,6 +72,32 @@ class CardlinkTest {
         }
     }
 
+    @Test
+    @Throws(Exception::class)
+    fun testTanInvalid() {
+        ContainerProvider.getWebSocketContainer().connectToServer(Client::class.java, uri).use {
+            Assertions.assertEquals("CONNECT", MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+            exceptSessionInformationMessageAndUseInvalidTAN(it)
+            exceptConfirmSmsCodeResponseMessage()
+            expectWrongTan()
+
+            Thread.sleep(500)
+            var confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE_INVALID, CARD_SESSION_ID)
+            it.asyncRemote.sendText(confirmSmsCodeEnvelope)
+            expectWrongTan()
+
+            Thread.sleep(500)
+            confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE_INVALID, CARD_SESSION_ID)
+            it.asyncRemote.sendText(confirmSmsCodeEnvelope)
+            expectWrongTan()
+
+            Thread.sleep(500)
+            confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE_INVALID, CARD_SESSION_ID)
+            it.asyncRemote.sendText(confirmSmsCodeEnvelope)
+            expectTanRetryExceeded()
+        }
+    }
+
     //TODO - To test blocked numbers the mock service shall assume the following number to be blocked: "+49 15172612342"
     // which is sent here to the service.
     @Test
@@ -150,13 +176,27 @@ class CardlinkTest {
 
         // Now we wait a little bit, and we will receive an SMS code what we will confirm
         Thread.sleep(500)
-        val confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE, CARD_SESSION_ID)
+        val confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE_VALID, CARD_SESSION_ID)
         session.asyncRemote.sendText(confirmSmsCodeEnvelope)
     }
 
-    private fun expectConfirmTanRequestResponse(session: Session) {
+    private fun exceptSessionInformationMessageAndUseInvalidTAN(session: Session) {
         EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)
+        Assertions.assertEquals(SESSION_INFO, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+
+        // Request SMS Code
+        val requestSmsCodeEnvelope = String.format(REQUEST_SMS_CODE_VALID, CARD_SESSION_ID)
+        session.asyncRemote.sendText(requestSmsCodeEnvelope)
+
+        // Now we wait a little bit, and we will receive an SMS code what we will confirm
+        Thread.sleep(500)
+        val confirmSmsCodeEnvelope = String.format(CONFIRM_SMS_CODE_INVALID, CARD_SESSION_ID)
+        session.asyncRemote.sendText(confirmSmsCodeEnvelope)
+    }
+    private fun expectConfirmTanRequestResponse(session: Session) {
+        val payload = EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)?.payload
         Assertions.assertEquals(CONFIRM_TAN_RESPONSE, MESSAGES_TYPES.poll(10, TimeUnit.SECONDS))
+        Assertions.assertEquals(ResultCode.SUCCESS, (payload as ConfirmTan).resultCode)
 
         // Send a register eGK Message after connecting
         val registerEgkEnvelope = String.format(REGISTER_EGK_MESSAGE, CARD_SESSION_ID)
@@ -175,6 +215,20 @@ class CardlinkTest {
         val payload = EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)?.payload
         Assertions.assertEquals(REQUEST_SMS_TAN_RESPONSE, response)
         Assertions.assertEquals(ResultCode.NUMBER_BLOCKED, (payload as ConfirmPhoneNumber).resultCode)
+    }
+
+    private fun expectTanRetryExceeded() {
+        val response = MESSAGES_TYPES.poll(10, TimeUnit.SECONDS)
+        val payload = EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)?.payload
+        Assertions.assertEquals(CONFIRM_TAN_RESPONSE, response)
+        Assertions.assertEquals(ResultCode.TAN_RETRY_LIMIT_EXCEEDED, (payload as ConfirmTan).resultCode)
+    }
+
+    private fun expectWrongTan() {
+        val response = MESSAGES_TYPES.poll(10, TimeUnit.SECONDS)
+        val payload = EGK_ENVELOPE_MESSAGES.poll(10, TimeUnit.SECONDS)?.payload
+        Assertions.assertEquals(CONFIRM_TAN_RESPONSE, response)
+        Assertions.assertEquals(ResultCode.TAN_INCORRECT, (payload as ConfirmTan).resultCode)
     }
 
     private fun exceptConfirmSmsCodeResponseMessage() {
@@ -270,11 +324,22 @@ class CardlinkTest {
             ]
         """
 
-        private const val CONFIRM_SMS_CODE = """
+        private const val CONFIRM_SMS_CODE_VALID = """
             [
                 {
                     "type": "confirmSMSCode",
-                    "payload": "eyJzbXNDb2RlIjogIjQ2MTkxNCJ9"
+                    "payload": "eyJzbXNDb2RlIjogIjEyMzEyMyJ9"
+                },
+                "25b739dd-f94c-4687-b978-1b4a8246eb35",
+                "a7e35054-e095-4341-aa0e-c42349875c29"
+            ]
+        """
+
+        private const val CONFIRM_SMS_CODE_INVALID = """
+            [
+                {
+                    "type": "confirmSMSCode",
+                    "payload": "eyJzbXNDb2RlIjogIjk5OTk5OSJ9"
                 },
                 "25b739dd-f94c-4687-b978-1b4a8246eb35",
                 "a7e35054-e095-4341-aa0e-c42349875c29"
