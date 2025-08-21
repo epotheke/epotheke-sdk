@@ -179,6 +179,7 @@ class CardLinkEndpoint {
         var errorMsg : String? = null
         var resultCode : ResultCode = ResultCode.SUCCESS
 
+
         if (webSocketId != null) {
             try {
                 val correctSMSCode = smsCodeHandler.checkSMSCode(webSocketId, sendTan.smsCode)
@@ -250,7 +251,18 @@ class CardLinkEndpoint {
 
             return
         }
-
+        val isBlockedNumber = smsSender.isBlockedNumber(originalPhoneNumber)
+        if (isBlockedNumber){
+            val errorMsg = "Number is blocked."
+            logger.error {errorMsg}
+            val msg = GematikEnvelope(ConfirmPhoneNumber(ResultCode.NUMBER_BLOCKED, errorMsg), correlationId, cardSessionId)
+            session.asyncRemote.sendObject(msg) {
+                if (it.exception != null) {
+                    logger.debug(it.exception) { "Unable to send message." }
+                }
+            }
+            return
+        }
         val phoneNumber = smsSender.phoneNumberToInternationalFormat(originalPhoneNumber, "DE")
 
         logger.debug { "Received 'requestSmsCode' with phone number: '$originalPhoneNumber'." }

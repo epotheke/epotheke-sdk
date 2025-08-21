@@ -45,6 +45,8 @@ interface SMSSender {
 
     fun isGermanPhoneNumber(phoneNumber: String) : Boolean
 
+    fun isBlockedNumber(phoneNumber: String) : Boolean
+
     fun phoneNumberToInternationalFormat(phoneNumber: String, region: String) : String
 
     fun createMessage(msg: SMSCreateMessage)
@@ -72,6 +74,10 @@ class SpryngsmsSender : SMSSender {
         val phoneNumberUtil = PhoneNumberUtil.getInstance()
         val phoneNumber : PhoneNumber = phoneNumberUtil.parse(phoneNumberRaw, "DE")
         return phoneNumberUtil.isValidNumberForRegion(phoneNumber, "DE")
+    }
+
+    override fun isBlockedNumber(phoneNumber: String): Boolean {
+        return phoneNumber ==  "+49 15172612342"
     }
 
     override fun phoneNumberToInternationalFormat(phoneNumberRaw: String, region: String) : String {

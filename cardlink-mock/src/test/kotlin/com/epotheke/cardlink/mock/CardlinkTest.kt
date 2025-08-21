@@ -51,11 +51,15 @@ class CardlinkTest {
 
     private fun <T> any(type: Class<T>): T = Mockito.any<T>(type)
 
+
+
     @BeforeEach
     fun setup() {
         `when`(smsSender.createMessage(any(SMSCreateMessage::class.java)))
             .then { logger.info { "[MOCK] Sending out SMS..." } }
         `when`(smsSender.isGermanPhoneNumber(any(String::class.java)))
+            .thenCallRealMethod()
+        `when`(smsSender.isBlockedNumber(any(String::class.java)))
             .thenCallRealMethod()
         `when`(smsSender.phoneNumberToInternationalFormat(any(String::class.java), any(String::class.java)))
             .thenCallRealMethod()
