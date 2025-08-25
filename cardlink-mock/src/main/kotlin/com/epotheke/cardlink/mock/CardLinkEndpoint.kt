@@ -72,7 +72,7 @@ class CardLinkEndpoint {
     @OnClose 
     fun onClose(session:Session, reason: CloseReason) {
         val webSocketId = getWebSocketId(session)
-        logger.debug { "WebSocket connection with ID: $webSocketId was closed." }
+        logger.debug { "WebSocket connection with ID: $webSocketId was closed. Reason: $reason" }
     }
 
     @OnError
