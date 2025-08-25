@@ -173,32 +173,32 @@ class CardLinkEndpoint {
             return
         }
 
-        logger.debug { "Received 'confirmSmsCode' with sms code: '${sendTan.tan}'." }
+        logger.debug { "Received 'confirmSmsCode' with sms code: '${sendTan.smsCode}'." }
 
         val webSocketId = getWebSocketId(session)
         var errorMsg : String? = null
-        var minor : MinorResultCode? = null
+        var resultCode : ResultCode = ResultCode.SUCCESS
 
         if (webSocketId != null) {
             try {
-                val correctSMSCode = smsCodeHandler.checkSMSCode(webSocketId, sendTan.tan)
+                val correctSMSCode = smsCodeHandler.checkSMSCode(webSocketId, sendTan.smsCode)
                 if (!correctSMSCode) {
                     val error = "Tan is incorrect."
                     logger.error { error }
-                    minor = MinorResultCode.TAN_INCORRECT
+                    resultCode = ResultCode.TAN_INCORRECT
                     errorMsg = error
                 }
             } catch (ex: MaxTriesReached) {
                 val error = "Reached max tries for SMS-Code confirmation."
                 logger.error { error }
-                minor = MinorResultCode.TAN_RETRY_LIMIT_EXCEEDED
+                resultCode = ResultCode.TAN_RETRY_LIMIT_EXCEEDED
                 errorMsg = error
             }
         }
 
         logger.debug { "Sending out confirmation for TAN ..." }
 
-        val confirmTan = ConfirmTan(minor, errorMsg)
+        val confirmTan = ConfirmTan(resultCode, errorMsg)
         val confirmTanMessage = GematikEnvelope(confirmTan, correlationId, cardSessionId)
 
         session.asyncRemote.sendObject(confirmTanMessage) {
@@ -259,11 +259,11 @@ class CardLinkEndpoint {
             )
             smsSender.createMessage(smsCreateMessage)
 
-            ConfirmPhoneNumber(null, null)
+            ConfirmPhoneNumber(ResultCode.SUCCESS, null)
         } else {
             val error = "Unable to get WebSocketID from query parameters."
             logger.error { error }
-            ConfirmPhoneNumber(MinorResultCode.UNKNOWN_ERROR, error)
+            ConfirmPhoneNumber(ResultCode.UNKNOWN_ERROR, error)
         }
 
         val gematikMessage = GematikEnvelope(confirmPhoneNumber, correlationId, cardSessionId)
