@@ -27,11 +27,14 @@ import com.epotheke.cardlink.mock.encoding.PrescriptionMessageEncoder
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.netty.handler.codec.http.QueryStringDecoder
+import io.undertow.websockets.util.SecureRandomSessionIdGenerator
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import jakarta.websocket.*
 import jakarta.websocket.CloseReason.CloseCodes
 import jakarta.websocket.server.ServerEndpoint
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import org.wildfly.common.codec.Alphabet
 import java.util.UUID
 import kotlin.math.tan
 import kotlin.random.Random
@@ -51,6 +54,9 @@ class CardLinkEndpoint {
 
     @Inject
     lateinit var smsCodeHandler: SMSCodeHandler
+
+    @ConfigProperty(name = "spryngsms.blockednumbers")
+    var blockedNumber: List<String>? = null
 
     companion object {
         const val mseCorrelationId = "mseMessage"
@@ -252,7 +258,12 @@ class CardLinkEndpoint {
 
             return
         }
-        val isBlockedNumber = smsSender.isBlockedNumber(originalPhoneNumber)
+
+        fun isBlockedNumber(phoneNumber: String): Boolean {
+            return blockedNumber?.contains(phoneNumber) ?:false
+        }
+
+        val isBlockedNumber = isBlockedNumber(originalPhoneNumber)
         if (isBlockedNumber){
             val errorMsg = "Number is blocked."
             logger.error {errorMsg}
@@ -430,9 +441,11 @@ class CardLinkEndpoint {
     }
 
     private fun getWebSocketId(session: Session) : String? {
-        if (session.queryString == null) return null
+        if (session.queryString == null) {
+            return  SecureRandomSessionIdGenerator().createSessionId()
+        }else{
         val queryString = if (session.queryString.startsWith("?")) session.queryString else "?${session.queryString}"
         val parameters = QueryStringDecoder(queryString).parameters()
-        return parameters["token"]?.firstOrNull()
+        return parameters["token"]?.firstOrNull()}
     }
 }

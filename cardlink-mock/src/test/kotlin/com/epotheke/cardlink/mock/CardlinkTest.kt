@@ -28,6 +28,7 @@ import io.quarkus.test.common.http.TestHTTPResource
 import io.quarkus.test.junit.QuarkusTest
 import jakarta.websocket.*
 import kotlinx.serialization.SerialName
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,7 +44,7 @@ private val logger = KotlinLogging.logger {}
 @QuarkusTest
 class CardlinkTest {
 
-    @TestHTTPResource("/cardlink?token=123456")
+    @TestHTTPResource("/cardlink")
     lateinit var uri: URI
 
     @InjectMock
@@ -58,8 +59,6 @@ class CardlinkTest {
         `when`(smsSender.createMessage(any(SMSCreateMessage::class.java)))
             .then { logger.info { "[MOCK] Sending out SMS..." } }
         `when`(smsSender.isGermanPhoneNumber(any(String::class.java)))
-            .thenCallRealMethod()
-        `when`(smsSender.isBlockedNumber(any(String::class.java)))
             .thenCallRealMethod()
         `when`(smsSender.phoneNumberToInternationalFormat(any(String::class.java), any(String::class.java)))
             .thenCallRealMethod()

@@ -37,6 +37,7 @@ import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 import org.eclipse.microprofile.rest.client.inject.RestClient
+import kotlin.system.exitProcess
 
 
 private val logger = KotlinLogging.logger {}
@@ -44,8 +45,6 @@ private val logger = KotlinLogging.logger {}
 interface SMSSender {
 
     fun isGermanPhoneNumber(phoneNumber: String) : Boolean
-
-    fun isBlockedNumber(phoneNumber: String) : Boolean
 
     fun phoneNumberToInternationalFormat(phoneNumber: String, region: String) : String
 
@@ -74,10 +73,6 @@ class SpryngsmsSender : SMSSender {
         val phoneNumberUtil = PhoneNumberUtil.getInstance()
         val phoneNumber : PhoneNumber = phoneNumberUtil.parse(phoneNumberRaw, "DE")
         return phoneNumberUtil.isValidNumberForRegion(phoneNumber, "DE")
-    }
-
-    override fun isBlockedNumber(phoneNumber: String): Boolean {
-        return phoneNumber ==  "+49 15172612342"
     }
 
     override fun phoneNumberToInternationalFormat(phoneNumberRaw: String, region: String) : String {
