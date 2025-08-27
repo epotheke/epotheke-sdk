@@ -34,9 +34,7 @@ import jakarta.websocket.*
 import jakarta.websocket.CloseReason.CloseCodes
 import jakarta.websocket.server.ServerEndpoint
 import org.eclipse.microprofile.config.inject.ConfigProperty
-import org.wildfly.common.codec.Alphabet
 import java.util.UUID
-import kotlin.math.tan
 import kotlin.random.Random
 
 
@@ -58,6 +56,8 @@ class CardLinkEndpoint {
     @ConfigProperty(name = "spryngsms.blockednumbers")
     var blockedNumber: List<String>? = null
 
+    private var sessionIds = mutableMapOf<Session, String>()
+
     companion object {
         const val mseCorrelationId = "mseMessage"
         const val internalAuthCorrelationId = "internalAuthMessage"
@@ -66,25 +66,26 @@ class CardLinkEndpoint {
 
     @OnOpen
     fun onOpen(session: Session, cfg: EndpointConfig) {
-        val webSocketId = getWebSocketId(session)
+        setWebSocketId(session)
+        val webSocketId= sessionIds[session]
 
         if (webSocketId == null) {
             session.close(CloseReason(CloseCodes.PROTOCOL_ERROR, "No webSocketID was provided."))
         } else {
             logger.debug { "New WebSocket connection with ID: $webSocketId." }
-            handleWSConnect(session, webSocketId)
+            handleWSConnect(session, webSocketId )
         }
     }
 
     @OnClose 
     fun onClose(session:Session, reason: CloseReason) {
-        val webSocketId = getWebSocketId(session)
-        logger.debug { "WebSocket connection with ID: $webSocketId was closed. Reason: $reason" }
+        val webSocketId = sessionIds[session]
+        logger.debug { "WebSocket connection with ID: $webSocketId was closed." }
     }
 
     @OnError
     fun onError(session: Session, t: Throwable) {
-        val webSocketId = getWebSocketId(session)
+        val webSocketId = sessionIds[session]
         logger.debug(t) { "An error occurred for WebSocket connection with ID: $webSocketId." }
     }
 
@@ -182,7 +183,7 @@ class CardLinkEndpoint {
 
         logger.debug { "Received 'confirmSmsCode' with sms code: '${sendTan.smsCode}'." }
 
-        val webSocketId = getWebSocketId(session)
+        val webSocketId = sessionIds[session]
         var errorMsg : String? = null
         var resultCode : ResultCode = ResultCode.SUCCESS
 
@@ -281,7 +282,7 @@ class CardLinkEndpoint {
         logger.debug { "Got phone number: '$originalPhoneNumber' / International Form: $phoneNumber" }
         logger.debug { "Sending SMS out to '$phoneNumber'." }
 
-        val webSocketId = getWebSocketId(session)
+        val webSocketId = sessionIds[session]
 
         val confirmPhoneNumber = if (webSocketId != null) {
             val smsCode = smsCodeHandler.createSMSCode(webSocketId)
@@ -440,12 +441,15 @@ class CardLinkEndpoint {
         }
     }
 
-    private fun getWebSocketId(session: Session) : String? {
+  private fun setWebSocketId (session: Session) {
         if (session.queryString == null) {
-            return  SecureRandomSessionIdGenerator().createSessionId()
-        }else{
-        val queryString = if (session.queryString.startsWith("?")) session.queryString else "?${session.queryString}"
-        val parameters = QueryStringDecoder(queryString).parameters()
-        return parameters["token"]?.firstOrNull()}
+           sessionIds[session] = SecureRandomSessionIdGenerator().createSessionId()
+        } else {
+            val queryString =if (session.queryString.startsWith("?")) session.queryString else "?${session.queryString}"
+            val parameters = QueryStringDecoder(queryString).parameters()
+            sessionIds[session] =
+                parameters["token"]?.firstOrNull() ?: SecureRandomSessionIdGenerator().createSessionId()
+        }
     }
+
 }
