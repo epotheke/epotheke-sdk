@@ -21,10 +21,10 @@ stages:
     - docs
 
 include:
-    - project: 'ec/gitlab-ci-templates'
+    - project: 'ec/admin/gitlab-ci-templates'
       ref: main
       file: '/templates/.gitlab-ci-build.yml'
-    - project: 'ec/gitlab-ci-templates'
+    - project: 'ec/admin/gitlab-ci-templates'
       ref: main
       file: '/templates/.gitlab-ci-deployment.yml'
     - '/ci/versioning.yml'
