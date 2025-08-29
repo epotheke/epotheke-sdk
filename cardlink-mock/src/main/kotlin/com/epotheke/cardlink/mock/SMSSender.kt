@@ -37,6 +37,7 @@ import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 import org.eclipse.microprofile.rest.client.inject.RestClient
+import kotlin.system.exitProcess
 
 
 private val logger = KotlinLogging.logger {}

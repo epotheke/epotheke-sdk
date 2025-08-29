@@ -27,11 +27,13 @@ import com.epotheke.cardlink.mock.encoding.PrescriptionMessageEncoder
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.netty.handler.codec.http.QueryStringDecoder
+import io.undertow.websockets.util.SecureRandomSessionIdGenerator
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import jakarta.websocket.*
 import jakarta.websocket.CloseReason.CloseCodes
 import jakarta.websocket.server.ServerEndpoint
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.util.UUID
 import kotlin.random.Random
 
@@ -51,6 +53,11 @@ class CardLinkEndpoint {
     @Inject
     lateinit var smsCodeHandler: SMSCodeHandler
 
+    @ConfigProperty(name = "spryngsms.blockednumbers")
+    var blockedNumber: List<String>? = null
+
+    private var sessionIds = mutableMapOf<Session, String>()
+
     companion object {
         const val mseCorrelationId = "mseMessage"
         const val internalAuthCorrelationId = "internalAuthMessage"
@@ -59,25 +66,26 @@ class CardLinkEndpoint {
 
     @OnOpen
     fun onOpen(session: Session, cfg: EndpointConfig) {
-        val webSocketId = getWebSocketId(session)
+        setWebSocketId(session)
+        val webSocketId= sessionIds[session]
 
         if (webSocketId == null) {
             session.close(CloseReason(CloseCodes.PROTOCOL_ERROR, "No webSocketID was provided."))
         } else {
             logger.debug { "New WebSocket connection with ID: $webSocketId." }
-            handleWSConnect(session, webSocketId)
+            handleWSConnect(session, webSocketId )
         }
     }
 
     @OnClose 
     fun onClose(session:Session, reason: CloseReason) {
-        val webSocketId = getWebSocketId(session)
+        val webSocketId = sessionIds[session]
         logger.debug { "WebSocket connection with ID: $webSocketId was closed." }
     }
 
     @OnError
     fun onError(session: Session, t: Throwable) {
-        val webSocketId = getWebSocketId(session)
+        val webSocketId = sessionIds[session]
         logger.debug(t) { "An error occurred for WebSocket connection with ID: $webSocketId." }
     }
 
@@ -173,32 +181,35 @@ class CardLinkEndpoint {
             return
         }
 
-        logger.debug { "Received 'confirmSmsCode' with sms code: '${sendTan.tan}'." }
+        logger.debug { "Received 'confirmSmsCode' with sms code: '${sendTan.smsCode}'." }
 
-        val webSocketId = getWebSocketId(session)
+        val webSocketId = sessionIds[session]
         var errorMsg : String? = null
-        var minor : MinorResultCode? = null
+        var resultCode : ResultCode = ResultCode.SUCCESS
+
 
         if (webSocketId != null) {
             try {
-                val correctSMSCode = smsCodeHandler.checkSMSCode(webSocketId, sendTan.tan)
+                val correctSMSCode = smsCodeHandler.checkSMSCode(webSocketId, sendTan.smsCode)
                 if (!correctSMSCode) {
                     val error = "Tan is incorrect."
                     logger.error { error }
-                    minor = MinorResultCode.TAN_INCORRECT
+                    resultCode = ResultCode.TAN_INCORRECT
                     errorMsg = error
+                } else {
+                    resultCode= ResultCode.SUCCESS
                 }
             } catch (ex: MaxTriesReached) {
                 val error = "Reached max tries for SMS-Code confirmation."
                 logger.error { error }
-                minor = MinorResultCode.TAN_RETRY_LIMIT_EXCEEDED
+                resultCode = ResultCode.TAN_RETRY_LIMIT_EXCEEDED
                 errorMsg = error
             }
         }
 
         logger.debug { "Sending out confirmation for TAN ..." }
 
-        val confirmTan = ConfirmTan(minor, errorMsg)
+        val confirmTan = ConfirmTan(resultCode, errorMsg)
         val confirmTanMessage = GematikEnvelope(confirmTan, correlationId, cardSessionId)
 
         session.asyncRemote.sendObject(confirmTanMessage) {
@@ -206,6 +217,10 @@ class CardLinkEndpoint {
                 logger.debug(it.exception) { "Unable to send message." }
             }
         }
+    }
+
+    fun isBlockedNumber(phoneNumber: String): Boolean {
+        return blockedNumber?.contains(phoneNumber) ?:false
     }
 
     private fun handleRequestSmsCode(requestSmsTanMessage: GematikEnvelope, session: Session) {
@@ -239,17 +254,35 @@ class CardLinkEndpoint {
         if (! isGermanNumber) {
             val errorMsg = "Not a German phone number."
             logger.error { errorMsg }
-            sendError(session, errorMsg, cardSessionId, correlationId, 400)
+            val msg = GematikEnvelope(ConfirmPhoneNumber(ResultCode.NUMBER_FROM_WRONG_COUNTRY, errorMsg), correlationId, cardSessionId)
+            session.asyncRemote.sendObject(msg) {
+                if (it.exception != null) {
+                    logger.debug(it.exception) { "Unable to send message." }
+                }
+            }
+
             return
         }
 
+        val isBlockedNumber = isBlockedNumber(originalPhoneNumber)
+        if (isBlockedNumber){
+            val errorMsg = "Number is blocked."
+            logger.error {errorMsg}
+            val msg = GematikEnvelope(ConfirmPhoneNumber(ResultCode.NUMBER_BLOCKED, errorMsg), correlationId, cardSessionId)
+            session.asyncRemote.sendObject(msg) {
+                if (it.exception != null) {
+                    logger.debug(it.exception) { "Unable to send message." }
+                }
+            }
+            return
+        }
         val phoneNumber = smsSender.phoneNumberToInternationalFormat(originalPhoneNumber, "DE")
 
         logger.debug { "Received 'requestSmsCode' with phone number: '$originalPhoneNumber'." }
         logger.debug { "Got phone number: '$originalPhoneNumber' / International Form: $phoneNumber" }
         logger.debug { "Sending SMS out to '$phoneNumber'." }
 
-        val webSocketId = getWebSocketId(session)
+        val webSocketId = sessionIds[session]
 
         val confirmPhoneNumber = if (webSocketId != null) {
             val smsCode = smsCodeHandler.createSMSCode(webSocketId)
@@ -259,11 +292,11 @@ class CardLinkEndpoint {
             )
             smsSender.createMessage(smsCreateMessage)
 
-            ConfirmPhoneNumber(null, null)
+            ConfirmPhoneNumber(ResultCode.SUCCESS, null)
         } else {
             val error = "Unable to get WebSocketID from query parameters."
             logger.error { error }
-            ConfirmPhoneNumber(MinorResultCode.UNKNOWN_ERROR, error)
+            ConfirmPhoneNumber(ResultCode.UNKNOWN_ERROR, error)
         }
 
         val gematikMessage = GematikEnvelope(confirmPhoneNumber, correlationId, cardSessionId)
@@ -408,10 +441,15 @@ class CardLinkEndpoint {
         }
     }
 
-    private fun getWebSocketId(session: Session) : String? {
-        if (session.queryString == null) return null
-        val queryString = if (session.queryString.startsWith("?")) session.queryString else "?${session.queryString}"
-        val parameters = QueryStringDecoder(queryString).parameters()
-        return parameters["token"]?.firstOrNull()
+  private fun setWebSocketId (session: Session) {
+        if (session.queryString == null) {
+           sessionIds[session] = SecureRandomSessionIdGenerator().createSessionId()
+        } else {
+            val queryString =if (session.queryString.startsWith("?")) session.queryString else "?${session.queryString}"
+            val parameters = QueryStringDecoder(queryString).parameters()
+            sessionIds[session] =
+                parameters["token"]?.firstOrNull() ?: SecureRandomSessionIdGenerator().createSessionId()
+        }
     }
+
 }

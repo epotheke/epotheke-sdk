@@ -36,12 +36,15 @@ class SMSCodeHandler {
 
     @ConfigProperty(name = "cardlink.mock.accept-all-tans")
     var acceptAllTans: Boolean = true
-
+    @ConfigProperty(name = "cardlink.mock.use-random-tan")
+    var useRandomTan: Boolean = true
+    @ConfigProperty(name = "cardlink.mock.static-tan")
+    var staticTan: String?=null
     private var smsCodes = mutableMapOf<String, String>()
     private var smsCodeRemainingTries = mutableMapOf<String, Int>()
 
     fun createSMSCode(webSocketId: String) : String {
-        val smsCode = generateRandomString(ALPHABET_NUM, 8)
+        val smsCode = staticTan ?: generateRandomString(ALPHABET_NUM, size = 6)
         smsCodes[webSocketId] = smsCode
         smsCodeRemainingTries[webSocketId] = DEFAULT_MAX_TRIES
         return smsCode
