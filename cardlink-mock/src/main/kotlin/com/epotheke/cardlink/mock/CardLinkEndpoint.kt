@@ -219,6 +219,10 @@ class CardLinkEndpoint {
         }
     }
 
+    fun isBlockedNumber(phoneNumber: String): Boolean {
+        return blockedNumber?.contains(phoneNumber) ?:false
+    }
+
     private fun handleRequestSmsCode(requestSmsTanMessage: GematikEnvelope, session: Session) {
         val cardSessionId = requestSmsTanMessage.cardSessionId
         val correlationId = requestSmsTanMessage.correlationId
@@ -258,10 +262,6 @@ class CardLinkEndpoint {
             }
 
             return
-        }
-
-        fun isBlockedNumber(phoneNumber: String): Boolean {
-            return blockedNumber?.contains(phoneNumber) ?:false
         }
 
         val isBlockedNumber = isBlockedNumber(originalPhoneNumber)
