@@ -1,6 +1,5 @@
 package com.epotheke.cardlink.mock
 
-import com.epotheke.serialization.ByteArrayAsBase64
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.ClassDiscriminatorMode
