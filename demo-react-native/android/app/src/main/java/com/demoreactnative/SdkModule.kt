@@ -52,6 +52,7 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     private var erezeptProtocol: PrescriptionProtocol? = null
     private var ws_sessionId: String? = null
     private var lastICCSN: String? = null
+    private var lastPersonalData: String? = null
 
     @ReactMethod
     fun getPrescriptions(filter: ReadableArray, p: Promise) {
@@ -107,6 +108,12 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
     fun getLastICCSN(p: Promise) {
         p.resolve(lastICCSN)
     }
+
+    @ReactMethod
+    fun getLastPersonalData(p: Promise) {
+        p.resolve(lastPersonalData)
+    }
+
     private val cardLinkControllerCallback = object : CardLinkControllerCallback {
         override fun onAuthenticationCompletion(
             p0: ActivationResult?,
@@ -129,6 +136,9 @@ class SdkModule(private val reactContext: ReactApplicationContext) :
             } else {
                 ws_sessionId = p0?.getResultParameter("CardLink::WS_SESSION_ID")
                 lastICCSN = p0?.getResultParameter("CardLink::ICCSN")
+                lastPersonalData = p0?.getResultParameter("CardLink::PERSONAL_DATA")
+
+                logger.debug { "rn-bridge: personal data: $lastPersonalData" }
                 logger.debug { "rn-bridge: wsession_id set to: ${ws_sessionId}" }
                 logger.debug { "rn-bridge: lastISSCN set to: ${lastICCSN}" }
                 onAuthenticationCompletionCB?.invoke(null, null)

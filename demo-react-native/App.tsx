@@ -391,6 +391,7 @@ function App(): React.JSX.Element {
                     setlastICCSN(iccsn);
 
                     log(`wsSessionID: ${wsSession} - iccsn: ${iccsn}`);
+                    log(`personal data: ${await SdkModule.getLastPersonalData()}`)
 
                     setFetchPrescriptionsEnabled(true)
 
