@@ -274,7 +274,9 @@ class SdkCore(
         override fun onAuthenticationCompletion(result: NSObject?) {
             sdk.sdkLock.lock()
             if(activationSession == sdk.currentActivationSession){
-                cardLinkControllerCallback.onAuthenticationCompletion(result as ActivationResultProtocol, protocols)
+                val overwrittenResult = result?.let{OverwritingActivationResult(it as ActivationResultProtocol)}
+
+                cardLinkControllerCallback.onAuthenticationCompletion(overwrittenResult, protocols)
                 sdk.currentActivation = null
                 sdk.currentActivationSession = null
                 sdk.sdkLock.signal()
@@ -285,5 +287,16 @@ class SdkCore(
         }
     }
 
+    private class OverwritingActivationResult(val origResult: ActivationResultProtocol) : ActivationResultProtocol by origResult, NSObject() {
+        override fun getResultParameter(key: String?): String? {
+            return if (key == "CardLink::PERSONAL_DATA") {
+                origResult.getResultParameter(key)?.let {
+                    decodeHexPersonalDataXml(it)
+                }?.json()
+            } else {
+                origResult.getResultParameter(key)
+            }
+        }
+    }
 }
 
