@@ -21,6 +21,10 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.websocket)
                 implementation(libs.ktor.client.auth)
+
+                implementation(libs.xmlutil.core)
+                implementation(libs.xmlutil.ser)
+                implementation(libs.fleeksoft.charset)
             }
         }
         val commonTest by getting {

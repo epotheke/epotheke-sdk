@@ -28,6 +28,8 @@ import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.internal.synchronized
 import org.openecard.android.activation.AndroidContextManager
 import org.openecard.android.activation.OpeneCard
 import org.openecard.android.utils.NfcIntentHelper
@@ -76,6 +78,7 @@ class SdkCore(
      * if none is ongoing it starts an activation
      *
      */
+    @OptIn(InternalCoroutinesApi::class)
     fun activate(waitForSlot: Boolean, cardLinkUrl: String, tenantToken: String?) {
         synchronized(sdkLock) {
             waitingActivations = waitingActivations.inc()
@@ -119,6 +122,7 @@ class SdkCore(
         currentActivation?.cancelOngoingAuthentication()
     }
 
+    @OptIn(InternalCoroutinesApi::class)
     private fun initOecContext(activationSession: Any, cardLinkUrl: String, tenantToken: String?) {
 
         val oec = OpeneCard.createInstance()
@@ -147,6 +151,7 @@ class SdkCore(
         })
     }
 
+    @OptIn(InternalCoroutinesApi::class)
     fun destroyOecContext() {
         logger.debug { "SdkCore.android - destroying oecContext." }
 
@@ -243,6 +248,7 @@ class SdkCore(
         }
     }
 
+    @OptIn(InternalCoroutinesApi::class)
     private fun overridingSdkErrorHandler(sdkErrorHandler: SdkErrorHandler, activationSession: Any): SdkErrorHandler {
         return object : SdkErrorHandler {
             override fun onError(error: ServiceErrorResponse) {
@@ -262,6 +268,7 @@ class SdkCore(
         }
     }
 
+    @OptIn(InternalCoroutinesApi::class)
     private fun overridingControllerCallback(protocols: Set<CardLinkProtocol>, activationSession: Any): ControllerCallback {
         return object : ControllerCallback {
 
@@ -278,7 +285,12 @@ class SdkCore(
                         if (!ctx.isDestroyed) {
                             nfcIntentHelper?.disableNFCDispatch()
                         }
-                        cardLinkControllerCallback.onAuthenticationCompletion(p0, protocols)
+
+                        cardLinkControllerCallback.onAuthenticationCompletion(
+                            p0?.adjustedResults(),
+                           protocols
+                        )
+
                         needNfc = false
                         currentActivation = null
                         currentActivationSession = null
@@ -292,5 +304,20 @@ class SdkCore(
 
             }
         }
+    }
+
+    fun ActivationResult.adjustedResults(): ActivationResult {
+        val origResult = this
+        return object : ActivationResult by origResult {
+            override fun getResultParameter(key: String): String? {
+                return if (key == "CardLink::PERSONAL_DATA") {
+                    origResult.getResultParameter(key)?.let {
+                        decodeHexPersonalDataXml(it)
+                    }?.json()
+                } else {
+                    origResult.getResultParameter(key)
+                }
+            }
+        } as ActivationResult
     }
 }

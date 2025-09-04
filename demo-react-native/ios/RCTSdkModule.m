@@ -83,6 +83,7 @@
 @property EpothekePrescriptionProtocolImp *prescriptionProtocol;
 @property NSString *wsSessionID;
 @property NSString *lastIccsn;
+@property NSString *lastPersonalData;
 @end
 
 @implementation CardLinkControllerCallback
@@ -99,6 +100,7 @@
         if (self.onAuthenticationCompletionCB) {
                     self.wsSessionID = [p0 getResultParameter:@"CardLink::WS_SESSION_ID"];
                     self.lastIccsn= [p0 getResultParameter:@"CardLink::ICCSN"];
+                    self.lastPersonalData= [p0 getResultParameter:@"CardLink::PERSONAL_DATA"];
                     self.onAuthenticationCompletionCB(@[ [NSNull null], [NSNull null] ] );
         }
     } else {
@@ -418,7 +420,16 @@ RCT_EXPORT_METHOD(getLastICCSN: (RCTPromiseResolveBlock)resolve  : (RCTPromiseRe
         }
     });
 }
+RCT_EXPORT_METHOD(getLastPersonalData: (RCTPromiseResolveBlock)resolve  : (RCTPromiseRejectBlock)reject) {
 
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        if (clCtrlCB && clCtrlCB.lastPersonalData) {
+            resolve(clCtrlCB.lastPersonalData);
+        } else {
+            resolve(nil);
+        }
+    });
+}
 RCT_EXPORT_METHOD(getPrescriptions : (NSArray*)filter: (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
 
     dispatch_sync(dispatch_get_main_queue(),

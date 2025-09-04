@@ -25,6 +25,8 @@ oec = "2.3.12"
 quarkus = "3.10.1"
 
 libphonenumber = "8.13.36"
+xmlutil = "0.90.2"
+fleeksoft = "0.0.1"
 
 
 [libraries]
@@ -37,6 +39,11 @@ kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-co
 kotlin-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kx-co" }
 kotlin-jackson = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "kotlin-jackson" }
 kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kx-serde" }
+
+xmlutil-core = {module = "io.github.pdvrieze.xmlutil:core", version.ref = "xmlutil"}
+xmlutil-ser = {module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xmlutil"}
+
+fleeksoft-charset = {module = "com.fleeksoft.charset:charset",version.ref="fleeksoft"}
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core-ktx" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-junit" }
