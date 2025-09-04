@@ -1,6 +1,6 @@
 publish-to-github:
   stage: publish
-  image: debian:stable-20230109-slim
+  image: debian:trixie-20250811-slim
   tags:
     - "podman"
   script:
