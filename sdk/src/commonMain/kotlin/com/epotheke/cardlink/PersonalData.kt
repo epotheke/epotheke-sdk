@@ -1,6 +1,8 @@
 package com.epotheke.cardlink
 
+import com.fleeksoft.charset.decodeToString
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.utils.io.charsets.forName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import nl.adaptivity.xmlutil.ExperimentalXmlUtilApi
@@ -11,12 +13,24 @@ import nl.adaptivity.xmlutil.serialization.XmlSerialName
 
 private val logger = KotlinLogging.logger { }
 
+@OptIn(ExperimentalUnsignedTypes::class)
+internal fun UByteArray.toPersonalData(): PersoenlicheVersichertendaten? =
+    try {
+        val len = this[0].toInt().shl(8).or(this[1].toInt())
+        val pd = this.sliceArray(IntRange(2, 2 + len - 1))
+        val xmlString = gunzip(pd).toByteArray().decodeToString(Charsets.forName("ISO-8859-15"))
+        xml.decodeFromString(PersoenlicheVersichertendaten.serializer(), xmlString)
+    } catch (e: Exception) {
+        logger.warn(e) { "Exception during reading of ef.pd" }
+        null
+    }
+
 fun PersoenlicheVersichertendaten.json() = Json.encodeToString(this)
 
-const val vsdmNamespace = "http://ws.gematik.de/fa/vsdm/vsd/v5.2"
+private const val VSDM_NAMESPACE = "http://ws.gematik.de/fa/vsdm/vsd/v5.2"
 
 @Serializable
-@XmlSerialName("UC_PersoenlicheVersichertendatenXML", vsdmNamespace)
+@XmlSerialName("UC_PersoenlicheVersichertendatenXML", VSDM_NAMESPACE)
 class PersoenlicheVersichertendaten {
     @XmlSerialName("CDM_VERSION")
     var comVersion: String? = null

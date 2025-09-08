@@ -391,6 +391,30 @@ class NfcTest {
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
+    fun testCardLinkReadInsurerData() =
+        runTestJobWithActivity { activity ->
+            launch {
+                everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
+                everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
+                everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
+                everySuspend { uiMock.requestCardInsertion() } calls {
+                    activity.msg("Insert Card")
+                }
+                everySuspend { uiMock.onCardRecognized() } calls {
+                    activity.msg("Card detected. Don't move")
+                }
+
+                CardlinkAuthenticationConfig.readPersonalData = false
+                CardlinkAuthenticationConfig.readInsurerData = true
+                val result =
+                    assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
+                assertNull(result.personalData)
+                assertNotNull(result.insurerData)
+            }
+        }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
     fun testCardLink_dev() =
         runTestJobWithActivity { activity ->
             launch {

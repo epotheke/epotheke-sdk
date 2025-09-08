@@ -30,6 +30,9 @@ import org.openecard.sc.iface.TerminalFactory
 import org.openecard.sc.iface.feature.PaceError
 import org.openecard.sc.iface.withContextSuspend
 import org.openecard.sc.pace.PaceFeatureSoftwareFactory
+import org.openecard.sc.tlv.Tag
+import org.openecard.sc.tlv.Tlv
+import org.openecard.sc.tlv.toTlvBer
 import org.openecard.sc.tlv.toTlvSimple
 import kotlin.time.Duration.Companion.seconds
 
@@ -42,12 +45,12 @@ private val logger = KotlinLogging.logger { }
 
 object CardlinkAuthenticationConfig {
     var readPersonalData = true
-
     var readInsurerData = false
 }
 
 class CardlinkAuthResult(
     var personalData: PersoenlicheVersichertendaten? = null,
+    var insurerData: AllgemeineVersicherungsdaten? = null,
     var cardSessionId: String? = null,
     var iccsn: String? = null,
     var iccsnReassignmentTimestamp: String? = null,
@@ -106,6 +109,9 @@ class CardlinkAuthenticationProtocol(
 
                     if (CardlinkAuthenticationConfig.readPersonalData) {
                         cardLinkAuthResult.personalData = readPersonalData(can) ?: readError("Personal data")
+                    }
+                    if (CardlinkAuthenticationConfig.readInsurerData) {
+                        cardLinkAuthResult.insurerData = readInsurerData(can) ?: readError("Insurer data")
                     }
 
                     val readMfData =
@@ -495,12 +501,13 @@ class CardlinkAuthenticationProtocol(
     @OptIn(ExperimentalUnsignedTypes::class)
     private suspend fun SmartcardDeviceConnection.readPersonalData(can: String): PersoenlicheVersichertendaten? =
         applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
-            readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efPd)?.let { readBytes ->
-                val len = readBytes[0].toInt().shl(8).or(readBytes[1].toInt())
-                val pd = readBytes.sliceArray(IntRange(2, 2 + len - 1))
-                val xmlString = gunzip(pd).toByteArray().decodeToString(Charsets.forName("ISO-8859-15"))
-                xml.decodeFromString(PersoenlicheVersichertendaten.serializer(), xmlString)
-            }
+            readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efPd)?.toPersonalData()
+        }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    private suspend fun SmartcardDeviceConnection.readInsurerData(can: String): AllgemeineVersicherungsdaten? =
+        applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
+            readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efVd)?.toInsurerData()
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
