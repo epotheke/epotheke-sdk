@@ -4,9 +4,7 @@ import com.epotheke.erezept.model.prescriptionJsonFormatter
 import com.epotheke.sdk.CardLinkProtocolBase
 import com.epotheke.sdk.WebsocketCommon
 import com.epotheke.sdk.randomUUID
-import com.fleeksoft.charset.decodeToString
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.utils.io.charsets.forName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -30,9 +28,6 @@ import org.openecard.sc.iface.TerminalFactory
 import org.openecard.sc.iface.feature.PaceError
 import org.openecard.sc.iface.withContextSuspend
 import org.openecard.sc.pace.PaceFeatureSoftwareFactory
-import org.openecard.sc.tlv.Tag
-import org.openecard.sc.tlv.Tlv
-import org.openecard.sc.tlv.toTlvBer
 import org.openecard.sc.tlv.toTlvSimple
 import kotlin.time.Duration.Companion.seconds
 
@@ -44,7 +39,7 @@ expect fun gunzip(data: UByteArray): UByteArray
 private val logger = KotlinLogging.logger { }
 
 object CardlinkAuthenticationConfig {
-    var readPersonalData = true
+    var readPersonalData = false
     var readInsurerData = false
 }
 

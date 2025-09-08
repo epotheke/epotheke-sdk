@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.assertNull
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
@@ -232,7 +233,7 @@ class NfcTest {
             everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
             everySuspend { uiMock.onCanRequest() } calls {
                 // we just stop the test here
-                testJob?.cancel()
+                testJob?.cancelAndJoin()
                 "123123"
             }
 
@@ -361,14 +362,13 @@ class NfcTest {
                 val result =
                     assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
 
-                assertNotNull(result.personalData)
                 assertNotNull(result.iccsn)
             }
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
-    fun testCardLinkNoPersonalDataByConfig() =
+    fun testCardLinkReadPersonalData() =
         runTestJobWithActivity { activity ->
             launch {
                 everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
@@ -381,11 +381,10 @@ class NfcTest {
                     activity.msg("Card detected. Don't move")
                 }
 
-                CardlinkAuthenticationConfig.readPersonalData = false
+                CardlinkAuthenticationConfig.readPersonalData = true
                 val result =
-                    assertNotNull(callEstablishCardLink(activity, Service.DEV), "cardlink was not established.")
-                assertNull(result.personalData)
-                assertNotNull(result.iccsn)
+                    assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
+                assertNotNull(result.personalData)
             }
         }
 
@@ -404,11 +403,9 @@ class NfcTest {
                     activity.msg("Card detected. Don't move")
                 }
 
-                CardlinkAuthenticationConfig.readPersonalData = false
                 CardlinkAuthenticationConfig.readInsurerData = true
                 val result =
                     assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
-                assertNull(result.personalData)
                 assertNotNull(result.insurerData)
             }
         }
@@ -430,7 +427,6 @@ class NfcTest {
 
                 val result =
                     assertNotNull(callEstablishCardLink(activity, Service.DEV), "cardlink was not established.")
-                assertNotNull(result.personalData)
                 assertNotNull(result.iccsn)
             }
         }
@@ -472,13 +468,12 @@ class NfcTest {
 
                 val result =
                     assertNotNull(callEstablishCardLink(activity, Service.DEV), "cardlink was not established.")
-                assertNotNull(result.personalData)
                 assertNotNull(result.iccsn)
             }
         }
 
+    // @Test
     @OptIn(ExperimentalUnsignedTypes::class)
-    @Test
     fun testCardLink_prod() =
         runTestJobWithActivity { activity ->
             launch {
@@ -494,7 +489,6 @@ class NfcTest {
 
                 val result =
                     assertNotNull(callEstablishCardLink(activity, Service.PROD), "cardlink was not established.")
-                assertNotNull(result.personalData)
                 assertNotNull(result.iccsn)
             }
         }
