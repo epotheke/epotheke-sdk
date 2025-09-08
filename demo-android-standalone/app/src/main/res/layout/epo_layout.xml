@@ -19,31 +19,31 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.5">
 
+
         <TextView
             android:id="@+id/service"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="80dp"
+            android:layout_marginTop="16dp"
             android:gravity="center"
             android:text="Service: "
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.501"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
-
 
         <TextView
             android:id="@+id/statusText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="80dp"
+            android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Initialising..."
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="@+id/service"
-            app:layout_constraintStart_toStartOf="@+id/service"
-            app:layout_constraintTop_toBottomOf="@+id/service" />
+            app:layout_constraintEnd_toEndOf="@+id/radio_services"
+            app:layout_constraintStart_toStartOf="@+id/radio_services"
+            app:layout_constraintTop_toBottomOf="@+id/radio_services" />
 
         <EditText
             android:id="@+id/input"
@@ -75,33 +75,75 @@
             style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             app:layout_constraintEnd_toEndOf="@+id/statusText"
             app:layout_constraintStart_toStartOf="@+id/statusText"
             app:layout_constraintTop_toBottomOf="@+id/statusText" />
 
         <Button
-            android:id="@+id/btn_cancel"
+            android:id="@+id/btn_establishCardlink"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Cancel"
-            app:layout_constraintEnd_toEndOf="@+id/btn_getPrescriptions"
-            app:layout_constraintStart_toStartOf="@+id/btn_getPrescriptions"
-            app:layout_constraintTop_toBottomOf="@+id/btn_getPrescriptions" />
+            android:layout_marginTop="8dp"
+            android:enabled="true"
+            android:text="establish cardlink"
+            app:layout_constraintEnd_toEndOf="@+id/btn_ok"
+            app:layout_constraintHorizontal_bias="0.492"
+            app:layout_constraintStart_toStartOf="@+id/btn_ok"
+            app:layout_constraintTop_toBottomOf="@+id/btn_ok" />
 
         <Button
             android:id="@+id/btn_getPrescriptions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:enabled="false"
+            android:layout_marginTop="8dp"
             android:text="Get prescriptions"
-            android:visibility="invisible"
-            app:layout_constraintEnd_toEndOf="@+id/btn_ok"
-            app:layout_constraintHorizontal_bias="0.4"
-            app:layout_constraintStart_toStartOf="@+id/btn_ok"
-            app:layout_constraintTop_toBottomOf="@+id/btn_ok"/>
+            app:layout_constraintEnd_toEndOf="@+id/btn_establishCardlink"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@+id/btn_establishCardlink"
+            app:layout_constraintTop_toBottomOf="@+id/btn_establishCardlink" />
+
+        <Button
+            android:id="@+id/btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Cancel"
+            app:layout_constraintEnd_toEndOf="@+id/btn_getPrescriptions"
+            app:layout_constraintStart_toStartOf="@+id/btn_getPrescriptions"
+            app:layout_constraintTop_toBottomOf="@+id/btn_getPrescriptions" />
+
+        <RadioGroup
+            android:id="@+id/radio_services"
+            android:layout_width="319dp"
+            android:layout_height="39dp"
+            android:baselineAligned="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:textAlignment="center"
+            app:layout_constraintEnd_toEndOf="@+id/service"
+            app:layout_constraintStart_toStartOf="@+id/service"
+            app:layout_constraintTop_toBottomOf="@+id/service">
+
+            <RadioButton
+                android:id="@+id/radBtnMock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mock" />
+
+            <RadioButton
+                android:id="@+id/radBtnDev"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dev" />
+
+            <RadioButton
+                android:id="@+id/radBtnProd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Prod" />
+
+        </RadioGroup>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

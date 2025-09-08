@@ -22,7 +22,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.epotheke.demo.SdkActivityImp"
+            android:name="com.epotheke.demo.EpothekeActivity"
+            android:launchMode="singleTop"
             android:clearTaskOnLaunch="true"
             android:configChanges="orientation|screenSize" />
     </application>
