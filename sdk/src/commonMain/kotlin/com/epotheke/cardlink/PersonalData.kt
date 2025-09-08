@@ -1,11 +1,7 @@
-package com.epotheke.sdk
+package com.epotheke.cardlink
 
-import com.fleeksoft.charset.Charsets
-import com.fleeksoft.charset.decodeToString
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.hex
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import nl.adaptivity.xmlutil.ExperimentalXmlUtilApi
 import nl.adaptivity.xmlutil.serialization.DefaultXmlSerializationPolicy
@@ -13,23 +9,7 @@ import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 
-private val logger = KotlinLogging.logger {  }
-
-fun decodeHexPersonalDataXml(hexString: String): PersoenlicheVersichertendaten? = try {
-
-        val xmlString = hex(hexString).decodeToString(
-            Charsets.forName("ISO-8859-15")
-        )
-
-        xml.decodeFromString(
-            PersoenlicheVersichertendaten.serializer(),
-            xmlString
-        )
-
-    } catch (e: Exception) {
-        logger.error(e) { "Error parsing personal data from eGK. Returning null." }
-        null
-    }
+private val logger = KotlinLogging.logger { }
 
 fun PersoenlicheVersichertendaten.json() = Json.encodeToString(this)
 
@@ -38,7 +18,6 @@ const val vsdmNamespace = "http://ws.gematik.de/fa/vsdm/vsd/v5.2"
 @Serializable
 @XmlSerialName("UC_PersoenlicheVersichertendatenXML", vsdmNamespace)
 class PersoenlicheVersichertendaten {
-
     @XmlSerialName("CDM_VERSION")
     var comVersion: String? = null
 
@@ -49,7 +28,6 @@ class PersoenlicheVersichertendaten {
 @Serializable
 @XmlSerialName("Versicherter")
 class Versicherter {
-
     @XmlSerialName("Versicherten_ID")
     @XmlElement
     lateinit var versichertenId: String
@@ -61,7 +39,6 @@ class Versicherter {
 @Serializable
 @XmlSerialName("Person")
 class Person {
-
     @XmlSerialName("Geburtsdatum")
     @XmlElement
     lateinit var geburtsdatum: String
@@ -93,15 +70,12 @@ class Person {
     @XmlSerialName("PostfachAdresse")
     var postfachAdresse: PostfachAdresse? = null
 
-
     @XmlSerialName("StrassenAdresse")
     var strassenAdresse: StrassenAdresse? = null
 }
 
-
 @Serializable
 class PostfachAdresse {
-
     @XmlSerialName("Postleitzahl")
     var postleitzahl: String? = null
 
@@ -119,7 +93,6 @@ class PostfachAdresse {
 
 @Serializable
 class StrassenAdresse {
-
     @XmlSerialName("Postleitzahl")
     @XmlElement
     var postleitzahl: String? = null
@@ -146,20 +119,22 @@ class StrassenAdresse {
 
 @Serializable
 class Land {
-
     @XmlSerialName("Wohnsitzlaendercode")
     @XmlElement
     lateinit var wohnsitzlaendercode: String
 }
+
 @OptIn(ExperimentalXmlUtilApi::class)
-private val xml = XML {
-    isUnchecked = true
-    repairNamespaces = true
-    policy = DefaultXmlSerializationPolicy.Builder()
-        .apply {
-            ignoreNamespaces()
-            ignoreUnknownChildren()
-            verifyElementOrder
-        }
-        .build()
-}
+val xml =
+    XML {
+        isUnchecked = true
+        repairNamespaces = true
+        policy =
+            DefaultXmlSerializationPolicy
+                .Builder()
+                .apply {
+                    ignoreNamespaces()
+                    ignoreUnknownChildren()
+                    verifyElementOrder
+                }.build()
+    }

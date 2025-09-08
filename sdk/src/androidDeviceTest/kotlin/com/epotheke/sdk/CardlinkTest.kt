@@ -4,6 +4,7 @@ import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.cardlink.CardLinkErrorCodes
 import com.epotheke.cardlink.CardlinkAuthResult
+import com.epotheke.cardlink.CardlinkAuthenticationConfig
 import com.epotheke.cardlink.CardlinkAuthenticationException
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
 import com.epotheke.cardlink.ResultCode
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.assertNull
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
 import org.openecard.sc.pcsc.AndroidTerminalFactory
@@ -346,7 +348,9 @@ class NfcTest {
                     countDown(activity, "Remove card", 5.seconds)
                     CAN_CORRECT
                 }
-
+                everySuspend { uiMock.onCardRemoved() } calls {
+                    activity.msg("Card removed")
+                }
                 everySuspend { uiMock.requestCardInsertion() } calls {
                     activity.msg("Insert Card")
                 }
@@ -358,6 +362,29 @@ class NfcTest {
                     assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
 
                 assertNotNull(result.personalData)
+                assertNotNull(result.iccsn)
+            }
+        }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun testCardLinkNoPersonalDataByConfig() =
+        runTestJobWithActivity { activity ->
+            launch {
+                everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
+                everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
+                everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
+                everySuspend { uiMock.requestCardInsertion() } calls {
+                    activity.msg("Insert Card")
+                }
+                everySuspend { uiMock.onCardRecognized() } calls {
+                    activity.msg("Card detected. Don't move")
+                }
+
+                CardlinkAuthenticationConfig.readPersonalData = false
+                val result =
+                    assertNotNull(callEstablishCardLink(activity, Service.DEV), "cardlink was not established.")
+                assertNull(result.personalData)
                 assertNotNull(result.iccsn)
             }
         }

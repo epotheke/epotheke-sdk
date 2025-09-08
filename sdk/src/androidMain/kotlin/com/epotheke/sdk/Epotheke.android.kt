@@ -1,7 +1,6 @@
 package com.epotheke.sdk
 
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
-import com.epotheke.cardlink.UserInteraction
 import com.epotheke.erezept.protocol.PrescriptionProtocolImp
 import org.openecard.sc.iface.TerminalFactory
 

@@ -1,11 +1,12 @@
 package com.epotheke.cardlink
 
-import com.epotheke.erezept.model.PrescriptionMessage
 import com.epotheke.erezept.model.prescriptionJsonFormatter
 import com.epotheke.sdk.CardLinkProtocolBase
 import com.epotheke.sdk.WebsocketCommon
 import com.epotheke.sdk.randomUUID
+import com.fleeksoft.charset.decodeToString
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.utils.io.charsets.forName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -39,25 +40,31 @@ expect fun gunzip(data: UByteArray): UByteArray
 
 private val logger = KotlinLogging.logger { }
 
-data class SessionInfo(
-    val cardSessionId: String,
-    val webSocketId: String? = null,
-    val phoneRegistered: Boolean = false,
-)
+object CardlinkAuthenticationConfig {
+    var readPersonalData = true
+
+    var readInsurerData = false
+}
 
 class CardlinkAuthResult(
-    var personalData: String? = null,
+    var personalData: PersoenlicheVersichertendaten? = null,
     var cardSessionId: String? = null,
     var iccsn: String? = null,
     var iccsnReassignmentTimestamp: String? = null,
     var wsSessionId: String? = null,
 )
 
+internal data class SessionInfo(
+    val cardSessionId: String,
+    val webSocketId: String? = null,
+    val phoneRegistered: Boolean = false,
+)
+
 class CardlinkAuthenticationProtocol(
     private val terminalFactory: TerminalFactory,
     private val ws: WebsocketCommon,
 ) : CardLinkProtocolBase(ws) {
-    lateinit var sessionInfo: SessionInfo
+    internal lateinit var sessionInfo: SessionInfo
     private val cardLinkAuthResult = CardlinkAuthResult()
     lateinit var interaction: UserInteraction
 
@@ -96,7 +103,10 @@ class CardlinkAuthenticationProtocol(
                             "Recognized card is not an eGK",
                         )
                     }
-                    cardLinkAuthResult.personalData = readPersonalData(can) ?: readError("Personal data")
+
+                    if (CardlinkAuthenticationConfig.readPersonalData) {
+                        cardLinkAuthResult.personalData = readPersonalData(can) ?: readError("Personal data")
+                    }
 
                     val readMfData =
                         readMfData(can)?.apply {
@@ -483,12 +493,13 @@ class CardlinkAuthenticationProtocol(
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private suspend fun SmartcardDeviceConnection.readPersonalData(can: String): String? =
+    private suspend fun SmartcardDeviceConnection.readPersonalData(can: String): PersoenlicheVersichertendaten? =
         applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
             readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efPd)?.let { readBytes ->
                 val len = readBytes[0].toInt().shl(8).or(readBytes[1].toInt())
                 val pd = readBytes.sliceArray(IntRange(2, 2 + len - 1))
-                gunzip(pd).toHexString()
+                val xmlString = gunzip(pd).toByteArray().decodeToString(Charsets.forName("ISO-8859-15"))
+                xml.decodeFromString(PersoenlicheVersichertendaten.serializer(), xmlString)
             }
         }
 
