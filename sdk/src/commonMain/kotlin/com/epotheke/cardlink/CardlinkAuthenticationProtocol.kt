@@ -174,7 +174,7 @@ class CardlinkAuthenticationProtocol(
                     logger.error(e) { "Unknown exception" }
                     throw CardlinkAuthenticationClientException(
                         CardLinkErrorCodes.ClientCodes.OTHER_CLIENT_ERROR,
-                        "Unknown error happened: ${e.message}",
+                        "${e.message}",
                         e,
                     )
                 }
