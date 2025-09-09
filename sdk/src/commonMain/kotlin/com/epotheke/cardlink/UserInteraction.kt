@@ -7,8 +7,6 @@ interface UserInteraction {
 
 //  suspend   fun requestCardInsertion(msgHandler: NFCOverlayMessageHandler?)
 
-    suspend fun onCardInteractionComplete()
-
     suspend fun onCardInsufficient()
 
     suspend fun onCardRemoved()
