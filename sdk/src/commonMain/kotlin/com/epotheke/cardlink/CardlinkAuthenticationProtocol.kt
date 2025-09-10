@@ -11,6 +11,7 @@ import kotlinx.coroutines.withTimeout
 import org.openecard.cif.bundled.CompleteTree
 import org.openecard.cif.bundled.EgkCif
 import org.openecard.cif.bundled.EgkCifDefinitions
+import org.openecard.cif.bundled.EgkCifDefinitions.cardType
 import org.openecard.cif.definition.acl.DidStateReference
 import org.openecard.cif.definition.recognition.removeUnsupported
 import org.openecard.sal.iface.DeviceUnavailable
@@ -76,7 +77,7 @@ class CardlinkAuthenticationProtocol(
 
     // TODO make reading of pd and vd configurable here
     @OptIn(ExperimentalUnsignedTypes::class)
-    suspend fun establishCardlink(interaction: UserInteraction): CardlinkAuthResult? =
+    suspend fun establishCardlink(interaction: UserInteraction): CardlinkAuthResult =
         mapErrors {
             this.interaction = interaction
             ws.connectWithTimeout()
@@ -135,7 +136,7 @@ class CardlinkAuthenticationProtocol(
             "Could not read $toBeRead.",
         )
 
-    private suspend fun mapErrors(block: suspend () -> CardlinkAuthResult?): CardlinkAuthResult? {
+    private suspend fun mapErrors(block: suspend () -> CardlinkAuthResult): CardlinkAuthResult {
         try {
             return block()
         } catch (e: Exception) {
