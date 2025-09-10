@@ -71,11 +71,9 @@ class WebsocketListenerCommon : ChannelDispatcher {
 //        protos.map { p-> p.getErrorHandler()(p1) }
     }
 
-    fun onText(p1: String) {
-        runBlocking {
-            channels.forEach { c ->
-                c.send(p1)
-            }
+    suspend fun onText(p1: String) {
+        channels.forEach { c ->
+            c.send(p1)
         }
     }
 }

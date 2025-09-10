@@ -33,7 +33,7 @@ interface CardLinkProtocol {
 
 class FilteringChannel(
     val protocol: CardLinkProtocol,
-    val inputChannel: Channel<String> = Channel(),
+    val inputChannel: Channel<String> = Channel(10),
 ) : Channel<String> by inputChannel {
     /**
      * Put msg to channel if it passes filter
