@@ -75,7 +75,6 @@ class CardlinkAuthenticationProtocol(
             false
         }
 
-    // TODO make reading of pd and vd configurable here
     @OptIn(ExperimentalUnsignedTypes::class)
     suspend fun establishCardlink(interaction: UserInteraction): CardlinkAuthResult =
         mapErrors {
