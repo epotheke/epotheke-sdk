@@ -8,8 +8,9 @@ class Epotheke(
     terminalFactory: TerminalFactory,
     serviceUrl: String,
     tenantToken: String?,
+    wsSessionId: String? = null,
 ) {
-    private val ws = WebsocketCommon(serviceUrl, tenantToken)
+    private val ws = WebsocketCommon(serviceUrl, tenantToken, wsSessionId)
 
     val cardlinkAuthenticationProtocol =
         CardlinkAuthenticationProtocol(

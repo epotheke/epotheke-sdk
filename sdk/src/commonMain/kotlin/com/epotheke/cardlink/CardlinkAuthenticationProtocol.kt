@@ -206,7 +206,7 @@ class CardlinkAuthenticationProtocol(
     }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private fun sendEgkData(
+    private suspend fun sendEgkData(
         cardSessionId: String,
         mfData: MFData,
         cert: UByteArray,
@@ -235,7 +235,7 @@ class CardlinkAuthenticationProtocol(
             }
         }
 
-    private fun sendEnvelope(
+    private suspend fun sendEnvelope(
         payload: CardLinkPayload,
         correlationId: String? = randomUUID(),
     ) {

@@ -23,6 +23,7 @@
 package com.epotheke.cardlink
 
 import io.ktor.utils.io.charsets.Charsets
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -210,6 +211,7 @@ val module =
         }
     }
 
+@OptIn(ExperimentalSerializationApi::class)
 val cardLinkJsonFormatter =
     Json {
         serializersModule = module

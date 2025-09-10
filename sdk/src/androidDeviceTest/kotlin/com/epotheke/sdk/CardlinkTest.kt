@@ -20,6 +20,7 @@ import dev.mokkery.mock
 import dev.mokkery.verify.VerifyMode.Companion.exactly
 import dev.mokkery.verifySuspend
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,11 +30,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.assertNull
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
-import org.openecard.sc.pcsc.AndroidTerminalFactory
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -44,7 +43,7 @@ import kotlin.time.DurationUnit
 private val logger = KotlinLogging.logger {}
 
 @RunWith(AndroidJUnit4::class)
-class NfcTest {
+class CardlinkTest {
     private val testTimeout = 10.seconds
 
     // @Test
@@ -104,14 +103,8 @@ class NfcTest {
 
     private suspend fun callEstablishCardLink(
         activity: TestActivity,
-        service: Service,
-    ): CardlinkAuthResult? {
-        val ws =
-            WebsocketCommon(
-                service.url,
-                service.tenantToken,
-            )
-
+        ws: WebsocketCommon,
+    ): CardlinkAuthResult {
         val proto =
             CardlinkAuthenticationProtocol(
                 assertNotNull(activity.factory),
@@ -134,7 +127,10 @@ class NfcTest {
             }
             testJob =
                 launch {
-                    callEstablishCardLink(activity, Service.DEV)
+                    callEstablishCardLink(
+                        activity,
+                        WebsocketCommon(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                    )
                 }
 
             testJob.join()
@@ -172,7 +168,10 @@ class NfcTest {
             }
             testJob =
                 launch {
-                    callEstablishCardLink(activity, Service.DEV)
+                    callEstablishCardLink(
+                        activity,
+                        WebsocketCommon(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                    )
                 }
 
             testJob.join()
@@ -212,7 +211,10 @@ class NfcTest {
             }
             testJob =
                 launch {
-                    callEstablishCardLink(activity, Service.MOCK)
+                    callEstablishCardLink(
+                        activity,
+                        WebsocketCommon(SERVICE_URL_MOCK, null),
+                    )
                 }
             testJob.join()
 
@@ -239,7 +241,10 @@ class NfcTest {
 
             testJob =
                 launch {
-                    callEstablishCardLink(activity, Service.MOCK)
+                    callEstablishCardLink(
+                        activity,
+                        WebsocketCommon(SERVICE_URL_MOCK, null),
+                    )
                 }
             testJob.join()
             verifySuspend {
@@ -266,7 +271,10 @@ class NfcTest {
                 launch {
                     val e =
                         assertThrows<CardlinkAuthenticationException> {
-                            callEstablishCardLink(activity, Service.MOCK)
+                            callEstablishCardLink(
+                                activity,
+                                WebsocketCommon(SERVICE_URL_MOCK, null),
+                            )
                         }
                     assertEquals(CardLinkErrorCodes.CardLinkCodes.TAN_RETRY_LIMIT_EXCEEDED, e.code)
                 }
@@ -308,7 +316,10 @@ class NfcTest {
             }
             testJob =
                 launch {
-                    callEstablishCardLink(activity, Service.DEV)
+                    callEstablishCardLink(
+                        activity,
+                        WebsocketCommon(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                    )
                 }
             testJob.join()
             verifySuspend {
@@ -360,7 +371,16 @@ class NfcTest {
                 }
 
                 val result =
-                    assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
+                    assertNotNull(
+                        callEstablishCardLink(
+                            activity,
+                            WebsocketCommon(
+                                SERVICE_URL_MOCK,
+                                null,
+                            ),
+                        ),
+                        "cardlink was not established.",
+                    )
 
                 assertNotNull(result.iccsn)
             }
@@ -383,7 +403,16 @@ class NfcTest {
 
                 CardlinkAuthenticationConfig.readPersonalData = true
                 val result =
-                    assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
+                    assertNotNull(
+                        callEstablishCardLink(
+                            activity,
+                            WebsocketCommon(
+                                SERVICE_URL_MOCK,
+                                null,
+                            ),
+                        ),
+                        "cardlink was not established.",
+                    )
                 assertNotNull(result.personalData)
             }
         }
@@ -405,7 +434,16 @@ class NfcTest {
 
                 CardlinkAuthenticationConfig.readInsurerData = true
                 val result =
-                    assertNotNull(callEstablishCardLink(activity, Service.MOCK), "cardlink was not established.")
+                    assertNotNull(
+                        callEstablishCardLink(
+                            activity,
+                            WebsocketCommon(
+                                SERVICE_URL_MOCK,
+                                null,
+                            ),
+                        ),
+                        "cardlink was not established.",
+                    )
                 assertNotNull(result.insurerData)
             }
         }
@@ -426,7 +464,16 @@ class NfcTest {
                 }
 
                 val result =
-                    assertNotNull(callEstablishCardLink(activity, Service.DEV), "cardlink was not established.")
+                    assertNotNull(
+                        callEstablishCardLink(
+                            activity,
+                            WebsocketCommon(
+                                SERVICE_URL_DEV,
+                                TENANT_TOKEN_VALID_DEV,
+                            ),
+                        ),
+                        "cardlink was not established.",
+                    )
                 assertNotNull(result.iccsn)
             }
         }
@@ -441,6 +488,55 @@ class NfcTest {
             { assertTrue("Activitiy was not paused") { activity.wasResumedAfterPaused } },
         )
     }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun testWebsocketReconnect() =
+        runTestJobWithActivity { activity ->
+            launch {
+                val ws =
+                    WebsocketCommon(
+                        SERVICE_URL_MOCK,
+                        null,
+                        null,
+                    )
+
+                var job: Job? = null
+                everySuspend { uiMock.onPhoneNumberRequest() } calls {
+                    PHONE_NUMBER_VALID
+                }
+                everySuspend { uiMock.onTanRequest() } calls {
+                    // Close the websocket to test if reconnect works.
+                    ws.close(100, "Test")
+                    TAN_CORRECT
+                }
+                everySuspend { uiMock.onCanRequest() } calls {
+                    CAN_CORRECT
+                }
+
+                everySuspend { uiMock.requestCardInsertion() } calls {
+                    job?.cancelAndJoin()
+                }
+
+                job =
+                    launch {
+                        assertDoesNotThrow {
+                            try {
+                                callEstablishCardLink(
+                                    activity,
+                                    ws,
+                                )
+                            } catch (e: CancellationException) {
+                            }
+                        }
+                    }
+                job.join()
+
+                verifySuspend { uiMock.onPhoneNumberRequest() }
+                verifySuspend { uiMock.onTanRequest() }
+                verifySuspend { uiMock.onCanRequest() }
+            }
+        }
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
@@ -467,7 +563,16 @@ class NfcTest {
                 }
 
                 val result =
-                    assertNotNull(callEstablishCardLink(activity, Service.DEV), "cardlink was not established.")
+                    assertNotNull(
+                        callEstablishCardLink(
+                            activity,
+                            WebsocketCommon(
+                                SERVICE_URL_DEV,
+                                TENANT_TOKEN_VALID_DEV,
+                            ),
+                        ),
+                        "cardlink was not established.",
+                    )
                 assertNotNull(result.iccsn)
             }
         }
@@ -488,7 +593,16 @@ class NfcTest {
                 }
 
                 val result =
-                    assertNotNull(callEstablishCardLink(activity, Service.PROD), "cardlink was not established.")
+                    assertNotNull(
+                        callEstablishCardLink(
+                            activity,
+                            WebsocketCommon(
+                                SERVICE_URL_PROD,
+                                TENANT_TOKEN_VALID_PROD,
+                            ),
+                        ),
+                        "cardlink was not established.",
+                    )
                 assertNotNull(result.iccsn)
             }
         }

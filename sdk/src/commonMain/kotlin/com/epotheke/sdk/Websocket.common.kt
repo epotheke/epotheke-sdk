@@ -22,10 +22,12 @@
 
 package com.epotheke.sdk
 
+import com.epotheke.cardlink.GematikEnvelope
+import com.epotheke.cardlink.SessionInformation
+import com.epotheke.erezept.model.prescriptionJsonFormatter
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
@@ -39,15 +41,14 @@ import io.ktor.websocket.readText
 import io.ktor.websocket.send
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.EOFException
-import okio.Timeout
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -82,15 +83,32 @@ class WebsocketListenerCommon : ChannelDispatcher {
 class WebsocketCommon(
     private var url: String,
     tenantToken: String?,
+    private var wsSessionId: String? = null,
 ) {
     private var receiveJob: Job? = null
     private var wsListener: WebsocketListenerCommon = WebsocketListenerCommon()
     private val client: HttpClient = getHttpClient(tenantToken)
 
+    private val wsSessionContext = Dispatchers.IO.limitedParallelism(1)
     private var wsSession: DefaultClientWebSocketSession? = null
 
     fun addProtocolChannel(protoChannel: FilteringChannel) {
         wsListener.addProtocolChannel(protoChannel)
+    }
+
+    private fun updateSessionToken(msg: String) {
+        try {
+            when (val payload = prescriptionJsonFormatter.decodeFromString<GematikEnvelope>(msg).payload) {
+                is SessionInformation -> {
+                    if (wsSessionId != null && wsSessionId != payload.webSocketId) {
+                        log.warn { "Websocket session id overwritten by service to: ${payload.webSocketId}" }
+                    }
+                    wsSessionId = payload.webSocketId
+                }
+                else -> {}
+            }
+        } catch (_: Exception) {
+        }
     }
 
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
@@ -98,7 +116,9 @@ class WebsocketCommon(
             for (msg in incoming) {
                 when (msg) {
                     is Frame.Text -> {
-                        wsListener.onText(msg.readText())
+                        val read = msg.readText()
+                        updateSessionToken(read)
+                        wsListener.onText(read)
                     }
 
                     is Frame.Close -> {
@@ -128,12 +148,6 @@ class WebsocketCommon(
         }
     }
 
-    fun getUrl(): String = this.url
-
-    fun setUrl(url: String) {
-        this.url = url
-    }
-
     /**
      * Gets the selected subprotocol once the connection is established.
      * @return the selected subprotocol or null if no subprotocol was selected.
@@ -146,32 +160,36 @@ class WebsocketCommon(
      * Connect to the server.
      * This method can also be used to reestablish a lost connection.
      */
-    suspend fun connect() {
-        this.receiveJob?.cancel()
-        val uri = Url(url)
-        log.debug { "Connecting websocket to: $uri" }
-
-        wsSession =
-            client.webSocketSession(
-                method = HttpMethod.Get,
-                host = uri.host,
-                port = uri.port,
-                path = uri.fullPath,
-            ) {
-                url {
-                    url.protocol = URLProtocol.WSS
-                    url.port = uri.port
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun connect() =
+        withContext(wsSessionContext) {
+            receiveJob?.cancel()
+            val uri = Url(url)
+            log.debug { "Connecting websocket to: $uri" }
+            wsSession =
+                client.webSocketSession(
+                    method = HttpMethod.Get,
+                    host = uri.host,
+                    port = uri.port,
+                    path = uri.fullPath,
+                ) {
+                    url {
+                        protocol = URLProtocol.WSS
+                        port = uri.port
+                        wsSessionId?.let {
+                            parameters.append("token", it)
+                        }
+                    }
                 }
-            }
 
-        log.debug { "Websocket connected" }
+            log.debug { "Websocket connected" }
 
-        this.receiveJob =
-            CoroutineScope(Dispatchers.IO).launch {
-                log.debug { "Entering websocket receive loop." }
-                wsSession?.receiveLoop()
-            }
-    }
+            receiveJob =
+                CoroutineScope(Dispatchers.IO).launch {
+                    log.debug { "Entering websocket receive loop." }
+                    wsSession?.receiveLoop()
+                }
+        }
 
     suspend fun connectWithTimeout(duration: Duration = 10.seconds) {
         withTimeout(duration) {
@@ -199,39 +217,40 @@ class WebsocketCommon(
      * @param statusCode the status code to send.
      * @param reason the reason for closing the connection, or null if none should be given.
      */
-    fun close(
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun close(
         statusCode: Int,
         reason: String?,
-    ) {
+    ) = withContext(wsSessionContext) {
         log.debug { "Close was called. Close frame will be send." }
-        runBlocking {
-            wsSession?.close(
-                CloseReason(
-                    statusCode.toShort(),
-                    reason ?: "",
-                ),
-            )
-        }
+        val sessToClose = wsSession
+        wsSession = null
+        sessToClose?.close(
+            CloseReason(
+                statusCode.toShort(),
+                reason ?: "",
+            ),
+        )
     }
 
     /**
      * Send a text frame.
      * @param data the data to send.
      */
-    fun send(
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun send(
         data: String,
         reconnectIfNeeded: Boolean = true,
         reconnectTimeoutDuration: Duration? = 10.seconds,
-    ) {
-        runBlocking {
-            if (reconnectIfNeeded && !isOpen()) {
-                if (reconnectTimeoutDuration != null) {
-                    connectWithTimeout(reconnectTimeoutDuration)
-                } else {
-                    connect()
-                }
+    ) = withContext(wsSessionContext) {
+        val open = isOpen()
+        if (reconnectIfNeeded && !open) {
+            if (reconnectTimeoutDuration != null) {
+                connectWithTimeout(reconnectTimeoutDuration)
+            } else {
+                connect()
             }
-            wsSession?.send(data)
         }
+        wsSession?.send(data)
     }
 }
