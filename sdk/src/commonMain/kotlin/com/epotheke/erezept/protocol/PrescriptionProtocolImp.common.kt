@@ -34,9 +34,9 @@ import com.epotheke.sdk.CardLinkProtocol
 import com.epotheke.sdk.CardLinkProtocolBase
 import com.epotheke.sdk.WebsocketCommon
 import com.epotheke.sdk.now
+import com.epotheke.sdk.protocolChannel
 import com.epotheke.sdk.randomUUID
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jdk.internal.org.jline.utils.Colors.s
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerializationException
@@ -68,13 +68,16 @@ class PrescriptionProtocolImp(
     private val ws: WebsocketCommon,
 ) : CardLinkProtocolBase(ws),
     PrescriptionProtocol {
-    override fun filterMessage(msg: String) =
+    private val inputChannel = protocolChannel<PrescriptionMessage>()
+
+    override fun messageHandler(msg: String): (suspend () -> Unit)? {
         try {
-            prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(msg)
-            true
-        } catch (e: Exception) {
-            false
+            val envelope = prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(msg)
+            return { inputChannel.send(envelope) }
+        } catch (_: Exception) {
+            return null
         }
+    }
 
     @OptIn(ExperimentalStdlibApi::class)
     override suspend fun requestPrescriptions(
@@ -115,13 +118,12 @@ class PrescriptionProtocolImp(
                         inputChannel.receive()
                     }
                 when (
-                    val prescriptionMessage =
-                        prescriptionJsonFormatter.decodeFromString<PrescriptionMessage>(response)
+                    response
                 ) {
-                    is T -> return prescriptionMessage
+                    is T -> return response
                     is GenericErrorMessage -> {
-                        logger.debug { "Received generic error: ${prescriptionMessage.errorMessage}" }
-                        throw PrescriptionProtocolException(prescriptionMessage)
+                        logger.debug { "Received generic error: ${response.errorMessage}" }
+                        throw PrescriptionProtocolException(response)
                     }
 
                     else -> {

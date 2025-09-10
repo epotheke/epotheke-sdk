@@ -23,38 +23,25 @@
 package com.epotheke.sdk
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 
 private val logger = KotlinLogging.logger { }
 
 interface CardLinkProtocol {
-    fun filterMessage(msg: String): Boolean
+    fun messageHandler(msg: String): (suspend () -> Unit)?
 }
 
-class FilteringChannel(
-    val protocol: CardLinkProtocol,
-    val inputChannel: Channel<String> = Channel(10),
-) : Channel<String> by inputChannel {
-    /**
-     * Put msg to channel if it passes filter
-     */
-    override suspend fun send(element: String) {
-        if (protocol.filterMessage(element)) {
-            inputChannel.send(element)
-        }
-    }
-}
-
-interface ChannelDispatcher {
-    fun addProtocolChannel(channel: FilteringChannel)
-}
+internal fun <T> protocolChannel() =
+    Channel<T>(
+        1,
+        BufferOverflow.DROP_OLDEST,
+    ) { logger.warn { "InputChannel dropped message: $it" } }
 
 abstract class CardLinkProtocolBase(
     ws: WebsocketCommon,
 ) : CardLinkProtocol {
-    protected val inputChannel = FilteringChannel(this)
-
     init {
-        ws.addProtocolChannel(inputChannel)
+        ws.addProtocol(this)
     }
 }

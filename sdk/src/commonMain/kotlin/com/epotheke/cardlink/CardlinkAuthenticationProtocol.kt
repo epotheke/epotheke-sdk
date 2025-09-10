@@ -3,10 +3,13 @@ package com.epotheke.cardlink
 import com.epotheke.erezept.model.prescriptionJsonFormatter
 import com.epotheke.sdk.CardLinkProtocolBase
 import com.epotheke.sdk.WebsocketCommon
+import com.epotheke.sdk.protocolChannel
 import com.epotheke.sdk.randomUUID
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeout
 import org.openecard.cif.bundled.CompleteTree
 import org.openecard.cif.bundled.EgkCif
@@ -63,17 +66,20 @@ class CardlinkAuthenticationProtocol(
     private val terminalFactory: TerminalFactory,
     private val ws: WebsocketCommon,
 ) : CardLinkProtocolBase(ws) {
+    private val inputChannel = protocolChannel<GematikEnvelope>()
+
+    override fun messageHandler(msg: String): (suspend () -> Unit)? {
+        try {
+            val envelope = prescriptionJsonFormatter.decodeFromString<GematikEnvelope>(msg)
+            return { inputChannel.send(envelope) }
+        } catch (_: Exception) {
+            return null
+        }
+    }
+
     internal lateinit var sessionInfo: SessionInfo
     private val cardLinkAuthResult = CardlinkAuthResult()
     lateinit var interaction: UserInteraction
-
-    override fun filterMessage(msg: String) =
-        try {
-            prescriptionJsonFormatter.decodeFromString<GematikEnvelope>(msg)
-            true
-        } catch (e: Exception) {
-            false
-        }
 
     @OptIn(ExperimentalUnsignedTypes::class)
     suspend fun establishCardlink(interaction: UserInteraction): CardlinkAuthResult =
@@ -255,9 +261,7 @@ class CardlinkAuthenticationProtocol(
         ignoreSessionInfo: Boolean = true,
     ): GematikEnvelope =
         withTimeout(MESSAGE_TIMEOUT_DURATION) {
-            val envelope =
-                cardLinkJsonFormatter
-                    .decodeFromString<GematikEnvelope>(inputChannel.receive())
+            val envelope = inputChannel.receive()
 
             if (ignoreSessionInfo && envelope.payload is SessionInformation) {
                 receiveEnvelope(correlationId, true)

@@ -45,7 +45,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.EOFException
@@ -54,60 +53,62 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-class WebsocketListenerCommon : ChannelDispatcher {
-    private val channels = mutableListOf<FilteringChannel>()
-
-    override fun addProtocolChannel(channel: FilteringChannel) {
-        channels.add(channel)
-    }
-
-    fun onClose(
-        p1: Int,
-        p2: String?,
-    ) {
-    }
-
-    fun onError(p1: String) {
-//        protos.map { p-> p.getErrorHandler()(p1) }
-    }
-
-    suspend fun onText(p1: String) {
-        channels.forEach { c ->
-            c.send(p1)
-        }
-    }
-}
-
 class WebsocketCommon(
     private var url: String,
     tenantToken: String?,
     private var wsSessionId: String? = null,
 ) {
     private var receiveJob: Job? = null
-    private var wsListener: WebsocketListenerCommon = WebsocketListenerCommon()
-    private val client: HttpClient = getHttpClient(tenantToken)
 
+    fun addProtocol(protocol: CardLinkProtocol) {
+        protocols.add(protocol)
+    }
+
+    private suspend fun handleMessageWithProtocols(msg: String) {
+        val handlers =
+            protocols.mapNotNull { p ->
+                p.messageHandler(msg)
+            }
+        if (handlers.isEmpty()) {
+            log.warn { "Dropping message, since no protocol can handle it." }
+            log.debug { "Message was $msg" }
+        }
+        handlers.forEach { it.invoke() }
+    }
+
+    /**
+     * We add a small protocol to the protocol list to allow overriding wsSessionId if needed
+     */
+    private val wsSessionIdProtocol =
+        object : CardLinkProtocol {
+            override fun messageHandler(msg: String): (suspend () -> Unit)? =
+                try {
+                    when (val payload = prescriptionJsonFormatter.decodeFromString<GematikEnvelope>(msg).payload) {
+                        is SessionInformation -> {
+                            {
+                                if (wsSessionId != null && wsSessionId != payload.webSocketId) {
+                                    log.warn {
+                                        "Websocket session id overwritten by service to: ${payload.webSocketId}"
+                                    }
+                                }
+                                wsSessionId = payload.webSocketId
+                            }
+                        }
+                        else -> {
+                            null
+                        }
+                    }
+                } catch (_: Exception) {
+                    null
+                }
+        }
+
+    // Not that the protocols is initialised containing the wsSessionIdProtocol
+    private val protocols = mutableListOf<CardLinkProtocol>(wsSessionIdProtocol)
+
+    private val client: HttpClient = getHttpClient(tenantToken)
     private val wsSessionContext = Dispatchers.IO.limitedParallelism(1)
     private var wsSession: DefaultClientWebSocketSession? = null
-
-    fun addProtocolChannel(protoChannel: FilteringChannel) {
-        wsListener.addProtocolChannel(protoChannel)
-    }
-
-    private fun updateSessionToken(msg: String) {
-        try {
-            when (val payload = prescriptionJsonFormatter.decodeFromString<GematikEnvelope>(msg).payload) {
-                is SessionInformation -> {
-                    if (wsSessionId != null && wsSessionId != payload.webSocketId) {
-                        log.warn { "Websocket session id overwritten by service to: ${payload.webSocketId}" }
-                    }
-                    wsSessionId = payload.webSocketId
-                }
-                else -> {}
-            }
-        } catch (_: Exception) {
-        }
-    }
 
     private suspend fun DefaultClientWebSocketSession.receiveLoop() {
         try {
@@ -115,34 +116,24 @@ class WebsocketCommon(
                 when (msg) {
                     is Frame.Text -> {
                         val read = msg.readText()
-                        updateSessionToken(read)
-                        wsListener.onText(read)
+                        handleMessageWithProtocols(read)
                     }
 
                     is Frame.Close -> {
                         // only used when websocket raw is used
                         val reason: CloseReason? = msg.readReason()
-                        val code =
-                            reason?.code?.toInt() ?: CloseReason.Codes.INTERNAL_ERROR.code
-                                .toInt()
-                        val reasonMsg = reason?.message ?: "No reason"
-
-                        wsListener.onClose(code, reasonMsg)
+                        log.warn { "Websocket received close frame $reason." }
                     }
 
                     else -> {
                         log.warn { "Unhandled frame type received." }
-                        wsListener.onError("Invalid data received")
                     }
                 }
             }
         } catch (e: EOFException) {
-            log.debug { "Websocket channel closed by receiving EOFException." }
-            val reasonMsg = e.message
-            val code = CloseReason.Codes.NORMAL
-            wsListener.onClose(code.code.toInt(), reasonMsg)
+            log.error(e) { "Websocket closed by EOFException." }
         } catch (e: Exception) {
-            log.debug(e) { "Exception during websocket receive." }
+            log.error(e) { "Exception during websocket receive." }
         }
     }
 
