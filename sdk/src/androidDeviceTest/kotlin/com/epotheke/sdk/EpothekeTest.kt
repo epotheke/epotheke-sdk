@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.cardlink.UserInteraction
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
+import dev.mokkery.answering.sequentially
 import dev.mokkery.everySuspend
 import dev.mokkery.mock
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -69,5 +70,45 @@ class EpothekeTest {
                 )
 
             assertTrue { prescriptions.availablePrescriptionLists.isNotEmpty() }
+        }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun testEpothekeTwoEgks() =
+        runTestJobWithActivity { activity ->
+            val wsSessionId = randomUUID()
+            everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
+            everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
+            everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
+
+            var first = true
+            everySuspend { uiMock.requestCardInsertion() } calls {
+                if (first) {
+                    activity.msg("insert card")
+                    first = false
+                } else {
+                    activity.msg("insert different card")
+                }
+            }
+            everySuspend { uiMock.onCardRecognized() } calls {
+                activity.msg("don't move")
+            }
+
+            val epotheke =
+                Epotheke(
+                    assertNotNull(activity.factory),
+                    Service.DEV.url,
+                    Service.DEV.tenantToken,
+                    wsSessionId,
+                )
+
+            assertNotNull(epotheke.cardlinkAuthenticationProtocol.establishCardlink(uiMock))
+            assertNotNull(epotheke.cardlinkAuthenticationProtocol.establishCardlink(uiMock))
+            val prescriptions =
+                assertNotNull(
+                    epotheke.prescriptionProtocol.requestPrescriptions(),
+                )
+
+            assertEquals(2, prescriptions.availablePrescriptionLists.size)
         }
 }
