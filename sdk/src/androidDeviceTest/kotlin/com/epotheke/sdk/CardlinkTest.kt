@@ -1,9 +1,12 @@
 package com.epotheke.sdk
 
+import android.R.attr.countDown
+import android.util.Log.e
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.cardlink.CardLinkErrorCodes
 import com.epotheke.cardlink.CardlinkAuthResult
+import com.epotheke.cardlink.CardlinkAuthenticationClientException
 import com.epotheke.cardlink.CardlinkAuthenticationConfig
 import com.epotheke.cardlink.CardlinkAuthenticationException
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
@@ -20,6 +23,7 @@ import dev.mokkery.mock
 import dev.mokkery.verify.VerifyMode.Companion.exactly
 import dev.mokkery.verifySuspend
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.plugins.websocket.WebSocketException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,8 +35,10 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertInstanceOf
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
+import javax.net.ssl.SSLHandshakeException
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -113,6 +119,26 @@ class CardlinkTest {
 
         return proto.establishCardlink(uiMock)
     }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun testInvalidTokens() =
+        runTestJobWithActivity { activity ->
+            listOf(
+                TENANT_TOKEN_INVALID_DEV,
+                TENANT_TOKEN_EXPIRED_DEV,
+                TENANT_TOKEN_REVOKED_DEV,
+            ).forEach {
+                assertInstanceOf<WebSocketException>(
+                    assertThrows<CardlinkAuthenticationClientException> {
+                        callEstablishCardLink(
+                            activity,
+                            WebsocketCommon(SERVICE_URL_DEV, it),
+                        )
+                    }.cause,
+                )
+            }
+        }
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
