@@ -28,17 +28,7 @@ const val SERVICE_URL_DEV = "https://service.dev.epotheke.com/cardlink"
 const val SERVICE_URL_PROD = "https://service.epotheke.com/cardlink"
 const val SERVICE_URL_MOCK = "https://mock.test.epotheke.com/cardlink"
 const val TENANT_TOKEN_VALID_DEV = "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiYzcyNGFkMTktZmJmYy00MmFlLThlZDYtN2IzMDgxNDIyNzI5IiwiaWF0IjoxNzMwMjEyODQ3LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzI4NDg0NywianRpIjoiZGQyN2ZhYmQtMGNmNC00MGVkLThkNjQtMGUzNzlmZWRiMDhiIn0.xD2KqPFaLaXCDm0PO2nvhNFLOxsOqgTq1Np9PqQCmho3StAMjrrp6W1PWQbbxgtCFBY_g5j6y7eKhAx7oUpX0g"
-
 const val TENANT_TOKEN_VALID_PROD = "eyJraWQiOiJ0ZW5hbnQtc2lnbmVyLTIwMjQxMTA2IiwiYWxnIjoiRVMyNTYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5M2NlZTMtMTdkOC03MDAwLTkwOTktZmM4NGNlMjYyNzk1IiwiaWF0IjoxNzQxMTczNzM4LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTgwNDI0NTczOCwianRpIjoiYWE2NDA5NWMtY2NlNy00N2FjLWEzZDItYzA2ZThlYjE2MmVmIn0.L0D7XGchxtkv_rzvzvru6t80MJy8aQKhbiTReH69MNBVgp9Z-wUlDgIPdpbySmhDSTVEbp1rCwQAOyXje1dntQ"
-
-enum class Service(
-    val url: String,
-    val tenantToken: String?,
-) {
-    PROD(SERVICE_URL_PROD, TENANT_TOKEN_VALID_PROD),
-    DEV(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
-    MOCK(SERVICE_URL_MOCK, null),
-}
 
 const val PHONE_NUMBER_VALID = "+49 151 000 000 00"
 const val PHONE_NUMBER_INVALID = "42"

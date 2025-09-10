@@ -58,8 +58,8 @@ class EpothekeTest {
             val epotheke =
                 Epotheke(
                     assertNotNull(activity.factory),
-                    Service.DEV.url,
-                    Service.DEV.tenantToken,
+                    SERVICE_URL_DEV,
+                    TENANT_TOKEN_VALID_DEV,
                 )
 
             assertNotNull(epotheke.cardlinkAuthenticationProtocol.establishCardlink(uiMock))
@@ -96,8 +96,8 @@ class EpothekeTest {
             val epotheke =
                 Epotheke(
                     assertNotNull(activity.factory),
-                    Service.DEV.url,
-                    Service.DEV.tenantToken,
+                    SERVICE_URL_DEV,
+                    TENANT_TOKEN_VALID_DEV,
                     wsSessionId,
                 )
 
@@ -129,8 +129,8 @@ class EpothekeTest {
             val epotheke =
                 Epotheke(
                     assertNotNull(activity.factory),
-                    Service.DEV.url,
-                    Service.DEV.tenantToken,
+                    SERVICE_URL_DEV,
+                    TENANT_TOKEN_VALID_DEV,
                     null,
                 )
 
@@ -140,8 +140,8 @@ class EpothekeTest {
             val epothekeNew =
                 Epotheke(
                     assertNotNull(activity.factory),
-                    Service.DEV.url,
-                    Service.DEV.tenantToken,
+                    SERVICE_URL_DEV,
+                    TENANT_TOKEN_VALID_DEV,
                     res.wsSessionId,
                 )
 
