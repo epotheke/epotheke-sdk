@@ -2,6 +2,10 @@ package com.epotheke.sdk
 
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
 import com.epotheke.erezept.protocol.PrescriptionProtocolImp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.launch
 import org.openecard.sc.iface.TerminalFactory
 
 class Epotheke(
@@ -9,7 +13,7 @@ class Epotheke(
     serviceUrl: String,
     tenantToken: String?,
     wsSessionId: String? = null,
-) {
+) : AutoCloseable {
     private val ws = WebsocketCommon(serviceUrl, tenantToken, wsSessionId)
 
     val cardlinkAuthenticationProtocol =
@@ -18,4 +22,11 @@ class Epotheke(
             ws,
         )
     val prescriptionProtocol = PrescriptionProtocolImp(ws)
+
+    @OptIn(InternalCoroutinesApi::class)
+    override fun close() {
+        CoroutineScope(Dispatchers.IO).launch {
+            ws.close(1000, "Client stopped.")
+        }
+    }
 }
