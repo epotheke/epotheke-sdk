@@ -7,6 +7,7 @@ import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
 import dev.mokkery.mock
+import dev.mokkery.spy
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -38,7 +39,7 @@ class EpothekeTest {
         }
     }
 
-    val uiMock = mock<UserInteraction> { }
+    val uiMock = spy(userInterActionStub())
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test

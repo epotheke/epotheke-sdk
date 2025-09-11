@@ -20,6 +20,7 @@ import dev.mokkery.matcher.any
 import dev.mokkery.matcher.eq
 import dev.mokkery.matcher.matching
 import dev.mokkery.mock
+import dev.mokkery.spy
 import dev.mokkery.verify.VerifyMode.Companion.exactly
 import dev.mokkery.verifySuspend
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -105,7 +106,7 @@ class CardlinkTest {
         }
     }
 
-    val uiMock = mock<UserInteraction> { }
+    val uiMock = spy(userInterActionStub())
 
     private suspend fun callEstablishCardLink(
         activity: TestActivity,

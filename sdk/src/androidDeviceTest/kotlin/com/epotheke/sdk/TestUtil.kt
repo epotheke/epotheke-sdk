@@ -12,6 +12,10 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.test.core.app.launchActivity
+import com.epotheke.cardlink.CardLinkErrorCodes
+import com.epotheke.cardlink.ResultCode
+import com.epotheke.cardlink.UserInteraction
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +49,8 @@ const val TAN_INVALID = "AAA"
 
 const val CAN_CORRECT = "123123"
 const val CAN_WRONG = "666666"
+
+private val logger = KotlinLogging.logger { }
 
 class TestActivity : Activity() {
     var textView: TextView? = null
@@ -154,6 +160,64 @@ class TestActivity : Activity() {
         }
     }
 }
+
+fun userInterActionStub() =
+    object : UserInteraction {
+        override suspend fun requestCardInsertion() {
+            logger.debug { "requestCardInsertion" }
+        }
+
+        override suspend fun onCardRecognized() {
+            logger.debug { "onCardRecognized" }
+        }
+
+        override suspend fun onCardInsufficient() {
+            logger.debug { "onCardInsufficient" }
+        }
+
+        override suspend fun onCardRemoved() {
+            logger.debug { "onCardRemoved" }
+        }
+
+        override suspend fun onCanRequest(): String {
+            logger.debug { "onCanRequest" }
+            throw NotImplementedError("Methods returning must be mocked.")
+        }
+
+        override suspend fun onCanRetry(
+            resultCode: CardLinkErrorCodes.ClientCodes,
+            errorMessage: String?,
+        ): String {
+            logger.debug { "onCanRetry" }
+            throw NotImplementedError("onCanRetry not mocked - Methods returning must be mocked.")
+        }
+
+        override suspend fun onPhoneNumberRequest(): String {
+            logger.debug { "onPhoneNumberRequest" }
+            throw NotImplementedError("onPhoneNumberRequest not mocked - Methods returning must be mocked.")
+        }
+
+        override suspend fun onPhoneNumberRetry(
+            resultCode: ResultCode,
+            errorMessage: String?,
+        ): String {
+            logger.debug { "onPhoneNumberRetry" }
+            throw NotImplementedError("onPhoneNumberRetry not mocked - Methods returning must be mocked.")
+        }
+
+        override suspend fun onTanRequest(): String {
+            logger.debug { "onTanRequest" }
+            throw NotImplementedError("onTanRequest not mocked - Methods returning must be mocked.")
+        }
+
+        override suspend fun onTanRetry(
+            resultCode: ResultCode,
+            errorMessage: String?,
+        ): String {
+            logger.debug { "onTanRetry" }
+            throw NotImplementedError("onTanRetry not mocked - Methods returning must be mocked.")
+        }
+    }
 
 private suspend fun countDown(
     activity: TestActivity,
