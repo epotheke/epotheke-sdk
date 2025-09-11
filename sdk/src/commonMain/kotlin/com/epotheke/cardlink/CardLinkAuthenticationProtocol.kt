@@ -2,8 +2,8 @@ package com.epotheke.cardlink
 
 import com.epotheke.CardLinkProtocolBase
 import com.epotheke.Websocket
-import com.epotheke.cardlink.CardlinkAuthenticationConfig.readInsurerData
-import com.epotheke.cardlink.CardlinkAuthenticationConfig.readPersonalData
+import com.epotheke.cardlink.CardLinkAuthenticationConfig.readInsurerData
+import com.epotheke.cardlink.CardLinkAuthenticationConfig.readPersonalData
 import com.epotheke.prescription.prescriptionJsonFormatter
 import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -55,12 +55,12 @@ fun gunzip(data: UByteArray) =
             )
         }.readByteArray()
 
-object CardlinkAuthenticationConfig {
+object CardLinkAuthenticationConfig {
     var readPersonalData = false
     var readInsurerData = false
 }
 
-class CardlinkAuthResult(
+class CardLinkAuthResult(
     var personalData: PersoenlicheVersichertendaten? = null,
     var insurerData: AllgemeineVersicherungsdaten? = null,
     var cardSessionId: String? = null,
@@ -75,7 +75,7 @@ internal data class SessionInfo(
     val phoneRegistered: Boolean = false,
 )
 
-class CardlinkAuthenticationProtocol(
+class CardLinkAuthenticationProtocol(
     private val terminalFactory: TerminalFactory,
     private val ws: Websocket,
 ) : CardLinkProtocolBase(ws) {
@@ -91,7 +91,7 @@ class CardlinkAuthenticationProtocol(
     }
 
     internal lateinit var sessionInfo: SessionInfo
-    private val cardLinkAuthResult = CardlinkAuthResult()
+    private val cardLinkAuthResult = CardLinkAuthResult()
     lateinit var interaction: UserInteraction
 
     @Throws(
@@ -100,7 +100,7 @@ class CardlinkAuthenticationProtocol(
         CancellationException::class,
     )
     @OptIn(ExperimentalUnsignedTypes::class)
-    suspend fun establishCardlink(interaction: UserInteraction): CardlinkAuthResult =
+    suspend fun establishCardLink(interaction: UserInteraction): CardLinkAuthResult =
         mapErrors {
             this.interaction = interaction
             ws.connectWithTimeout()
@@ -167,7 +167,7 @@ class CardlinkAuthenticationProtocol(
 
     // move this maybe
     // don't forget throws for funcs which use this is CardlinkError, is CardlinkClientError, cancellation
-    private inline fun mapErrors(block: () -> CardlinkAuthResult): CardlinkAuthResult {
+    private inline fun mapErrors(block: () -> CardLinkAuthResult): CardLinkAuthResult {
         try {
             return block()
         } catch (e: Exception) {

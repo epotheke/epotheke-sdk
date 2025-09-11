@@ -54,12 +54,10 @@ dependencies {
     implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
 
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.3")
 
     // the actual epotheke library
     implementation("com.epotheke:sdk:$epothekeSdkVersion") {
-        // TODO check this
         exclude(group = "io.github.oshai", module = "kotlin-logging-android-debug")
     }
 

@@ -1,6 +1,6 @@
 package com.epotheke
 
-import com.epotheke.cardlink.CardlinkAuthenticationProtocol
+import com.epotheke.cardlink.CardLinkAuthenticationProtocol
 import com.epotheke.prescription.PrescriptionProtocolImp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,8 +17,8 @@ class Epotheke(
 ) : AutoCloseable {
     private val ws = Websocket(serviceUrl, tenantToken, wsSessionId)
 
-    val cardlinkAuthenticationProtocol =
-        CardlinkAuthenticationProtocol(
+    val cardLinkAuthenticationProtocol =
+        CardLinkAuthenticationProtocol(
             terminalFactory,
             ws,
         )

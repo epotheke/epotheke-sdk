@@ -4,11 +4,11 @@ import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.Websocket
 import com.epotheke.cardlink.CardCommunicationResultCode
+import com.epotheke.cardlink.CardLinkAuthResult
+import com.epotheke.cardlink.CardLinkAuthenticationConfig
+import com.epotheke.cardlink.CardLinkAuthenticationProtocol
 import com.epotheke.cardlink.CardLinkClientError
 import com.epotheke.cardlink.CardLinkError
-import com.epotheke.cardlink.CardlinkAuthResult
-import com.epotheke.cardlink.CardlinkAuthenticationConfig
-import com.epotheke.cardlink.CardlinkAuthenticationProtocol
 import com.epotheke.cardlink.ResultCode
 import com.epotheke.cardlink.TanRetryLimitExceeded
 import dev.mokkery.answering.calls
@@ -46,7 +46,7 @@ import kotlin.time.DurationUnit
 private val logger = KotlinLogging.logger {}
 
 @RunWith(AndroidJUnit4::class)
-class CardlinkTest {
+class CardLinkTest {
     private val testTimeout = 10.seconds
 
     @BeforeAll
@@ -106,14 +106,14 @@ class CardlinkTest {
     private suspend fun callEstablishCardLink(
         activity: TestActivity,
         ws: Websocket,
-    ): CardlinkAuthResult {
+    ): CardLinkAuthResult {
         val proto =
-            CardlinkAuthenticationProtocol(
+            CardLinkAuthenticationProtocol(
                 assertNotNull(activity.factory),
                 ws,
             )
 
-        return proto.establishCardlink(uiMock)
+        return proto.establishCardLink(uiMock)
     }
 
     @OptIn(ExperimentalUnsignedTypes::class)
@@ -421,7 +421,7 @@ class CardlinkTest {
                     activity.msg("Card detected. Don't move")
                 }
 
-                CardlinkAuthenticationConfig.readPersonalData = true
+                CardLinkAuthenticationConfig.readPersonalData = true
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
@@ -452,7 +452,7 @@ class CardlinkTest {
                     activity.msg("Card detected. Don't move")
                 }
 
-                CardlinkAuthenticationConfig.readInsurerData = true
+                CardLinkAuthenticationConfig.readInsurerData = true
                 val result =
                     assertNotNull(
                         callEstablishCardLink(

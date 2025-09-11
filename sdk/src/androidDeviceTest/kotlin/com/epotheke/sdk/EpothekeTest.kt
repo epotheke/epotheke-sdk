@@ -3,8 +3,6 @@ package com.epotheke.sdk
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.Epotheke
-import com.epotheke.Websocket
-import com.epotheke.cardlink.CardLinkClientError
 import com.epotheke.prescription.PrescriptionProtocolException
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
@@ -92,7 +90,7 @@ class EpothekeTest {
                     TENANT_TOKEN_VALID_DEV,
                 )
 
-            assertNotNull(epotheke.cardlinkAuthenticationProtocol.establishCardlink(uiMock))
+            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
             val prescriptions =
                 assertNotNull(
                     epotheke.prescriptionProtocol.requestPrescriptions(),
@@ -131,8 +129,8 @@ class EpothekeTest {
                     wsSessionId,
                 )
 
-            assertNotNull(epotheke.cardlinkAuthenticationProtocol.establishCardlink(uiMock))
-            assertNotNull(epotheke.cardlinkAuthenticationProtocol.establishCardlink(uiMock))
+            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
             val prescriptions =
                 assertNotNull(
                     epotheke.prescriptionProtocol.requestPrescriptions(),
@@ -164,7 +162,7 @@ class EpothekeTest {
                     null,
                 )
 
-            val res = assertNotNull(epotheke.cardlinkAuthenticationProtocol.establishCardlink(uiMock))
+            val res = assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
 
             // new instance and connection with session id from last result
             val epothekeNew =

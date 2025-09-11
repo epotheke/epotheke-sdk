@@ -52,71 +52,71 @@ class ProcessAlreadyStarted(
 
 class UnknownWebsocketMessage(
     message: String? = null,
-) : CardLinkError(message ?: " Unknown Web Socket message", 1007)
+) : CardLinkError(message ?: "Unknown Web Socket message", 1007)
 
 class InvalidWebsocketMessage(
     message: String? = null,
 ) : CardLinkError(
         message
-            ?: " Invalid Web Socket message, can occur if required data are missing or message encoding is wrong",
+            ?: "Invalid Web Socket message, can occur if required data are missing or message encoding is wrong",
         1008,
     )
 
 class EgkLimitReached(
     message: String? = null,
-) : CardLinkError(message ?: " Limit of 10 eGKs per session reached", 1009)
+) : CardLinkError(message ?: "Limit of 10 eGKs per session reached", 1009)
 
 class SessionExpired(
     message: String? = null,
-) : CardLinkError(message ?: " session time has exceeded the permissible 15 minutes", 1010)
+) : CardLinkError(message ?: "session time has exceeded the permissible 15 minutes", 1010)
 
 class ExpiredCertificate(
     message: String? = null,
-) : CardLinkError(message ?: " Expired eGK certificate", 1011)
+) : CardLinkError(message ?: "Expired eGK certificate", 1011)
 
 class InvalidCertificate(
     message: String? = null,
-) : CardLinkError(message ?: " Invalid eGK certificate (signature invalid, not a valid eGK certificate, ...)", 1012)
+) : CardLinkError(message ?: "Invalid eGK certificate (signature invalid, not a valid eGK certificate, ...)", 1012)
 
 class CertificateValidityMismatch(
     message: String? = null,
-) : CardLinkError(message ?: " Mismatch between certificate validity periods of X.509 and CVC", 1013)
+) : CardLinkError(message ?: "Mismatch between certificate validity periods of X.509 and CVC", 1013)
 
 class InvalidGdo(
     message: String? = null,
-) : CardLinkError(message ?: " Invalid EF.GDO", 1014)
+) : CardLinkError(message ?: "Invalid EF.GDO", 1014)
 
 class IccsnMismatch(
     message: String? = null,
-) : CardLinkError(message ?: " Mismatch between ICCSN in CV certificate and EF.GDO", 1015)
+) : CardLinkError(message ?: "Mismatch between ICCSN in CV certificate and EF.GDO", 1015)
 
 class InvalidEfAtr(
     message: String? = null,
-) : CardLinkError(message ?: " Invalid EF.ATR", 1016)
+) : CardLinkError(message ?: "Invalid EF.ATR", 1016)
 
 class UnableToSendSms(
     message: String? = null,
-) : CardLinkError(message ?: " Unable to send SMS for Tan validation", 1017)
+) : CardLinkError(message ?: "Unable to send SMS for Tan validation", 1017)
 
 class NotAdmissibleTelPrefix(
     message: String? = null,
-) : CardLinkError(message ?: " Not admissible telephone number prefix, only +49... is allowed", 1018)
+) : CardLinkError(message ?: "Not admissible telephone number prefix, only +49... is allowed", 1018)
 
 class UnknownError(
     message: String? = null,
 ) : CardLinkError(
-        message ?: " Unknown error, probably an internal server error happened or used on an unknown result code",
+        message ?: "Unknown error, probably an internal server error happened or used on an unknown result code",
         1019,
     )
 
 class TanExpired(
     message: String? = null,
-) : CardLinkError(message ?: " Tan has expired", 1022)
+) : CardLinkError(message ?: "Tan has expired", 1022)
 
 class TanRetryLimitExceeded(
     message: String? = null,
-) : CardLinkError(message ?: " Tan retry limit exceeded", 1024)
+) : CardLinkError(message ?: "Tan retry limit exceeded", 1024)
 
 class ServerTimeout(
     message: String? = null,
-) : CardLinkError(message ?: " If the client does not receive an APDU message from the CardLink service", 1025)
+) : CardLinkError(message ?: "If the client does not receive an APDU message from the CardLink service", 1025)

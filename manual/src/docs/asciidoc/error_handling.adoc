@@ -1,250 +1,152 @@
 == Error Handling
 
-The epotheke SDK provides different methods of providing errors, which depend on the time when an error occurs and the underlying reason.
+Except `PrescriptionFetchError` (see below) all possible errors during executions of SDK functionality can be handled by catching exceptions thrown by the functions of `CardLinkProtocols`.
+Note that an exception always means that the ongoing call is aborted and can't be recovered.
+A new attempt means calling the function again, starting over.
 
-In particular one can distinguish between 
+=== establishCardLink()
+`establishCardLink` can throw two types of Exceptions:
+- `CardLinkClientError` which indicates a problem on client side without server communication
+- `CardLinkError` indicating that the epotheke service responded with an error
 
-* **General Service Errors**
-* **Operational Errors**
+Both types have subclasses providing more detailed information.
 
-=== General Service Error Codes
-
-General Service Error Codes show problems which are not or not directly related to the process of an authentication, but prevent a successful execution.
-As an example of a general error is that NFC is not available or not enabled on the device.
-These codes occur in the `SdkErrorHandler` as result code within the `ServiceErrorResponse` object.
-The latter also contains a more descriptive message which can be obtained by `getErrorMessage`.
-
-The codes are:
-[cols="1,1"]
-|===
-|Error Code |Description
-
-|NOT_AUTHORIZED
-|Indicates that the requesting app is not authorized to use the CardLink servie.
-
-|NFC_NOT_AVAILABLE
-|Indicates that NFC is not available on the device.
-
-|NFC_NOT_ENABLED
-|Indicates that NFC is not enabled on the device.
-
-|NO_CONNECTION
-|Indicates that no connection to the CardLink service could be established.
-
-|LOST_CONNECTION
-|Indicates that the connection to the CardLink service was lost.
-
-|NFC_NO_EXTENDED_LENGTH
-|Indicates that the corresponding smartphone device does not support nfc with extended length.
-
-|NOT_REQUIRED_API_LEVEL
-|Indicates that the corresponding device is rather old and does not support the required API level.
-
-|ALREADY_STARTED
-|Indicates that a CardLink process is already started.
-| ALREADY_STOPPED
-|Indicates that a CardLink process is already stopped.
-
-|INTERNAL_ERROR
-|Indicates other internal errors.
-
-|SHUTDOWN_FAILED
-|Indicates that the shutdown of the app failed for some internal reason.
+==== CardLinkClientError subclasses
 
 |===
+|Classname | Info
 
-=== Operational Error Codes
+|CanStepInterrupted
+|The CAN based channel establishment was interrupted
 
-==== Major Result Codes
-When a CardLink process is finished, the `ActivationResult` is provided within the completion handler.
-This result contains a major `ResultCode`, which can be `OK`, indicating a successful process or other codes indicating some problem.
+|CardRemoved
+|The card was removed or connection was interrupted
 
-Those major codes are:
-[cols="1,1"]
-|===
-|`ResultCode` | Description
+|CardInsufficient
+|The provided card is not sufficient
 
-|OK
-|The CardLink process was successful.
-|REDIRECT
-|Is currently not used for CardLink.
-|CLIENT_ERROR
-|An error occured on the client side.
-|INTERRUPTED
-|The process was aborted, e.g. by cancellation of the user.
-|INTERNAL_ERROR
-|An internal problem within the SDK happened.
-|DEPENDING_HOST_UNREACHABLE
-|The CardLink server was not able to connect to a needed service (e.g. the electronic prescription service).
-|BAD_REQUEST
-|The CardLink service was not able to read and understand the sent data.
+|OtherPaceError
+|Error during PACE
 
+|OtherNfcError
+|Error during NFC communication
+
+|Timeout
+|A timeout happened
+
+|OtherClientError
+|An error happened on client side
 |===
 
-In addition to the Major Result Codes listed above, there may be a minor code within the `AuthenticationResult`.
-Those minor error codes can contain CardLink specific error codes, which are listed in the following. 
+All classes carry a `message` property providing information.
+In addition, all may carry a `cause` property carrying the underlying exception.
 
 
-==== Cardlink specific Minor Error Codes
+==== CardLinkError subclasses
+If the service answers with an error code, the SDK transfers this code to one of the following exceptions:
 
-Cardlink specific errors are divided into 
-
-* **Client Error Codes** - are provided by the SDK directly and 
-* **Cardlink Error Codes** - are problems, which are delivered from the CardLink service to the SDK.
-
-These codes can occur as a minor error code within an `AuthenticationResult` object, if the process ends.
-They are also used during a `CardlinkInteraction` phase, to indicate problems with the current step.
-The latter happens when a problem is recoverable and a step can be retried.
-For example, if a wrong CAN was provided by the user in the first `onCanRequest`, the SDK will call `onCanRetry` which enables to retry the input of the CAN and provides a corresponding error code.
-
-===== Client Error Codes
-
-Client error codes will be solely used on the client side.
-That means that those errors are produced without any communication to the CardLink service.
-Usually, those errors indicate a failed card authentication by interrupting the process, providing a wrong CAN or similar errors.
-In general, the following error codes are used:
-
-[cols="1,1,1"]
 |===
-|Client Error Code |Description | Occurrence
+|Classname | Info
 
-|CAN_EMPTY
-|No CAN or an empty CAN was provided.
-|During interaction
+|NotFound
+|Requested Entity Not found
 
-|CAN_TOO_LONG
-|A CAN with more than 6 digits was provided.
-|During interaction
+|SicctError
+|SICCT service returns an error
 
-|CAN_NOT_NUMERIC
-|CAN contains one or more non-numeric characters.
-|During interaction
+|ProcessAlreadyStarted
+|Register eGK process is already ongoing
 
-|CAN_STEP_INTERRUPTED
-|Entering the CAN and the subsequent card authentication process was interrupted or cancelled by the user for example.
-|During interaction, Within authentication result
+|UnknownWebsocketMessage
+|Unknown Web Socket message
 
-|CARD_REMOVED
-|The card was removed from the NFC field while communicating with it.
-|During interaction, Within authentication result
+|InvalidWebsocketMessage
+|Invalid Web Socket message, can occur if required data are missing or message encoding is wrong
 
-|CAN_INCORRECT
-|An incorrect CAN was provided.
-|During interaction
+|EgkLimitReached
+|Limit of 10 eGKs per session reached
 
-|OTHER_PACE_ERROR
-|Used for other PACE errors that can happen when communicating with the card. Further details are provided in the error message.
-|During interaction, Within authentication result
+|SessionExpired
+|session time has exceeded the permissible 15 minutes
 
-|INVALID_SLOT_HANDLE
-|Can occur when the "slot handle" of the card has become invalid, which may occur after some NFC-related communication error.
-|During interaction, Within authentication result
+|ExpiredCertificate
+|Expired eGK certificate
 
-|OTHER_NFC_ERROR
-|Used for other NFC errors that can occur when communicating with the card. Further details are provided in the error message.
-|During interaction, Within authentication result
+|InvalidCertificate
+|Invalid eGK certificate (signature invalid, not a valid eGK certificate, ...)
 
-|CLIENT_TIMEOUT
-|Indicates that the CardLink process timed out, which may be due to other errors. 
-|Within authentication result
+|CertificateValidityMismatch
+|Mismatch between certificate validity periods of X.509 and CVC
 
-|OTHER_CLIENT_ERROR
-|For all other errors. Further details are provided in the error message.
-|Within authentication result
+|InvalidGdo
+|Invalid EF.GDO
+
+|IccsnMismatch
+|Mismatch between ICCSN in CV certificate and EF.GDO
+
+|InvalidEfAtr
+|Invalid EF.ATR
+
+|UnableToSendSms
+|Unable to send SMS for Tan validation
+
+|NotAdmissibleTelPrefix
+|Not admissible telephone number prefix, only +49... is allowed
+
+|UnknownError
+|Unknown error, probably an internal server error happened or used on an unknown result code
+
+|TanExpired
+|Tan has expired
+
+|TanRetryLimitExceeded
+|Tan retry limit exceeded
+
+|ServerTimeout
+|If the client does not receive an APDU message from the CardLink service
 
 |===
 
-===== CardLink Error Codes
+=== fetchPrescriptions
+`fetchPrescriptions` can throw `PrescriptionProtocolException` which carries a `genericErrorMessage` property and an optional `cause` property.
+`cause` may reference an underlying exception.
 
-This section lists all errors that are returned by the CardLink service.
-The CardLink service returns those errors via the `TaskListErrorPayload`, where the error code is transmitted via an Integer value under the hood.
-This Integer value is mapped to a list of result codes which are listed in the following:
+`genericErrorMessage` carries a `GenericErrorMessage` object which provides an `errorCode` and an `errorMessage`.
 
-[cols="1,1,1"]
-|===
-|CardLink Error Code |Description | Occurrence
+The possible codes are:
 
-|NOT_FOUND
-|Is returned when a requested or referenced entity could not be found in the CardLink service.
-|During interaction, Within authentication result
+- INVALID_MESSAGE_DATA
+- TI_UNAVAILABLE
+- TI_SERVICE_ERROR
+- CARD_EXPIRED
+- CARD_REVOKED
+- CARD_INVALID
+- CARD_ERROR
+- UNSUPPORTED_ENVELOPE
+- NO_PRESCRIPTIONS_AVAILABLE
+- NOT_FOUND
+- UNKNOWN_ERROR
 
-|SICCT_ERROR
-|Is used when an error happens during SICCT communication with the "Konnektor".
-|Within authentication result
+==== PrescriptionFetchError
+In addition to the `prescriptionBundelList` in `AvailablePrescriptionList` there is an optional property `fetchErrors` which may contain a list of `PrescriptionFetchError`.
+These errors indicate errors which did not happen in epotheke service but in third-party services and are associated to specific prescriptions.
+A `PrescriptionFetchError` object contains the `prescriptionId` of the associated Prescription, an `errorCode` and an `errorMessage`.
+The possible codes are:
 
-|PROCESS_ALREADY_STARTED
-|Indicates that a CardLink process is already ongoing. This error may occur for example, when the `registerEGK` message is sent twice.
-|Within authentication result
+- TI_FORBIDDEN
+- TI_PRESCRIPTION_NOT_FOUND
+- TI_TOO_MANY_REQUESTS_SENT
+- TI_INTERNAL_SERVER_ERROR
+- TI_UNKNOWN_ERROR
+- CONNECT_TIMEOUT_ERROR
+- SERIALIZATION_ERROR
+- UNKNOWN_ERROR
 
-|UNKNOWN_WEBSOCKET_MESSAGE
-|Indicates that an unknown/unsupported WebSocket message was received by the CardLink service.
-|Within authentication result
+=== CancellationException
+Note that both functions `establishCardLink`  and `fetchPrescriptions` may also throw a CancellationException due to the fact that these methods are implemented as suspendable functions in kotlin coroutines.
 
-|INVALID_WEBSOCKET_MESSAGE
-|Indicates that the CardLink service received an invalid WebSocket message. This can occur if required data are missing or the encoding of the message is wrong.
-|Within authentication result
+=== iOS specific error handling
+Exceptions from the epotheke SDK are provided to iOS platforms within `NSError` objects.
+Within those `NSError` objects the `domain` property is set to `KotlinException` and the exception itself can be obtained via `userInfo` with the key: "KotlinException".
+An example on how to make use of this can be found in the demo code `demo-ios-standalone`.
 
-|EGK_LIMIT_REACHED
-|Is used when the limit of 10 eGK transactions per session is reached.
-|Within authentication result
-
-|SESSION_EXPIRED
-|Is used when the established CardLink session has exceeded the permissible 15 minutes. A new WebSocket connection and a new phone pairing must be established.
-|Within authentication result
-
-|EXPIRED_CERTIFICATE
-|If the CardLink service receives an expired certificate in the `registerEGK` message.
-|Within authentication result
-
-|INVALID_CERTIFICATE
-|Indicates that the CardLink service received an invalid eGK certificate. This can occur when the signature is invalid, a non-eGK certificate is sent or a production eGK certificate is sent when the staging environment is used.
-|Within authentication result
-
-|CERTIFICATE_VALIDITY_MISMATCH
-|Is used on a mismatch between certificate validity periods of X.509 and CVC.
-|Within authentication result
-
-|INVALID_GDO
-|CardLink service is not able to parse the received EF.GDO in the `registerEGK` message.
-|Within authentication result
-
-|ICCSN_MISMATCH
-|Indicates a mismatch between the ICCSN in the CV certificate and the EF.GDO.
-|Within authentication result
-
-|INVALID_EF_ATR
-|CardLink service is not able to parse the received EF.ATR in the `registerEGK` message.
-|Within authentication result
-
-|UNABLE_TO_SEND_SMS
-|CardLink service is not able to send out SMS messages for TAN validation due to some internal problem.
-|Within authentication result
-
-|NOT_ADMISSIBLE_TEL_PREFIX
-|Not admissible telephone number prefix is used. CardLink allows only German telephone numbers with "+49" as prefix.
-|During interaction
-
-|NUMBER_BLOCKED
-|Indicates that a blocked phone number is used.
-|During interaction
-
-|TAN_EXPIRED
-|If the TAN for the SMS-TAN validation has expired.
-|During interaction
-
-|TAN_INCORRECT
-|Indicates that a wrong TAN was provided.
-|During interaction
-
-|TAN_RETRY_LIMIT_EXCEEDED
-|The TAN retry limit is exceeded.
-|During interaction
-
-|SERVER_TIMEOUT
-|Used when the client does not receive any more commands of the CardLink service. This can happen when the App is waiting for the `InternalAuthenticate` APDU but does not receive one due to some communication error for example.
-|Within authentication result
-
-|UNKNOWN_ERROR
-|Indicates an unknown error and is used on internal server errors for example. Further details are provided in the error message.
-|During interaction, Within authentication result
-|===

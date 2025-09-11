@@ -197,13 +197,13 @@ struct ContentView: View {
         let terminalFactory = IosTerminalFactory.companion.instance
         let epo = Epotheke(
             terminalFactory: terminalFactory, serviceUrl: url, tenantToken: tenantToken, wsSessionId: nil)
-        let authProt = epo.cardlinkAuthenticationProtocol
-        CardlinkAuthenticationConfig().readPersonalData = true
-        CardlinkAuthenticationConfig().readInsurerData = false
+        let authProt = epo.cardLinkAuthenticationProtocol
+        CardLinkAuthenticationConfig().readPersonalData = true
+        CardLinkAuthenticationConfig().readInsurerData = false
 
         Task {
             do {
-                let authResult = try await authProt.establishCardlink(interaction: CardLinkInteraction(v: self))
+                let authResult = try await authProt.establishCardLink(interaction: CardLinkInteraction(v: self))
                 epotheke = epo
                 status =
                     "Cardlink established for \(authResult.personalData?.versicherter?.person?.vorname ?? "vn") \(authResult.personalData?.versicherter?.person?.nachname ?? "nn")"

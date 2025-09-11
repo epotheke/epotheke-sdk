@@ -5,36 +5,39 @@ It takes care of the communication with the CardLink service and the handling of
 
 Demo applications for native android and ios apps can be found in folders: 
 - [demo-android-standalone](demo-android-standalone)
-- [demo-ios-standalone](demo-ios-standalone)
+- [demo-ios-standalone](demo-ios-standalone) (upcoming)
 
 The latest documentation can be found at https://mvn.ecsec.de/repository/data-public/epotheke/sdk/doc/latest/.
 
 ## App Integration
 
-The epotheke SDK provides an API which can be integrated directly using the `SdkCore` class.
+The epotheke SDK provides an API which can be integrated directly using the `Epotheke` class.
 
-This class needs to be instantiated and given the following: 
-- implementation of `CardLinkControllerCallback` for providing the CardLink result and protocols for subsequent processes (e.i. Prescription retrieval/selection)
-- implementation of `CardLinkInteraction` for exchanging data between the user and the CardLink service
-- implementation of `SdkErrorHandler` for handling errors related to the SDK initialisation
-- iosOnly: implementation of `IOSNFCOptions` for defining messages during NFC communications
+`Epotheke` class needs as parameters:
+- The service url
+- A tenant token for access to the service
+- An optional `websocketSessionId` to reconnect to an existing session.
+- On android, an instance of `AndroidTerminaFactory` for NFC communication
 
-After the initialisation the method `activate()` can be called to start a cardlink process.
-The call needs the parameters: 
-- `waitForSlot` determines if the call should enqueue a activation or return immediately if one is allready running.
-- `cardLinkUrl` the url of the CardLink service to use
-- `tenantToken` a JWT provided by the service provider, for environments allowing non-authenticated acces it can be null
+`AndroidTerminaFactory` can be gathered by calling `AndroidTerminalFactory.instance(activity)` providing a reference to the android activity.
 
-The proceses are thread-safe and gurantee that only one process is running. 
-Given callback handlers will only be called by the ongoing session.
+An instance of `Epotheke` class provides instances of: 
+- `CardlinkAuthenticationProtocol`
+- `PrescriptionProtocol`
+ 
+which can be used to perform use-cases.
+ 
+`CardlinkAuthenticationProtocol` allows to call `establishCadrlink(interaction)` which performs an authentication process 
+with epotheke using SMS/Tan verification and an eGK card. `interaction` has to be an implementation of `CardlinkInteraction` interface.
+This instance of `CardlinkInteraction` enables the protocol to get needed data and inform calling code about current steps.
+Since it is implemented by a consumer of the sdk, it has full control of how the process is presented to the user etc.
 
-An ongoing process can be cancelled calling `cancelOngoingActivation()`
+`PrescriptionProtocol` allows to call `requestPrescriptions()` which fetches available Prescriptions for registered eGK cards in the session.
 
-To cleanup all resources `destroyOecContext()` should be called.
+For cleanup resources `close()` close can be called on the instance of epotheke.
 
-
-On android, it is possible to extend the abstract SdkActivity class as it is done in [demo-android-standalone](demo-android-standalone). The abstract class already handles life-cycle hooks needed for NFC communications.
-If this class is not used, please refer to its implementation which hooks have to be called. 
+Note: On android a consuming app hast to ensure that intents in `onNewIntent()` function is handed to the `AndroidTerminalFactory` to allow 
+reading eGK cards via NFC. Filtering for appropriate tags and switching managing the NFC stack is done in the sdk.
 
 For details on how to configure your app project, refer to the [manual](https://mvn.ecsec.de/repository/data-public/epotheke/sdk/doc/latest/).
 
@@ -42,17 +45,15 @@ For details on how to configure your app project, refer to the [manual](https://
 
 
 ## Building the SDK
-
-Before building the SDK, it is necessary to setup the android SDK either [directly](https://developer.android.com/tools/sdkmanager) or together with [Android Studio](https://developer.android.com/studio).
-Make sure to set the `ANDROID_HOME` variable as explained [here](https://developer.android.com/tools/variables).
+```bash
+./gradlew build
+```
 
 In order to build the SDK for use in an app, it can be published to the local maven repository with the following command:
 ```bash
 ./gradlew publishToMavenLocal
 ```
 After successful execution of the command, the SDK can be used as shown in the demo application.
-The version of the SDK is defined in the [gradle.properties](gradle.properties) file.
-
 
 ## License
 
