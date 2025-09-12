@@ -52,6 +52,7 @@ import org.openecard.sc.pcsc.AndroidTerminalFactory
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import androidx.core.content.edit
+import com.epotheke.cardlink.CardlinkAuthenticationConfig
 import kotlinx.coroutines.Job
 
 private val logger = KotlinLogging.logger { }
@@ -131,6 +132,7 @@ class EpothekeActivity : AppCompatActivity() {
      * Note that the AndroidTerminalFactory needs a reference to the activity and we also store a referenced of it (see onNewIntent).
      */
     private fun createEpotheke() {
+
 
         epotheke = Epotheke(
             AndroidTerminalFactory.instance(this).also { fact ->
@@ -476,11 +478,30 @@ class EpothekeActivity : AppCompatActivity() {
 
         return lifecycleScope.launch(Dispatchers.IO) {
             try {
+                //Switch on reading of personal data during authentication
+                CardlinkAuthenticationConfig.readPersonalData = true
+                CardlinkAuthenticationConfig.readInsurerData = true
 
                 epotheke?.cardlinkAuthenticationProtocol?.establishCardlink(interaction = userInteraction)
                     ?.let { result: CardlinkAuthResult ->
                         authenticationResults.add(result)
-                        showInfo("WS-Session: ${result.wsSessionId}\n ICCSN: ${result.iccsn}")
+                        showInfo(
+                            listOf(
+                                "Success",
+                                "\n",
+                                "\n",
+                                "Insuree: ",
+                                result.personalData?.versicherter?.person?.vorname,
+                                " ",
+                                result.personalData?.versicherter?.person?.nachname,
+                                "\n",
+                                "Insurer: ",
+                                result.insurerData?.versicherter?.versicherungsschutz?.kostentraeger?.name,
+                                "\n",
+                                "ICCSN: ",
+                                result.iccsn,
+                            ).joinToString()
+                        )
                     }
 
             } catch (e: Exception) {
@@ -516,7 +537,7 @@ class EpothekeActivity : AppCompatActivity() {
                  * Each outer list is associated with a card and contains available prescriptions for it.
                  * The inner lists contains types describing prescriptions.
                  *
-                 * For the showcase we simply build a string containing names of these elements from the lists associated witht iccsns.
+                 * For the showcase we simply build a string containing names of these elements from the lists associated witth iccsns.
                  */
                 val text = result?.availablePrescriptionLists?.joinToString(separator = "\n") {
                     val meds = it.prescriptionBundleList.joinToString(
