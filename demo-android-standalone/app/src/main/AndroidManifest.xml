@@ -22,6 +22,7 @@
             </intent-filter>
         </activity>
         <activity
+            android:windowSoftInputMode="adjustResize"
             android:name="com.epotheke.demo.EpothekeActivity"
             android:launchMode="singleTop"
             android:clearTaskOnLaunch="true"

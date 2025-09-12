@@ -53,9 +53,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import androidx.core.content.edit
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger { }
 
@@ -122,8 +119,6 @@ class EpothekeActivity : AppCompatActivity() {
      */
     private var authenticationResults: MutableList<CardlinkAuthResult> = mutableListOf()
 
-    private var curService = Service.MOCK
-
     private var currentJob: Job? = null
 
     /**
@@ -140,30 +135,35 @@ class EpothekeActivity : AppCompatActivity() {
         epotheke = Epotheke(
             AndroidTerminalFactory.instance(this).also { fact ->
                 terminalFactory = fact
-            }, curService.url, curService.tenantToken, null
+            }, storedValues.env.url, storedValues.env.tenantToken, null
         )
 
         //just for showing the current environment
         findViewById<TextView>(R.id.service).apply {
-            text = "Service: ${curService.url}"
+            text = "Service: ${storedValues.env.url}"
         }
     }
 
     private fun switchEnv(env: Service) {
-        setInputActive(false)
-        setBusy(false)
 
         currentJob?.cancel()
-        curService = env
+        currentJob = null
+
+        switchInputs(false)
+        setBusy(false)
+
         storedValues.env = env
+
         createEpotheke()
-        showInfo("Switched to $env")
+        showInfo("Current environment: $env")
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         storedValues = InputStore(this)
 
         setContentView(R.layout.epo_layout)
+
+        findViewById<TextView>(R.id.input).setSelectAllOnFocus(true)
 
         createEpotheke()
 
@@ -198,33 +198,29 @@ class EpothekeActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btn_establishCardlink).apply {
             setOnClickListener {
-                currentJob = lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        establishCardlink()
-                    }
-                }
+                currentJob = establishCardlink()
             }
         }
 
         findViewById<Button>(R.id.btn_getPrescriptions).apply {
             setOnClickListener {
-                currentJob = lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        requestPrescriptions()
-                    }
-                }
+                currentJob = requestPrescriptions()
             }
         }
 
-        setInputActive(false)
+        switchInputs(false)
         findViewById<Button>(R.id.btn_cancel).apply {
-            setOnClickListener { finish() }
+            setOnClickListener {
+                when (currentJob) {
+                    null -> finish()
+                    else -> switchEnv(storedValues.env)
+                }
+            }
         }
         setBusy(false)
 
         super.onCreate(savedInstanceState)
     }
-
 
     /**
      *  NFC handling is completely managed in the AndroidTerminalFactory except for the following.
@@ -400,11 +396,11 @@ class EpothekeActivity : AppCompatActivity() {
 
             findViewById<Button>(R.id.btn_ok).apply {
                 setOnClickListener {
-                    setInputActive(false)
+                    switchInputs(false)
                     btnAction(inputField.text.toString())
                 }
             }
-            setInputActive(true)
+            switchInputs(true)
         }
     }
 
@@ -426,14 +422,27 @@ class EpothekeActivity : AppCompatActivity() {
      *
      * @param active
      */
-    private fun setInputActive(active: Boolean) {
+    private fun switchInputs(active: Boolean) {
         runOnUiThread {
-            findViewById<TextView>(R.id.input).apply {
-                visibility = if (active) VISIBLE else INVISIBLE
+
+            listOf(
+                R.id.input,
+                R.id.btn_ok
+            ).map {
+                findViewById<android.view.View>(it)
+            }.forEach {
+                it.visibility = if (active) VISIBLE else INVISIBLE
             }
-            findViewById<Button>(R.id.btn_ok).apply {
-                visibility = if (active) VISIBLE else INVISIBLE
+
+            listOf(
+                R.id.btn_establishCardlink,
+                R.id.btn_getPrescriptions,
+            ).map {
+                findViewById<android.view.View>(it)
+            }.forEach {
+                it.visibility = if (!active && (currentJob == null || currentJob?.isActive == false) ) VISIBLE else INVISIBLE
             }
+
             setBusy(!active)
         }
     }
@@ -461,11 +470,11 @@ class EpothekeActivity : AppCompatActivity() {
      * This can be used to call establishCardlink() function as shown here.
      */
     @OptIn(ExperimentalStdlibApi::class)
-    private fun establishCardlink() {
+    private fun establishCardlink(): Job {
         showInfo("Performing carldink authentication")
         setBusy(true)
 
-        lifecycleScope.launch(Dispatchers.IO) {
+        return lifecycleScope.launch(Dispatchers.IO) {
             try {
 
                 epotheke?.cardlinkAuthenticationProtocol?.establishCardlink(interaction = userInteraction)
@@ -478,6 +487,7 @@ class EpothekeActivity : AppCompatActivity() {
                 showInfo("Error ${e.message}")
                 logger.error(e) { "Exception authenticating" }
             }
+            switchInputs(false)
             setBusy(false)
         }
     }
@@ -487,10 +497,10 @@ class EpothekeActivity : AppCompatActivity() {
      * This can be used to call requestPrescriptions() function as shown here.
      */
     @OptIn(ExperimentalStdlibApi::class)
-    private fun requestPrescriptions() {
+    private fun requestPrescriptions(): Job {
         logger.debug { "Start action for PrescriptionProtocol" }
 
-        lifecycleScope.launch(Dispatchers.IO) {
+        return lifecycleScope.launch(Dispatchers.IO) {
             setBusy(true)
             try {
                 /**
@@ -529,15 +539,14 @@ class EpothekeActivity : AppCompatActivity() {
                     "${it.iccsn.toHexString()}: \n - $meds"
                 }
 
-
-                setBusy(false)
                 showInfo("Available prescriptions: \n$text")
 
             } catch (e: Exception) {
                 logger.debug(e) { "Error in request" }
-                setBusy(false)
                 showInfo("Error in request ${e.message}")
             }
+            switchInputs(false)
+            setBusy(false)
         }
     }
 }
