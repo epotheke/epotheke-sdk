@@ -35,14 +35,12 @@
 
         <TextView
             android:id="@+id/statusText"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="@+id/radio_services"
-            app:layout_constraintStart_toStartOf="@+id/radio_services"
             app:layout_constraintTop_toBottomOf="@+id/radio_services" />
 
         <EditText
@@ -54,7 +52,7 @@
             android:enabled="false"
             android:gravity="center"
             android:inputType="text"
-            app:layout_constraintEnd_toEndOf="@+id/statusText"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.45"
             app:layout_constraintStart_toStartOf="@+id/statusText"
             app:layout_constraintTop_toBottomOf="@+id/busy" />
@@ -63,11 +61,10 @@
             android:id="@+id/btn_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="28dp"
             android:text="OK"
-            app:layout_constraintEnd_toEndOf="@+id/input"
-            app:layout_constraintHorizontal_bias="0.459"
-            app:layout_constraintStart_toStartOf="@+id/input"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/input" />
 
         <ProgressBar
@@ -76,7 +73,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:layout_constraintEnd_toEndOf="@+id/statusText"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/statusText"
             app:layout_constraintTop_toBottomOf="@+id/statusText" />
 
@@ -84,23 +81,21 @@
             android:id="@+id/btn_establishCardlink"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
             android:enabled="true"
             android:text="establish cardlink"
-            app:layout_constraintEnd_toEndOf="@+id/btn_ok"
-            app:layout_constraintHorizontal_bias="0.492"
-            app:layout_constraintStart_toStartOf="@+id/btn_ok"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btn_ok" />
 
         <Button
             android:id="@+id/btn_getPrescriptions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:text="Get prescriptions"
-            app:layout_constraintEnd_toEndOf="@+id/btn_establishCardlink"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="@+id/btn_establishCardlink"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btn_establishCardlink" />
 
         <Button
@@ -109,21 +104,20 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Cancel"
-            app:layout_constraintEnd_toEndOf="@+id/btn_getPrescriptions"
-            app:layout_constraintStart_toStartOf="@+id/btn_getPrescriptions"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btn_getPrescriptions" />
 
         <RadioGroup
             android:id="@+id/radio_services"
-            android:layout_width="319dp"
+            android:layout_width="match_parent"
             android:layout_height="39dp"
             android:baselineAligned="true"
             android:gravity="center"
             android:orientation="horizontal"
             android:textAlignment="center"
-            app:layout_constraintEnd_toEndOf="@+id/service"
-            app:layout_constraintStart_toStartOf="@+id/service"
-            app:layout_constraintTop_toBottomOf="@+id/service">
+            app:layout_constraintTop_toBottomOf="@+id/service"
+            tools:layout_editor_absoluteX="142dp">
 
             <RadioButton
                 android:id="@+id/radBtnMock"
@@ -136,6 +130,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Dev" />
+
+            <RadioButton
+                android:id="@+id/radBtnStaging"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Staging" />
 
             <RadioButton
                 android:id="@+id/radBtnProd"

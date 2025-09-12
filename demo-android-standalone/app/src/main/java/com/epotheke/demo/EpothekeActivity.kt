@@ -65,11 +65,17 @@ enum class Service(val url: String, val tenantToken: String?) {
     ),
     DEV("https://service.dev.epotheke.com/cardlink", null),
 
+    STAGE(
+        "https://service.staging.epotheke.com/cardlink",
+        "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
+    ),
+
     PROD(
         "https://service.epotheke.com/cardlink",
         "eyJraWQiOiJ0ZW5hbnQtc2lnbmVyLTIwMjQxMTA2IiwiYWxnIjoiRVMyNTYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5M2NlZTMtMTdkOC03MDAwLTkwOTktZmM4NGNlMjYyNzk1IiwiaWF0IjoxNzQxMTczNzM4LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTgwNDI0NTczOCwianRpIjoiYWE2NDA5NWMtY2NlNy00N2FjLWEzZDItYzA2ZThlYjE2MmVmIn0.L0D7XGchxtkv_rzvzvru6t80MJy8aQKhbiTReH69MNBVgp9Z-wUlDgIPdpbySmhDSTVEbp1rCwQAOyXje1dntQ"
     ),
 }
+
 class InputStore(activity: EpothekeActivity) {
     val preferences: SharedPreferences = activity.getPreferences(Context.MODE_PRIVATE)
 
@@ -82,7 +88,7 @@ class InputStore(activity: EpothekeActivity) {
         set(v) = preferences.edit { putString("CAN_$env", v) }
 
     var env: Service
-        get() = preferences.getString("ENV", "MOCK")?.let{
+        get() = preferences.getString("ENV", "MOCK")?.let {
             Service.valueOf(it)
         } ?: Service.MOCK
         set(v) = preferences.edit { putString("ENV", v.name) }
@@ -91,7 +97,7 @@ class InputStore(activity: EpothekeActivity) {
 
 class EpothekeActivity : AppCompatActivity() {
 
-    lateinit var storedValues : InputStore
+    lateinit var storedValues: InputStore
 
     /**
      * Epotheke uses NFC to communicate with eGK cards.
@@ -177,6 +183,12 @@ class EpothekeActivity : AppCompatActivity() {
                 switchEnv(Service.DEV)
             }
         }
+        findViewById<RadioButton>(R.id.radBtnStaging).apply {
+            isChecked = storedValues.env == Service.STAGE
+            setOnClickListener {
+                switchEnv(Service.STAGE)
+            }
+        }
         findViewById<RadioButton>(R.id.radBtnProd).apply {
             isChecked = storedValues.env == Service.PROD
             setOnClickListener {
@@ -187,7 +199,7 @@ class EpothekeActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_establishCardlink).apply {
             setOnClickListener {
                 currentJob = lifecycleScope.launch {
-                    withContext(Dispatchers.IO){
+                    withContext(Dispatchers.IO) {
                         establishCardlink()
                     }
                 }
@@ -271,7 +283,7 @@ class EpothekeActivity : AppCompatActivity() {
             resultCode: ResultCode, errorMessage: String?
         ) = suspendCoroutine { continuation ->
             getValueFromUser(
-                "Problem with phone number: $resultCode. Please try again",storedValues.phoneNumber
+                "Problem with phone number: $resultCode. Please try again", storedValues.phoneNumber
             ) { value ->
                 storedValues.phoneNumber = value
                 continuation.resume(value)
