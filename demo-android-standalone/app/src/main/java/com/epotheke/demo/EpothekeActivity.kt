@@ -22,7 +22,9 @@
 
 package com.epotheke.demo
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View.VISIBLE
 import android.view.View.INVISIBLE
@@ -49,10 +51,15 @@ import kotlinx.coroutines.launch
 import org.openecard.sc.pcsc.AndroidTerminalFactory
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import androidx.core.content.edit
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger { }
 
-private enum class Service(val url: String, val tenantToken: String?) {
+enum class Service(val url: String, val tenantToken: String?) {
     MOCK(
         "https://mock.test.epotheke.com/cardlink", null
     ),
@@ -63,9 +70,28 @@ private enum class Service(val url: String, val tenantToken: String?) {
         "eyJraWQiOiJ0ZW5hbnQtc2lnbmVyLTIwMjQxMTA2IiwiYWxnIjoiRVMyNTYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5M2NlZTMtMTdkOC03MDAwLTkwOTktZmM4NGNlMjYyNzk1IiwiaWF0IjoxNzQxMTczNzM4LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTgwNDI0NTczOCwianRpIjoiYWE2NDA5NWMtY2NlNy00N2FjLWEzZDItYzA2ZThlYjE2MmVmIn0.L0D7XGchxtkv_rzvzvru6t80MJy8aQKhbiTReH69MNBVgp9Z-wUlDgIPdpbySmhDSTVEbp1rCwQAOyXje1dntQ"
     ),
 }
+class InputStore(activity: EpothekeActivity) {
+    val preferences: SharedPreferences = activity.getPreferences(Context.MODE_PRIVATE)
+
+    var phoneNumber: String
+        get() = preferences.getString("PHONE_$env", "+4915123456789") ?: "+4915123456789"
+        set(v) = preferences.edit { putString("PHONE_$env", v) }
+
+    var can: String
+        get() = preferences.getString("CAN_$env", "123123") ?: "123123"
+        set(v) = preferences.edit { putString("CAN_$env", v) }
+
+    var env: Service
+        get() = preferences.getString("ENV", "MOCK")?.let{
+            Service.valueOf(it)
+        } ?: Service.MOCK
+        set(v) = preferences.edit { putString("ENV", v.name) }
+}
+
 
 class EpothekeActivity : AppCompatActivity() {
 
+    lateinit var storedValues : InputStore
 
     /**
      * Epotheke uses NFC to communicate with eGK cards.
@@ -92,6 +118,7 @@ class EpothekeActivity : AppCompatActivity() {
 
     private var curService = Service.MOCK
 
+    private var currentJob: Job? = null
 
     /**
      * To create an instance of epotheke we have to provide:
@@ -116,7 +143,19 @@ class EpothekeActivity : AppCompatActivity() {
         }
     }
 
+    private fun switchEnv(env: Service) {
+        setInputActive(false)
+        setBusy(false)
+
+        currentJob?.cancel()
+        curService = env
+        storedValues.env = env
+        createEpotheke()
+        showInfo("Switched to $env")
+    }
+
     public override fun onCreate(savedInstanceState: Bundle?) {
+        storedValues = InputStore(this)
 
         setContentView(R.layout.epo_layout)
 
@@ -127,34 +166,41 @@ class EpothekeActivity : AppCompatActivity() {
         }
 
         findViewById<RadioButton>(R.id.radBtnMock).apply {
-            isChecked = true
+            isChecked = storedValues.env == Service.MOCK
             setOnClickListener {
-                curService = Service.MOCK
-                createEpotheke()
+                switchEnv(Service.MOCK)
             }
         }
         findViewById<RadioButton>(R.id.radBtnDev).apply {
+            isChecked = storedValues.env == Service.DEV
             setOnClickListener {
-                curService = Service.DEV
-                createEpotheke()
+                switchEnv(Service.DEV)
             }
         }
         findViewById<RadioButton>(R.id.radBtnProd).apply {
+            isChecked = storedValues.env == Service.PROD
             setOnClickListener {
-                curService = Service.PROD
-                createEpotheke()
+                switchEnv(Service.PROD)
             }
         }
 
         findViewById<Button>(R.id.btn_establishCardlink).apply {
             setOnClickListener {
-                establishCardlink()
+                currentJob = lifecycleScope.launch {
+                    withContext(Dispatchers.IO){
+                        establishCardlink()
+                    }
+                }
             }
         }
 
         findViewById<Button>(R.id.btn_getPrescriptions).apply {
             setOnClickListener {
-                requestPrescriptions()
+                currentJob = lifecycleScope.launch {
+                    withContext(Dispatchers.IO) {
+                        requestPrescriptions()
+                    }
+                }
             }
         }
 
@@ -210,8 +256,9 @@ class EpothekeActivity : AppCompatActivity() {
          */
         override suspend fun onPhoneNumberRequest() = suspendCoroutine { continuation ->
             getValueFromUser(
-                "Please provide valid german phone number (mock won't send sms)", "+4915123456789"
+                "Please provide valid german phone number (mock won't send sms)", storedValues.phoneNumber
             ) { value ->
+                storedValues.phoneNumber = value
                 continuation.resume(value)
             }
         }
@@ -224,8 +271,9 @@ class EpothekeActivity : AppCompatActivity() {
             resultCode: ResultCode, errorMessage: String?
         ) = suspendCoroutine { continuation ->
             getValueFromUser(
-                "Problem with phone number: $resultCode. Please try again", "+4915123456789"
+                "Problem with phone number: $resultCode. Please try again",storedValues.phoneNumber
             ) { value ->
+                storedValues.phoneNumber = value
                 continuation.resume(value)
             }
         }
@@ -239,7 +287,7 @@ class EpothekeActivity : AppCompatActivity() {
          */
         override suspend fun onTanRequest() = suspendCoroutine { continuation ->
             getValueFromUser(
-                "Please provide TAN from sms (mock accepts 123123)", "123456"
+                "Please provide TAN from sms (mock accepts 123123)", "123123"
             ) { value ->
                 continuation.resume(value)
             }
@@ -254,7 +302,7 @@ class EpothekeActivity : AppCompatActivity() {
         ) = suspendCoroutine { continuation ->
             getValueFromUser(
                 "Problem with TAN: $resultCode. Please provide TAN from sms (mock accepts all)",
-                "123456"
+                "123123"
             ) { value ->
                 continuation.resume(value)
             }
@@ -265,7 +313,8 @@ class EpothekeActivity : AppCompatActivity() {
          * and needs the CAN to establish NFC channel.
          */
         override suspend fun onCanRequest() = suspendCoroutine { continuation ->
-            getValueFromUser("Please provide CAN of card", "123123") { value ->
+            getValueFromUser("Please provide CAN of card", storedValues.can) { value ->
+                storedValues.can = value
                 continuation.resume(value)
             }
         }
@@ -277,7 +326,8 @@ class EpothekeActivity : AppCompatActivity() {
         override suspend fun onCanRetry(
             resultCode: CardLinkErrorCodes.ClientCodes, errorMessage: String?
         ) = suspendCoroutine { continuation ->
-            getValueFromUser("$resultCode - Please provide CAN of card", "123123") { value ->
+            getValueFromUser("$resultCode - Please provide CAN of card", storedValues.can) { value ->
+                storedValues.can = value
                 continuation.resume(value)
             }
         }

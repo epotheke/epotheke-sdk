@@ -20,15 +20,15 @@ android {
         multiDexEnabled = true
     }
     android {
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+        }
     }
-}
 
-kotlin {
-    jvmToolchain(21)
-}
+    kotlin {
+        jvmToolchain(21)
+    }
 
     buildTypes {
         release {
@@ -59,10 +59,9 @@ dependencies {
 
     // the actual epotheke library
     implementation("com.epotheke:sdk:$epothekeSdkVersion") {
-        //TODO check this
+        // TODO check this
         exclude(group = "io.github.oshai", module = "kotlin-logging-android-debug")
     }
-
 
     // logging library, use whatever you like to output the slf4j log statements
     implementation("io.github.oshai:kotlin-logging-android:7.0.13")
