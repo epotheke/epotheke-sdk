@@ -2,6 +2,7 @@
 kotlin = "2.2.0"
 ktlint = "1.7.1"
 ktlint-plugin = "13.0.+"
+ktlint-githubreporter = "2.0.1"
 kx-co = "1.10.+"
 kx-serde = "1.9.+"
 kt-logging = "7.0.+"
@@ -40,6 +41,8 @@ fleeksoft = "0.0.1"
 
 
 [libraries]
+
+ktlint-githubreporter = { module = "io.github.tobi2k:ktlint-gitlab-reporter", version.ref = "ktlint-githubreporter" }
 
 oec-smartcard-sal = {module = "org.openecard.sal:smartcard-sal-android", version.ref = "oec"}
 oec-pace = {module = "org.openecard.smartcard:pace", version.ref = "oec"}
