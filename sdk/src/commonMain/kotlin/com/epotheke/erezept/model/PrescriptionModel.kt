@@ -22,6 +22,7 @@
 
 package com.epotheke.erezept.model
 
+import com.epotheke.sdk.randomUUID
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -36,7 +37,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import com.epotheke.sdk.randomUUID
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -50,7 +50,7 @@ const val MEDICATION_PZN = "medicationPZN"
 const val MEDICATION_FREE_TEXT = "medicationFreeText"
 const val MEDICATION_COMPOUNDING = "medicationCompounding"
 const val MEDICATION_INGREDIENT = "medicationIngredient"
-const val BESTANDTEIL_WIRKSTOFF_VERORDNUNG= "bestandteilWirkstoffverordnung"
+const val BESTANDTEIL_WIRKSTOFF_VERORDNUNG = "bestandteilWirkstoffverordnung"
 const val BESTANDTEIL_REZEPTUR_VERORDNUNG = "bestandteilRezepturverordnung"
 const val SELECTED_PRESCRIPTION_LIST_RESPONSE = "selectedPrescriptionListResponse"
 const val PRESCRIPTION_BUNDLE = "prescriptionBundle"
@@ -205,7 +205,9 @@ data class BestandteilRezepturverordnung(
     val mengeUndEinheit: String? = null,
 )
 
-enum class GenericErrorResultType(val value: String) {
+enum class GenericErrorResultType(
+    val value: String,
+) {
     INVALID_MESSAGE_DATA("INVALID_MESSAGE_DATA"),
     TI_UNAVAILABLE("TI_UNAVAILABLE"),
     TI_SERVICE_ERROR("TI_SERVICE_ERROR"),
@@ -216,7 +218,7 @@ enum class GenericErrorResultType(val value: String) {
     UNSUPPORTED_ENVELOPE("UNSUPPORTED_ENVELOPE"),
     NO_PRESCRIPTIONS_AVAILABLE("NO_PRESCRIPTIONS_AVAILABLE"),
     NOT_FOUND("NOT_FOUND"),
-    UNKNOWN_ERROR("UNKNOWN_ERROR");
+    UNKNOWN_ERROR("UNKNOWN_ERROR"),
 }
 
 @Serializable
@@ -394,61 +396,70 @@ data class Practitioner(
 enum class SupplyOptionsType {
     @SerialName("onPremise")
     ON_PREMISE,
+
     @SerialName("shipment")
     SHIPMENT,
+
     @SerialName("delivery")
-    DELIVERY;
+    DELIVERY,
 }
 
-private val prescriptionModule = SerializersModule {
-    polymorphic(PrescriptionMessage::class) {
-        subclass(RequestPrescriptionList::class)
-        subclass(AvailablePrescriptionLists::class)
-        subclass(SelectedPrescriptionList::class)
-        subclass(SelectedPrescriptionListResponse::class)
-        subclass(GenericErrorMessage::class)
+private val prescriptionModule =
+    SerializersModule {
+        polymorphic(PrescriptionMessage::class) {
+            subclass(RequestPrescriptionList::class)
+            subclass(AvailablePrescriptionLists::class)
+            subclass(SelectedPrescriptionList::class)
+            subclass(SelectedPrescriptionListResponse::class)
+            subclass(GenericErrorMessage::class)
+        }
+        polymorphic(MedicationItem::class) {
+            subclass(MedicationCompounding::class)
+            subclass(MedicationIngredient::class)
+            subclass(MedicationFreeText::class)
+            subclass(MedicationPzn::class)
+        }
+        polymorphic(PrescriptionInterface::class) {
+            subclass(PracticeSupply::class)
+            subclass(Prescription::class)
+        }
+        polymorphic(Address::class) {
+            subclass(StreetAddress::class)
+            subclass(PobAddress::class)
+        }
     }
-    polymorphic(MedicationItem::class) {
-        subclass(MedicationCompounding::class)
-        subclass(MedicationIngredient::class)
-        subclass(MedicationFreeText::class)
-        subclass(MedicationPzn::class)
-    }
-    polymorphic(PrescriptionInterface::class) {
-        subclass(PracticeSupply::class)
-        subclass(Prescription::class)
-    }
-    polymorphic(Address::class) {
-        subclass(StreetAddress::class)
-        subclass(PobAddress::class)
-    }
-}
-
 
 @OptIn(ExperimentalSerializationApi::class)
-val prescriptionJsonFormatter = Json {
-    serializersModule = prescriptionModule
-    classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS
-    ignoreUnknownKeys = true
-    // convert missing values to null and do not emit null values
-    explicitNulls = false
-    encodeDefaults = true
-}
+val prescriptionJsonFormatter =
+    Json {
+        serializersModule = prescriptionModule
+        classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS
+        ignoreUnknownKeys = true
+        // convert missing values to null and do not emit null values
+        explicitNulls = false
+        encodeDefaults = true
+    }
 
-typealias ByteArrayAsBase64 = @Serializable(ByteArrayAsBase64Serializer::class) ByteArray
+typealias ByteArrayAsBase64 =
+    @Serializable(ByteArrayAsBase64Serializer::class)
+    ByteArray
 
 @OptIn(ExperimentalEncodingApi::class)
 object ByteArrayAsBase64Serializer : KSerializer<ByteArray> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ByteArrayAsBase64Serializer", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("ByteArrayAsBase64Serializer", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: ByteArray) {
+    override fun serialize(
+        encoder: Encoder,
+        value: ByteArray,
+    ) {
         encoder.encodeString(
-            Base64.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL).encode(value)
+            Base64.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL).encode(value),
         )
     }
 
-    override fun deserialize(decoder: Decoder): ByteArray {
-        return Base64.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
+    override fun deserialize(decoder: Decoder): ByteArray =
+        Base64
+            .withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
             .decode(decoder.decodeString())
-    }
 }
