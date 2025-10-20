@@ -5,114 +5,101 @@
 //  Created by Florian Otto on 13.08.24.
 //
 
-import CoreNFC
-import OpenEcard.open_ecard_mobile_lib
 import SwiftUI
 import epotheke
 
 extension NSError {
-    func toGenericErrorMessage() -> GenericErrorMessage? {
-        return (self.userInfo["KotlinException"] as? PrescriptionProtocolException)?.msg
+    var kotlinError: Any? {
+        guard domain == "KotlinException" else { return nil }
+        return userInfo["KotlinException"]
     }
 }
-
 struct ContentView: View {
-    @State var showCanAlert = false
-    @State var showNumberAlert = false
-    @State var showTanAlert = false
-    @State var can = "123123"
-    @State var tan = "123123"
-    @State var nbr = "+49 22211133"
+    @State var showInput = false
+    @State var inputTitle = "Enter phone number"
+    @State var inputMsg = "Enter phone number"
+    @State var input = ""
 
-    @State var cb = {}
+    @State var status = ""
+
+    @State var epotheke: Epotheke?
+
+    init() {
+        IosNfcAlertMessages().cardConnectedMessage = "Card connected."
+        IosNfcAlertMessages().cardInsertedMessage = "Card inserted."
+        IosNfcAlertMessages().cardNotSupported = "Card not supported."
+        IosNfcAlertMessages().provideCardMessage = "Please bring eGK to device."
+    }
+
+    @State var continuation: CheckedContinuation<String, Never>?
 
     var body: some View {
-        VStack {
+        VStack(spacing: 32) {
             Button {
                 print("Starting epotheke test case")
-                performEpo()
+                performEpo(
+                    url: "https://mock.test.epotheke.com/cardlink"
+                )
             } label: {
-                Text("epotheke Demo")
-            }.alert(Text("Phonenumber"), isPresented: self.$showNumberAlert) {
-                Button("OK") {
-                    self.$cb.wrappedValue()
-                }
-                TextField("nbr", text: $nbr).textContentType(.telephoneNumber)
-            } message: {
-                Text("Enter Phonenumber")
-            }.alert(Text("TAN"), isPresented: self.$showTanAlert) {
-                Button("OK") {
-                    self.$cb.wrappedValue()
-                }
-                TextField("tan", text: $tan).textContentType(.oneTimeCode)
-            } message: {
-                Text("Enter TAN")
-            }.alert(Text("CAN"), isPresented: self.$showCanAlert) {
-                Button("OK") {
-                    self.$cb.wrappedValue()
-                }
-                TextField("can", text: $can).textContentType(.oneTimeCode)
-            } message: {
-                Text("Enter CAN")
+                Text("Establish Cardlink (Mock)")
             }
-        }
-        .padding()
-    }
+            Button {
+                print("Starting epotheke test case")
+                performEpo(
+                    url: "https://service.dev.epotheke.com/cardlink"
+                )
+            } label: {
+                Text("Establish Cardlink (DEV)")
+            }
+            Button {
+                print("Starting epotheke test case")
+                performEpo(
+                    url: "https://service.staging.epotheke.com/cardlink",
+                    tenantToken:
+                        "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
+                )
+            } label: {
+                Text("Establish Cardlink (Staging)")
+            }
+            Button {
+                print("Starting epotheke test case")
+                performEpo(
+                    url: "https://service.epotheke.com/cardlink",
+                    tenantToken:
+                        "eyJraWQiOiJ0ZW5hbnQtc2lnbmVyLTIwMjQxMTA2IiwiYWxnIjoiRVMyNTYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5M2NlZTMtMTdkOC03MDAwLTkwOTktZmM4NGNlMjYyNzk1IiwiaWF0IjoxNzQxMTczNzM4LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTgwNDI0NTczOCwianRpIjoiYWE2NDA5NWMtY2NlNy00N2FjLWEzZDItYzA2ZThlYjE2MmVmIn0.L0D7XGchxtkv_rzvzvru6t80MJy8aQKhbiTReH69MNBVgp9Z-wUlDgIPdpbySmhDSTVEbp1rCwQAOyXje1dntQ"
+                )
+            } label: {
+                Text("Establish Cardlink (Prod)")
+            }
+            Button {
+                print("Starting fetch")
+                fetchPrescriptions()
+            } label: {
+                Text("Fetch Prescriptions")
+            }
+            Text("Status:")
+            TextField("status", text: $status).alert(Text("UserInput"), isPresented: $showInput) {
+                Button("OK") {
+                    showInput = false
+                    continuation?.resume(returning: input)
+                    continuation = nil
+                }
+                TextField("InField", text: $input)
+            } message: {
+                Text(inputMsg)
+            }
 
-    /* This implementation allows to configure messages which are shown by iOS during nfc interaction*/
-    class IOSNFCOptions: NSObject, NFCConfigProtocol {
-        func getDefaultCardInsertedMessage() -> String! {
-            return "Card was inserted"
-        }
-
-        func getDefaultCardInsufficientMessage() -> String! {
-            return "Card is not sufficient"
-        }
-
-        func getProvideCardMessage() -> String! {
-            return "Please hold card to your phone"
-        }
-
-        func getDefaultNFCCardRecognizedMessage() -> String! {
-            return "Please wait. A card has been detected"
-        }
-
-        func getDefaultNFCErrorMessage() -> String! {
-            return "An error occurred communicating with the card."
-        }
-
-        func getAquireNFCTagTimeoutMessage() -> String! {
-            return "Could not connect to a card. Please try again."
-        }
-
-        func getNFCCompletionMessage() -> String! {
-            return "Finished communicating with the card"
-        }
-
-        func getTagLostErrorMessage() -> String! {
-            return "Contact was lost with the card"
-        }
-
-        func getDefaultCardConnectedMessage() -> String! {
-            return "Connected with the card."
-        }
-
-    }
-
-    /* This implementation will handle errors whcih might occur within sdk or during processes the sdk handles.*/
-    class SdkErrorHandlerImp: NSObject, SdkErrorHandler {
-        func hdl(code: String, error: String) {
-            print("error code:" + code)
-            print("error :" + error)
         }
     }
 
     /* This class implements the interactions with the sdk during the cardlink process
      When for example the CAN of the card is needed, the sdk will call the appropriate function.
      Within the app the user can get asked for the CAN.
-     After that the handed in callback handler has to be called with the given value to resume the process.
      */
-    class CardLinkInteraction: NSObject, CardLinkInteractionProtocol {
+
+    @MainActor
+    class CardLinkInteraction: NSObject, UserInteraction {
+
         var v: ContentView
 
         init(v: ContentView) {
@@ -120,169 +107,153 @@ struct ContentView: View {
             super.init()
         }
 
-        func onCanRequest(_ enterCan: (NSObjectProtocol & ConfirmPasswordOperationProtocol)!) {
-            print("onCanRequest")
-            self.v.cb = {
-                print("doing enterCAN")
-                enterCan.confirmPassword(self.v.$can.wrappedValue)
-            }
-            self.v.showCanAlert = true
-        }
-        func onCanRetry(
-            _ enterCan: (any NSObjectProtocol & ConfirmPasswordOperationProtocol)!,
-            withResultCode resultCode: String!,
-            withErrorMessage errorMessage: String!
-        ) {
-            print("onCanRetry")
-            self.v.cb = {
-                print("can retry due to")
-                print(resultCode)
-                enterCan.confirmPassword(self.v.$can.wrappedValue)
-            }
-            self.v.showCanAlert = true
+        func onPhoneNumberRequest() async throws -> String {
+            await withCheckedContinuation { continuation in
+                self.v.showInput = false
+                self.v.inputTitle = "Number"
+                self.v.inputMsg = "Enter number"
+                self.v.input = "+49 151 123 123 23"
+                self.v.showInput = true
 
-        }
-        func onPhoneNumberRequest(_ enterPhoneNumber: (NSObjectProtocol & ConfirmTextOperationProtocol)!) {
-            print("onPhoneNumberRequest")
-            self.v.cb = {
-                enterPhoneNumber.confirmText(self.v.$nbr.wrappedValue)
+                self.v.continuation = continuation
             }
-            self.v.showNumberAlert = true
-        }
-        func onPhoneNumberRetry(
-            _ enterPhoneNumber: (any NSObjectProtocol & ConfirmTextOperationProtocol)!,
-            withResultCode resultCode: String!,
-            withErrorMessage errorMessage: String!
-        ) {
-            print("onPhoneRetry due to")
-            print(resultCode)
-            self.v.cb = {
-                enterPhoneNumber.confirmText(self.v.$nbr.wrappedValue)
-            }
-            self.v.showNumberAlert = true
-
         }
 
-        func onSmsCodeRequest(_ smsCode: (NSObjectProtocol & ConfirmPasswordOperationProtocol)!) {
-            print("onSmsCodeRequest")
-            self.v.cb = {
-                smsCode.confirmPassword(self.v.$tan.wrappedValue)
+        func onPhoneNumberRetry(resultCode: ResultCode, msg errorMessage: String?) async throws -> String {
+            await withCheckedContinuation { continuation in
+                self.v.showInput = false
+                self.v.inputTitle = "Number"
+                self.v.inputMsg = "Problem with number: \(errorMessage ?? "")"
+                self.v.input = "+49 151 123 123 23"
+                self.v.showInput = true
+                self.v.status = "Problem with number: \(errorMessage ?? "")"
+
+                self.v.continuation = continuation
             }
-            self.v.showTanAlert = true
+        }
+        func onTanRequest() async throws -> String {
+            await withCheckedContinuation { continuation in
+                self.v.showInput = false
+                self.v.inputTitle = "TAN"
+                self.v.inputMsg = "Enter TAN"
+                self.v.input = "123123"
+                self.v.showInput = true
+
+                self.v.continuation = continuation
+            }
         }
 
-        func onSmsCodeRetry(
-            _ smsCode: (any NSObjectProtocol & ConfirmPasswordOperationProtocol)!,
-            withResultCode resultCode: String!,
-            withErrorMessage errorMessage: String!
-        ) {
-            print("onSmsCodeRetry due to")
-            self.v.cb = {
-                smsCode.confirmPassword(self.v.$tan.wrappedValue)
+        func onTanRetry(resultCode: ResultCode, msg errorMessage: String?) async throws -> String {
+            await withCheckedContinuation { continuation in
+                self.v.showInput = false
+                self.v.inputTitle = "TAN"
+                self.v.inputMsg = "Problem with TAN: \(errorMessage ?? "")"
+                self.v.input = "123123"
+                self.v.showInput = true
+                self.v.status = "Problem with TAN: \(errorMessage ?? "")"
+
+                self.v.continuation = continuation
             }
-            self.v.showTanAlert = true
         }
-        func requestCardInsertion() {
+        func onCanRequest() async throws -> String {
+            await withCheckedContinuation { continuation in
+                self.v.showInput = false
+                self.v.inputTitle = "CAN"
+                self.v.inputMsg = "Enter CAN"
+                self.v.input = "123123"
+                self.v.showInput = true
+
+                self.v.continuation = continuation
+            }
+        }
+        func onCanRetry(resultCode: CardCommunicationResultCode) async throws -> String {
+            await withCheckedContinuation { continuation in
+                self.v.showInput = false
+                self.v.inputTitle = "CAN"
+                self.v.inputMsg = "CAN was wrong: \(resultCode.msg ?? "")"
+                self.v.input = "123123"
+                self.v.showInput = true
+                self.v.status = "CAN was wrong: \(resultCode.msg ?? "")"
+
+                self.v.continuation = continuation
+            }
+        }
+
+        func requestCardInsertion() async throws {
             print("requestCardInsertion")
         }
 
-        func requestCardInsertion(_ msgHandler: (NSObjectProtocol & NFCOverlayMessageHandlerProtocol)!) {
-            print("requestCardInsertion")
-        }
-
-        func onCardInteractionComplete() {
-            print("onCardInteractionComplete")
-        }
-
-	func onCardInserted() {
-            print("onCardInserted")
-        }
-
-        func onCardInsufficient() {
-            print("onCardInsufficient")
-        }
-        func onCardRecognized() {
+        func onCardRecognized() async throws {
             print("onCardRecognized")
         }
 
-        func onCardRemoved() {
-            print("onCardRemoved")
-        }
-
     }
 
-    /* This class implements the CardlinkController interface.
-     After the cardlink establishment the function "onAuthenticationCompletion" will be called with the result of the cardlink process
+    func performEpo(
+        url: String,
+        tenantToken: String? = nil
+    ) {
 
-     If the establishment was successfull (ActivationResultCode is OK) the given cardLinkProtocols-Set
-     will contain working objects to work with the established connection.
-     Currently the first and only object is an implementation of the PrescriptionProtocol, which allows the request available
-     prescriptions and to send back a selection for purchasing them.
-     */
-    class CardLinkController: NSObject, CardLinkControllerCallback {
-        func onAuthenticationCompletion(p0: ActivationResultProtocol?, cardLinkProtocols: Set<AnyHashable>) {
-            print("onAuthComp")
-            if p0?.getCode() == ActivationResultCode.OK {
-                let p = cardLinkProtocols.first
-                let p1 = p as! any PrescriptionProtocol
+        let terminalFactory = IosTerminalFactory.companion.instance
+        let epo = Epotheke(
+            terminalFactory: terminalFactory, serviceUrl: url, tenantToken: tenantToken, wsSessionId: nil)
+        let authProt = epo.cardlinkAuthenticationProtocol
+        CardlinkAuthenticationConfig().readPersonalData = true
+        CardlinkAuthenticationConfig().readInsurerData = false
 
-                //Available prescriptions can be requested via the cardlinkProtocol instance
-                //one can either create a request object like in the following line
-                //let req = RequestPrescriptionList(iccsns: [KotlinByteArray(size: 0)], messageId: RandomUUID_iosKt.randomUUID())
-                //where an empty list means all available prescriptions for all cards in the session or is filtered by the given list
-                //and provide this to the requestPrescriptions() function
+        Task {
+            do {
+                let authResult = try await authProt.establishCardlink(interaction: CardLinkInteraction(v: self))
+                epotheke = epo
+                status =
+                    "Cardlink established for \(authResult.personalData?.versicherter?.person?.vorname ?? "vn") \(authResult.personalData?.versicherter?.person?.nachname ?? "nn")"
+            } catch let error as NSError {
 
-                //one can also provide the iccsns for which the prescriptions should be requested provide directly as a list of strings as shown below.
-                //available iccsns can be gathered after each card registration via the ActivationResultProtocol in the resultParameters
-
-                DispatchQueue.main.sync {
-                    p1.requestPrescriptions(iccsns: [], messageId: RandomUUID_iosKt.randomUUID()) {
-                        response, er in
-                        if let f = (er as? NSError)?.toGenericErrorMessage() {
-                            switch f.errorCode {
-                            case GenericErrorResultType.noPrescriptionsAvailable:
-                                print(f.errorMessage)
-                            case GenericErrorResultType.unknownError:
-                                print(f.errorMessage)
-                            default:
-                                print("no error type")
-                            }
-                        } else {
-                            print(response)
-                        }
-                    }
+                switch error.kotlinError {
+                case let e as CardLinkClientError:
+                    status = e.message
+                case let e as CardLinkError:
+                    status = e.message
+                case .some(let e):
+                    status = (e as? KotlinException)?.message ?? "missing error message"
+                case .none:
+                    status = "error in establish cardlink with unmapped error"
                 }
-            } else {
-                print("process ended with an error.")
+
+            }
+        }
+    }
+    @MainActor
+    func fetchPrescriptions() {
+        guard let prescProt = epotheke?.prescriptionProtocol else {
+            status = "Cardlink not established."
+            return
+        }
+
+        Task {
+            do {
+                let prescriptions = try await prescProt.requestPrescriptions(
+                    req: RequestPrescriptionList(iccsns: [], messageId: "")
+                )
+                let nbrForFirstCard = prescriptions.availablePrescriptionLists.first?.prescriptionBundleList.count ?? 0
+                status = "Found \(nbrForFirstCard) prescriptions for card."
+            } catch let error as NSError {
+
+                switch error.kotlinError {
+                case let e as PrescriptionProtocolException:
+                    status = e.genericErrorMessage.errorMessage
+                case .some(let e):
+                    status = (e as? KotlinException)?.message ?? "missing error message"
+                case .none:
+                    status = "error in establish cardlink with unmapped error"
+                }
+
             }
 
         }
 
-        /* Called when the cardlink process is started */
-        func onStarted() {
-            print("onStarted")
-        }
-
     }
 
-    /*This function initialises the above implementations and starts the epotheke prescription process*/
-    func performEpo() {
-        let cardLinkController = CardLinkController()
-        let sdkErrorHandler = SdkErrorHandlerImp()
-        let cardLinkInteraction = CardLinkInteraction(v: self)
-        let url = "https://service.dev.epotheke.com/cardlink"
-        //if environment allows unauthenticated access tenantToken can be null
-        let tenantToken: String? = nil
-        let sdk = SdkCore(
-            cardLinkUrl: url,
-            tenantToken: tenantToken,
-            cardLinkControllerCallback: cardLinkController,
-            cardLinkInteractionProtocol: cardLinkInteraction,
-            sdkErrorHandler: sdkErrorHandler,
-            nfcOpts: IOSNFCOptions())
-        sdk.setDebugLogLevel()
-        sdk.doInitCardLink()
-    }
 }
 
 #Preview {

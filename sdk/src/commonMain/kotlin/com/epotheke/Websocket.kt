@@ -117,6 +117,7 @@ class Websocket(
                 when (msg) {
                     is Frame.Text -> {
                         val read = msg.readText()
+                        log.debug { "Socket received $read" }
                         handleMessageWithProtocols(read)
                     }
 
@@ -241,6 +242,7 @@ class Websocket(
                 connect()
             }
         }
+        log.debug { "Socket sending $data" }
         wsSession?.send(data)
     }
 }
