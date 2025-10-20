@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.2.0"
+kotlin = "2.2.20"
 ktlint = "1.7.1"
 ktlint-githubreporter = "2.0.1"
 ktlint-plugin = "13.1.+"
@@ -9,6 +9,7 @@ kt-logging = "7.0.+"
 kx-datetime = "0.7.1"
 
 ktor = "3.1.+"
+okio = "3.16.2"
 
 
 agp = "8.12.+"
@@ -44,9 +45,10 @@ fleeksoft = "0.0.1"
 
 ktlint-githubreporter = { module = "io.github.tobi2k:ktlint-gitlab-reporter", version.ref = "ktlint-githubreporter" }
 
-oec-smartcard-sal = {module = "org.openecard.sal:smartcard-sal-android", version.ref = "oec"}
+oec-smartcard-sal = {module = "org.openecard.sal:smartcard-sal", version.ref = "oec"}
 oec-pace = {module = "org.openecard.smartcard:pace", version.ref = "oec"}
 oec-smartcard-pcsc-android = {module = "org.openecard.smartcard:pcsc-android", version.ref = "oec"}
+oec-smartcard-pcsc-ios = {module = "org.openecard.smartcard:pcsc-ios", version.ref = "oec"}
 oec-bundled-cifs= {module = "org.openecard.cif:bundled-cifs", version.ref = "oec"}
 
 
@@ -65,6 +67,7 @@ xmlutil-core = {module = "io.github.pdvrieze.xmlutil:core", version.ref = "xmlut
 xmlutil-ser = {module = "io.github.pdvrieze.xmlutil:serialization", version.ref = "xmlutil"}
 
 fleeksoft-charset = {module = "com.fleeksoft.charset:charset",version.ref="fleeksoft"}
+okio = {module = "com.squareup.okio:okio", version.ref = "okio"}
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core-ktx" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidx-test-ktx" }
@@ -123,6 +126,7 @@ test-android-kotlin = [
 	"androidx-test-junit",
 	"androidx-test-runner"
 ]
+oec-cardlink = ["oec-smartcard-sal", "oec-pace", "oec-bundled-cifs"]
 
 [plugins]
 androidKmpLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }

@@ -1,8 +1,8 @@
 package com.epotheke.cardlink
 
+import com.fleeksoft.charset.Charsets
 import com.fleeksoft.charset.decodeToString
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.utils.io.charsets.forName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import nl.adaptivity.xmlutil.ExperimentalXmlUtilApi
@@ -18,7 +18,7 @@ internal fun UByteArray.toPersonalData(): PersoenlicheVersichertendaten? =
     try {
         val len = this[0].toInt().shl(8).or(this[1].toInt())
         val pd = this.sliceArray(IntRange(2, 2 + len - 1))
-        val xmlString = gunzip(pd).toByteArray().decodeToString(Charsets.forName("ISO-8859-15"))
+        val xmlString = gunzip(pd).decodeToString(Charsets.forName("ISO-8859-15"))
         xml.decodeFromString(PersoenlicheVersichertendaten.serializer(), xmlString)
     } catch (e: Exception) {
         logger.warn(e) { "Exception during reading of ef.pd" }

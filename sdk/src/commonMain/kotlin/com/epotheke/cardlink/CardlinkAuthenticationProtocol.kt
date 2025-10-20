@@ -1,16 +1,15 @@
 package com.epotheke.cardlink
 
-import com.epotheke.erezept.model.prescriptionJsonFormatter
-import com.epotheke.sdk.CardLinkProtocolBase
-import com.epotheke.sdk.WebsocketCommon
-import com.epotheke.sdk.protocolChannel
-import com.epotheke.sdk.randomUUID
+import com.epotheke.CardLinkProtocolBase
+import com.epotheke.Websocket
+import com.epotheke.prescription.model.prescriptionJsonFormatter
+import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeout
+import okio.Buffer
+import okio.GzipSource
 import org.openecard.cif.bundled.CompleteTree
 import org.openecard.cif.bundled.EgkCif
 import org.openecard.cif.bundled.EgkCifDefinitions
@@ -28,17 +27,28 @@ import org.openecard.sal.sc.SmartcardSal
 import org.openecard.sal.sc.recognition.DirectCardRecognition
 import org.openecard.sc.apdu.toCommandApdu
 import org.openecard.sc.iface.SecureMessagingException
+import org.openecard.sc.iface.SmartCardStackMissing
 import org.openecard.sc.iface.TerminalFactory
 import org.openecard.sc.iface.feature.PaceError
 import org.openecard.sc.iface.withContextSuspend
 import org.openecard.sc.pace.PaceFeatureSoftwareFactory
 import org.openecard.sc.tlv.toTlvSimple
 import kotlin.time.Duration.Companion.seconds
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 private val MESSAGE_TIMEOUT_DURATION = 5.seconds
 
 @OptIn(ExperimentalUnsignedTypes::class)
-expect fun gunzip(data: UByteArray): UByteArray
+fun gunzip(data: UByteArray) =
+    Buffer()
+        .also {
+            it.writeAll(
+                GzipSource(
+                    Buffer().also { b -> b.write(data.toByteArray()) },
+                ),
+            )
+        }.readByteArray()
 
 private val logger = KotlinLogging.logger { }
 
@@ -64,7 +74,7 @@ internal data class SessionInfo(
 
 class CardlinkAuthenticationProtocol(
     private val terminalFactory: TerminalFactory,
-    private val ws: WebsocketCommon,
+    private val ws: Websocket,
 ) : CardLinkProtocolBase(ws) {
     private val inputChannel = protocolChannel<GematikEnvelope>()
 
@@ -81,6 +91,11 @@ class CardlinkAuthenticationProtocol(
     private val cardLinkAuthResult = CardlinkAuthResult()
     lateinit var interaction: UserInteraction
 
+    @Throws(
+        CardlinkAuthenticationException::class,
+        CardlinkAuthenticationClientException::class,
+        CancellationException::class,
+    )
     @OptIn(ExperimentalUnsignedTypes::class)
     suspend fun establishCardlink(interaction: UserInteraction): CardlinkAuthResult =
         mapErrors {
@@ -176,6 +191,12 @@ class CardlinkAuthenticationProtocol(
                     logger.warn(e) { "Cancellation appeared. Not throwing further." }
                     throw e
                 }
+                is SmartCardStackMissing -> {
+                    throw CardlinkAuthenticationClientException(
+                        CardLinkErrorCodes.ClientCodes.OTHER_NFC_ERROR,
+                        "NFC not available",
+                    )
+                }
                 else -> {
                     logger.error(e) { "Unknown exception" }
                     throw CardlinkAuthenticationClientException(
@@ -241,9 +262,10 @@ class CardlinkAuthenticationProtocol(
             }
         }
 
+    @OptIn(ExperimentalUuidApi::class)
     private suspend fun sendEnvelope(
         payload: CardLinkPayload,
-        correlationId: String? = randomUUID(),
+        correlationId: String? = Uuid.random().toString(),
     ) {
         ws.send(
             cardLinkJsonFormatter.encodeToString(
@@ -278,6 +300,7 @@ class CardlinkAuthenticationProtocol(
             }
         }
 
+    @OptIn(ExperimentalUuidApi::class)
     private suspend fun receiveSessionInformation(): SessionInfo {
         val egkEnvelope =
             try {
@@ -292,11 +315,15 @@ class CardlinkAuthenticationProtocol(
                 logger.debug {
                     "Using ${egkEnvelope.cardSessionId ?: "random cardSessionID as it was null"} as cardSessionId and ${payload.webSocketId} as webSocketId."
                 }
-                SessionInfo(egkEnvelope.cardSessionId ?: randomUUID(), payload.webSocketId, payload.phoneRegistered)
+                SessionInfo(
+                    egkEnvelope.cardSessionId ?: Uuid.random().toString(),
+                    payload.webSocketId,
+                    payload.phoneRegistered,
+                )
             }
 
             else -> {
-                val cardSessionId = randomUUID()
+                val cardSessionId = Uuid.random().toString()
                 logger.warn {
                     "Received no or a malformed SessionInformation message. Using $cardSessionId as cardSessionId."
                 }

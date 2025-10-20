@@ -1,9 +1,10 @@
-package com.epotheke.sdk
+package com.epotheke
 
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
-import com.epotheke.erezept.protocol.PrescriptionProtocolImp
+import com.epotheke.prescription.protocol.PrescriptionProtocolImp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
 import org.openecard.sc.iface.TerminalFactory
@@ -14,7 +15,7 @@ class Epotheke(
     tenantToken: String?,
     wsSessionId: String? = null,
 ) : AutoCloseable {
-    private val ws = WebsocketCommon(serviceUrl, tenantToken, wsSessionId)
+    private val ws = Websocket(serviceUrl, tenantToken, wsSessionId)
 
     val cardlinkAuthenticationProtocol =
         CardlinkAuthenticationProtocol(

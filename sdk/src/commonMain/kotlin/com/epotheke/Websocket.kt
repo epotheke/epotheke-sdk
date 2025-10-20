@@ -20,11 +20,11 @@
  *
  ***************************************************************************/
 
-package com.epotheke.sdk
+package com.epotheke
 
 import com.epotheke.cardlink.GematikEnvelope
 import com.epotheke.cardlink.SessionInformation
-import com.epotheke.erezept.model.prescriptionJsonFormatter
+import com.epotheke.prescription.model.prescriptionJsonFormatter
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -42,6 +42,7 @@ import io.ktor.websocket.send
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -53,7 +54,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = KotlinLogging.logger {}
 
-class WebsocketCommon(
+class Websocket(
     private var url: String,
     tenantToken: String?,
     private var wsSessionId: String? = null,

@@ -38,13 +38,6 @@ import com.epotheke.cardlink.CardLinkErrorCodes
 import com.epotheke.cardlink.CardlinkAuthResult
 import com.epotheke.cardlink.ResultCode
 import com.epotheke.cardlink.UserInteraction
-import com.epotheke.erezept.model.MedicationCompounding
-import com.epotheke.erezept.model.MedicationFreeText
-import com.epotheke.erezept.model.MedicationIngredient
-import com.epotheke.erezept.model.MedicationPzn
-import com.epotheke.erezept.model.PrescriptionBundle
-import com.epotheke.erezept.model.RequestPrescriptionList
-import com.epotheke.sdk.Epotheke
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -53,7 +46,15 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import androidx.core.content.edit
 import com.epotheke.cardlink.CardlinkAuthenticationConfig
+import com.epotheke.prescription.model.RequestPrescriptionList
+import com.epotheke.Epotheke
 import kotlinx.coroutines.Job
+import com.epotheke.prescription.model.MedicationCompounding
+import com.epotheke.prescription.model.MedicationFreeText
+import com.epotheke.prescription.model.MedicationIngredient
+import com.epotheke.prescription.model.MedicationPzn
+import com.epotheke.prescription.model.PrescriptionBundle
+
 
 private val logger = KotlinLogging.logger { }
 
@@ -500,7 +501,7 @@ class EpothekeActivity : AppCompatActivity() {
                                 "\n",
                                 "ICCSN: ",
                                 result.iccsn,
-                            ).joinToString()
+                            ).joinToString(separator = "")
                         )
                     }
 
@@ -543,7 +544,7 @@ class EpothekeActivity : AppCompatActivity() {
                     val meds = it.prescriptionBundleList.joinToString(
                         separator = "\n -",
                         limit = 2,
-                    ) { bundle: PrescriptionBundle ->
+                    ) { bundle : PrescriptionBundle ->
                         val medication = bundle.arzneimittel
                         medication.medicationItem.joinToString { item ->
                             when (item) {

@@ -1,9 +1,8 @@
 package com.epotheke.sdk
 
-import android.R.attr.countDown
-import android.util.Log.e
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.epotheke.Websocket
 import com.epotheke.cardlink.CardLinkErrorCodes
 import com.epotheke.cardlink.CardlinkAuthResult
 import com.epotheke.cardlink.CardlinkAuthenticationClientException
@@ -11,7 +10,6 @@ import com.epotheke.cardlink.CardlinkAuthenticationConfig
 import com.epotheke.cardlink.CardlinkAuthenticationException
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
 import com.epotheke.cardlink.ResultCode
-import com.epotheke.cardlink.UserInteraction
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.answering.sequentially
@@ -19,7 +17,6 @@ import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
 import dev.mokkery.matcher.eq
 import dev.mokkery.matcher.matching
-import dev.mokkery.mock
 import dev.mokkery.spy
 import dev.mokkery.verify.VerifyMode.Companion.exactly
 import dev.mokkery.verifySuspend
@@ -39,7 +36,6 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertInstanceOf
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
-import javax.net.ssl.SSLHandshakeException
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -110,7 +106,7 @@ class CardlinkTest {
 
     private suspend fun callEstablishCardLink(
         activity: TestActivity,
-        ws: WebsocketCommon,
+        ws: Websocket,
     ): CardlinkAuthResult {
         val proto =
             CardlinkAuthenticationProtocol(
@@ -134,7 +130,7 @@ class CardlinkTest {
                     assertThrows<CardlinkAuthenticationClientException> {
                         callEstablishCardLink(
                             activity,
-                            WebsocketCommon(SERVICE_URL_DEV, it),
+                            Websocket(SERVICE_URL_DEV, it),
                         )
                     }.cause,
                 )
@@ -156,7 +152,7 @@ class CardlinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        WebsocketCommon(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                        Websocket(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
                     )
                 }
 
@@ -197,7 +193,7 @@ class CardlinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        WebsocketCommon(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                        Websocket(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
                     )
                 }
 
@@ -240,7 +236,7 @@ class CardlinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        WebsocketCommon(SERVICE_URL_MOCK, null),
+                        Websocket(SERVICE_URL_MOCK, null),
                     )
                 }
             testJob.join()
@@ -270,7 +266,7 @@ class CardlinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        WebsocketCommon(SERVICE_URL_MOCK, null),
+                        Websocket(SERVICE_URL_MOCK, null),
                     )
                 }
             testJob.join()
@@ -300,7 +296,7 @@ class CardlinkTest {
                         assertThrows<CardlinkAuthenticationException> {
                             callEstablishCardLink(
                                 activity,
-                                WebsocketCommon(SERVICE_URL_MOCK, null),
+                                Websocket(SERVICE_URL_MOCK, null),
                             )
                         }
                     assertEquals(CardLinkErrorCodes.CardLinkCodes.TAN_RETRY_LIMIT_EXCEEDED, e.code)
@@ -345,7 +341,7 @@ class CardlinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        WebsocketCommon(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                        Websocket(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
                     )
                 }
             testJob.join()
@@ -401,7 +397,7 @@ class CardlinkTest {
                     assertNotNull(
                         callEstablishCardLink(
                             activity,
-                            WebsocketCommon(
+                            Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
                             ),
@@ -433,7 +429,7 @@ class CardlinkTest {
                     assertNotNull(
                         callEstablishCardLink(
                             activity,
-                            WebsocketCommon(
+                            Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
                             ),
@@ -464,7 +460,7 @@ class CardlinkTest {
                     assertNotNull(
                         callEstablishCardLink(
                             activity,
-                            WebsocketCommon(
+                            Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
                             ),
@@ -494,7 +490,7 @@ class CardlinkTest {
                     assertNotNull(
                         callEstablishCardLink(
                             activity,
-                            WebsocketCommon(
+                            Websocket(
                                 SERVICE_URL_DEV,
                                 TENANT_TOKEN_VALID_DEV,
                             ),
@@ -522,7 +518,7 @@ class CardlinkTest {
         runTestJobWithActivity { activity ->
             launch {
                 val ws =
-                    WebsocketCommon(
+                    Websocket(
                         SERVICE_URL_MOCK,
                         null,
                         null,
@@ -593,7 +589,7 @@ class CardlinkTest {
                     assertNotNull(
                         callEstablishCardLink(
                             activity,
-                            WebsocketCommon(
+                            Websocket(
                                 SERVICE_URL_DEV,
                                 TENANT_TOKEN_VALID_DEV,
                             ),
@@ -623,7 +619,7 @@ class CardlinkTest {
                     assertNotNull(
                         callEstablishCardLink(
                             activity,
-                            WebsocketCommon(
+                            Websocket(
                                 SERVICE_URL_PROD,
                                 TENANT_TOKEN_VALID_PROD,
                             ),

@@ -20,7 +20,7 @@
  *
  ***************************************************************************/
 
-package com.epotheke.sdk
+package com.epotheke
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.BufferOverflow
@@ -39,7 +39,7 @@ internal fun <T> protocolChannel() =
     ) { logger.warn { "InputChannel dropped message: $it" } }
 
 abstract class CardLinkProtocolBase(
-    ws: WebsocketCommon,
+    ws: Websocket,
 ) : CardLinkProtocol {
     init {
         ws.addProtocol(this)

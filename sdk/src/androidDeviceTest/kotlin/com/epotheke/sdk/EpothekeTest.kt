@@ -2,11 +2,10 @@ package com.epotheke.sdk
 
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.epotheke.cardlink.UserInteraction
+import com.epotheke.Epotheke
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
-import dev.mokkery.mock
 import dev.mokkery.spy
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
@@ -16,6 +15,8 @@ import org.junit.runner.RunWith
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 private val logger = KotlinLogging.logger {}
 
@@ -72,11 +73,11 @@ class EpothekeTest {
             assertTrue { prescriptions.availablePrescriptionLists.isNotEmpty() }
         }
 
-    @OptIn(ExperimentalUnsignedTypes::class)
+    @OptIn(ExperimentalUnsignedTypes::class, ExperimentalUuidApi::class)
     @Test
     fun testEpothekeTwoEgks() =
         runTestJobWithActivity { activity ->
-            val wsSessionId = randomUUID()
+            val wsSessionId = Uuid.random().toString()
             everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
             everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
             everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT

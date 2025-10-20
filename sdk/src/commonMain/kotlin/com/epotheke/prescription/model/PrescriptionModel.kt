@@ -20,9 +20,8 @@
  *
  ***************************************************************************/
 
-package com.epotheke.erezept.model
+package com.epotheke.prescription.model
 
-import com.epotheke.sdk.randomUUID
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -39,6 +38,8 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 const val REQUEST_PRESCRIPTION_LIST = "requestPrescriptionList"
 const val AVAILABLE_PRESCRIPTION_LISTS = "availablePrescriptionLists"
@@ -70,45 +71,53 @@ sealed interface PrescriptionMessage
 
 @Serializable
 @SerialName(REQUEST_PRESCRIPTION_LIST)
-data class RequestPrescriptionList(
-    @SerialName("ICCSNs")
-    val iccsns: List<ByteArrayAsBase64> = emptyList(),
-    val messageId: String = randomUUID(),
-) : PrescriptionMessage
+data class RequestPrescriptionList
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        @SerialName("ICCSNs")
+        val iccsns: List<ByteArrayAsBase64> = emptyList(),
+        val messageId: String = Uuid.random().toString(),
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LISTS)
-data class AvailablePrescriptionLists(
-    val availablePrescriptionLists: List<AvailablePrescriptionList>,
-    val messageId: String = randomUUID(),
-    val correlationId: String,
-) : PrescriptionMessage
+data class AvailablePrescriptionLists
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        val availablePrescriptionLists: List<AvailablePrescriptionList>,
+        val messageId: String = Uuid.random().toString(),
+        val correlationId: String,
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST)
-data class SelectedPrescriptionList(
-    @SerialName("ICCSN")
-    val iccsn: ByteArrayAsBase64,
-    val prescriptionIndexList: List<String>,
-    val version: String? = null,
-    val supplyOptionsType: SupplyOptionsType,
-    val name: String? = null,
-    val address: StreetAddress? = null,
-    val hint: String? = null,
-    val text: String? = null,
-    val phone: String? = null,
-    val mail: String? = null,
-    val messageId: String = randomUUID(),
-) : PrescriptionMessage
+data class SelectedPrescriptionList
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        @SerialName("ICCSN")
+        val iccsn: ByteArrayAsBase64,
+        val prescriptionIndexList: List<String>,
+        val version: String? = null,
+        val supplyOptionsType: SupplyOptionsType,
+        val name: String? = null,
+        val address: StreetAddress? = null,
+        val hint: String? = null,
+        val text: String? = null,
+        val phone: String? = null,
+        val mail: String? = null,
+        val messageId: String = Uuid.random().toString(),
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(GENERIC_ERROR)
-data class GenericErrorMessage(
-    val errorCode: GenericErrorResultType,
-    val errorMessage: String,
-    val messageId: String = randomUUID(),
-    val correlationId: String? = null,
-) : PrescriptionMessage
+data class GenericErrorMessage
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        val errorCode: GenericErrorResultType,
+        val errorMessage: String,
+        val messageId: String = Uuid.random().toString(),
+        val correlationId: String? = null,
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST_RESPONSE)

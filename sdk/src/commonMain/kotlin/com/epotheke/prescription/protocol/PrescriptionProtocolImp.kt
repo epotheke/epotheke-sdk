@@ -20,28 +20,30 @@
  *
  ***************************************************************************/
 
-package com.epotheke.erezept.protocol
+package com.epotheke.prescription.protocol
 
-import com.epotheke.erezept.model.AvailablePrescriptionLists
-import com.epotheke.erezept.model.GenericErrorMessage
-import com.epotheke.erezept.model.GenericErrorResultType
-import com.epotheke.erezept.model.PrescriptionMessage
-import com.epotheke.erezept.model.RequestPrescriptionList
-import com.epotheke.erezept.model.SelectedPrescriptionList
-import com.epotheke.erezept.model.SelectedPrescriptionListResponse
-import com.epotheke.erezept.model.prescriptionJsonFormatter
-import com.epotheke.sdk.CardLinkProtocol
-import com.epotheke.sdk.CardLinkProtocolBase
-import com.epotheke.sdk.WebsocketCommon
-import com.epotheke.sdk.now
-import com.epotheke.sdk.protocolChannel
-import com.epotheke.sdk.randomUUID
+import com.epotheke.CardLinkProtocol
+import com.epotheke.CardLinkProtocolBase
+import com.epotheke.Websocket
+import com.epotheke.prescription.model.AvailablePrescriptionLists
+import com.epotheke.prescription.model.GenericErrorMessage
+import com.epotheke.prescription.model.GenericErrorResultType
+import com.epotheke.prescription.model.PrescriptionMessage
+import com.epotheke.prescription.model.RequestPrescriptionList
+import com.epotheke.prescription.model.SelectedPrescriptionList
+import com.epotheke.prescription.model.SelectedPrescriptionListResponse
+import com.epotheke.prescription.model.prescriptionJsonFormatter
+import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerializationException
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 private val logger = KotlinLogging.logger {}
 private const val RECEIVE_TIMEOUT_SECONDS = 30L
@@ -54,10 +56,11 @@ interface PrescriptionProtocol : CardLinkProtocol {
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun requestPrescriptions(req: RequestPrescriptionList): AvailablePrescriptionLists
 
+    @OptIn(ExperimentalUuidApi::class)
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
     suspend fun requestPrescriptions(
         iccsns: List<String> = emptyList(),
-        messageId: String = randomUUID(),
+        messageId: String = Uuid.random().toString(),
     ): AvailablePrescriptionLists
 
     @Throws(PrescriptionProtocolException::class, CancellationException::class)
@@ -65,7 +68,7 @@ interface PrescriptionProtocol : CardLinkProtocol {
 }
 
 class PrescriptionProtocolImp(
-    private val ws: WebsocketCommon,
+    private val ws: Websocket,
 ) : CardLinkProtocolBase(ws),
     PrescriptionProtocol {
     private val inputChannel = protocolChannel<PrescriptionMessage>()
@@ -106,8 +109,9 @@ class PrescriptionProtocolImp(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     private suspend inline fun <reified T : PrescriptionMessage> receive(reqMessageId: String): T {
-        val lastTimestampUntilTimeout = now() + RECEIVE_TIMEOUT_SECONDS
+        val lastTimestampUntilTimeout = Clock.System.now().epochSeconds + RECEIVE_TIMEOUT_SECONDS
         var duration = RECEIVE_TIMEOUT_SECONDS.seconds
         while (true) {
             try {
@@ -127,7 +131,7 @@ class PrescriptionProtocolImp(
                     }
 
                     else -> {
-                        duration = (lastTimestampUntilTimeout - now()).seconds
+                        duration = (lastTimestampUntilTimeout - Clock.System.now().epochSeconds).seconds
                     }
                 }
                 // this might happen on reconnect since server sends session information as a hello

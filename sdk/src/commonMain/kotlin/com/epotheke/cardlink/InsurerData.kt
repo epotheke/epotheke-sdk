@@ -1,8 +1,8 @@
 package com.epotheke.cardlink
 
+import com.fleeksoft.charset.Charsets
 import com.fleeksoft.charset.decodeToString
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.utils.io.charsets.forName
 import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.serialization.XmlElement
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
@@ -13,14 +13,14 @@ private val logger = KotlinLogging.logger { }
 internal fun UByteArray.toInsurerData(): AllgemeineVersicherungsdaten? =
     try {
         val start = this[0].toInt().shl(8).or(this[1].toInt())
-        val len = this[2].toInt().shl(8).or(this[3].toInt())
+        val end = this[2].toInt().shl(8).or(this[3].toInt())
 
-        val vd = this.sliceArray(IntRange(start, start + len - 1))
+        val vd = this.sliceArray(IntRange(start, end))
 
         val xmlString =
             gunzip(
                 vd,
-            ).toByteArray().decodeToString(Charsets.forName("ISO-8859-15"))
+            ).decodeToString(Charsets.forName("ISO-8859-15"))
         xml.decodeFromString(AllgemeineVersicherungsdaten.serializer(), xmlString)
     } catch (e: Exception) {
         logger.warn(e) { "Exception during reading of ef.vd" }
