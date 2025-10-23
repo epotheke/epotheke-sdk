@@ -20,7 +20,7 @@
  *
  ***************************************************************************/
 
-package com.epotheke.prescription.model
+package com.epotheke.prescription
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer

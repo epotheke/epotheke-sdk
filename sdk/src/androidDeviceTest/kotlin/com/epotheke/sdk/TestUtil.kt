@@ -12,7 +12,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.test.core.app.launchActivity
-import com.epotheke.cardlink.CardLinkErrorCodes
+import com.epotheke.cardlink.CardCommunicationResultCode
 import com.epotheke.cardlink.ResultCode
 import com.epotheke.cardlink.UserInteraction
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -180,23 +180,12 @@ fun userInterActionStub() =
             logger.debug { "onCardRecognized" }
         }
 
-        override suspend fun onCardInsufficient() {
-            logger.debug { "onCardInsufficient" }
-        }
-
-        override suspend fun onCardRemoved() {
-            logger.debug { "onCardRemoved" }
-        }
-
         override suspend fun onCanRequest(): String {
             logger.debug { "onCanRequest" }
             throw NotImplementedError("Methods returning must be mocked.")
         }
 
-        override suspend fun onCanRetry(
-            resultCode: CardLinkErrorCodes.ClientCodes,
-            errorMessage: String?,
-        ): String {
+        override suspend fun onCanRetry(resultCode: CardCommunicationResultCode): String {
             logger.debug { "onCanRetry" }
             throw NotImplementedError("onCanRetry not mocked - Methods returning must be mocked.")
         }
@@ -208,7 +197,7 @@ fun userInterActionStub() =
 
         override suspend fun onPhoneNumberRetry(
             resultCode: ResultCode,
-            errorMessage: String?,
+            msg: String?,
         ): String {
             logger.debug { "onPhoneNumberRetry" }
             throw NotImplementedError("onPhoneNumberRetry not mocked - Methods returning must be mocked.")
@@ -221,7 +210,7 @@ fun userInterActionStub() =
 
         override suspend fun onTanRetry(
             resultCode: ResultCode,
-            errorMessage: String?,
+            msg: String?,
         ): String {
             logger.debug { "onTanRetry" }
             throw NotImplementedError("onTanRetry not mocked - Methods returning must be mocked.")

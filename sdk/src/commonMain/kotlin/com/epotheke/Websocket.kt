@@ -24,7 +24,7 @@ package com.epotheke
 
 import com.epotheke.cardlink.GematikEnvelope
 import com.epotheke.cardlink.SessionInformation
-import com.epotheke.prescription.model.prescriptionJsonFormatter
+import com.epotheke.prescription.prescriptionJsonFormatter
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession

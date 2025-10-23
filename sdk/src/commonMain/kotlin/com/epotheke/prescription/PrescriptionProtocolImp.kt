@@ -20,19 +20,11 @@
  *
  ***************************************************************************/
 
-package com.epotheke.prescription.protocol
+package com.epotheke.prescription
 
 import com.epotheke.CardLinkProtocol
 import com.epotheke.CardLinkProtocolBase
 import com.epotheke.Websocket
-import com.epotheke.prescription.model.AvailablePrescriptionLists
-import com.epotheke.prescription.model.GenericErrorMessage
-import com.epotheke.prescription.model.GenericErrorResultType
-import com.epotheke.prescription.model.PrescriptionMessage
-import com.epotheke.prescription.model.RequestPrescriptionList
-import com.epotheke.prescription.model.SelectedPrescriptionList
-import com.epotheke.prescription.model.SelectedPrescriptionListResponse
-import com.epotheke.prescription.model.prescriptionJsonFormatter
 import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.TimeoutCancellationException
@@ -49,7 +41,7 @@ private val logger = KotlinLogging.logger {}
 private const val RECEIVE_TIMEOUT_SECONDS = 30L
 
 class PrescriptionProtocolException(
-    val msg: GenericErrorMessage,
+    val genericErrorMessage: GenericErrorMessage,
 ) : Exception()
 
 interface PrescriptionProtocol : CardLinkProtocol {

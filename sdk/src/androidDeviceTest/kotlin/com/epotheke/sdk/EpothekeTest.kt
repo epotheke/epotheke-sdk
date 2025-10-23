@@ -22,7 +22,6 @@ private val logger = KotlinLogging.logger {}
 
 @RunWith(AndroidJUnit4::class)
 class EpothekeTest {
-    // @Test
     @BeforeAll
     fun assureNfcOn() {
         runBlocking {

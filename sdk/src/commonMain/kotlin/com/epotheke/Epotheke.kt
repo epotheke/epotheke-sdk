@@ -1,7 +1,7 @@
 package com.epotheke
 
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
-import com.epotheke.prescription.protocol.PrescriptionProtocolImp
+import com.epotheke.prescription.PrescriptionProtocolImp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

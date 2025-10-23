@@ -2,7 +2,9 @@ package com.epotheke.cardlink
 
 import com.epotheke.CardLinkProtocolBase
 import com.epotheke.Websocket
-import com.epotheke.prescription.model.prescriptionJsonFormatter
+import com.epotheke.cardlink.CardlinkAuthenticationConfig.readInsurerData
+import com.epotheke.cardlink.CardlinkAuthenticationConfig.readPersonalData
+import com.epotheke.prescription.prescriptionJsonFormatter
 import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
@@ -39,6 +41,8 @@ import kotlin.uuid.Uuid
 
 private val MESSAGE_TIMEOUT_DURATION = 5.seconds
 
+private val logger = KotlinLogging.logger { }
+
 @OptIn(ExperimentalUnsignedTypes::class)
 fun gunzip(data: UByteArray) =
     Buffer()
@@ -49,8 +53,6 @@ fun gunzip(data: UByteArray) =
                 ),
             )
         }.readByteArray()
-
-private val logger = KotlinLogging.logger { }
 
 object CardlinkAuthenticationConfig {
     var readPersonalData = false
@@ -92,8 +94,8 @@ class CardlinkAuthenticationProtocol(
     lateinit var interaction: UserInteraction
 
     @Throws(
-        CardlinkAuthenticationException::class,
-        CardlinkAuthenticationClientException::class,
+        CardLinkError::class,
+        CardLinkClientError::class,
         CancellationException::class,
     )
     @OptIn(ExperimentalUnsignedTypes::class)
@@ -111,123 +113,77 @@ class CardlinkAuthenticationProtocol(
             if (!sessionInfo.phoneRegistered) {
                 registerPhone()
             }
+            var cardCommunicationResult: CardCommunicationResultCode? = null
+            do {
+                val can = getCheckedCan(cardCommunicationResult)
+                try {
+                    withConnectedCard {
+                        if (EgkCif.metadata.id != cardType) {
+                            throw CardInsufficient(
+                                "Recognized card is not an eGK",
+                            )
+                        }
 
-            retryIfPossible { lastCode, lastMsg ->
-                val can = getCheckedCan(lastCode, lastMsg)
-                withConnectedCard {
-                    if (EgkCif.metadata.id != cardType) {
-                        interaction.onCardInsufficient()
-                        throw CardlinkAuthenticationClientException(
-                            CardLinkErrorCodes.ClientCodes.OTHER_CLIENT_ERROR,
-                            "Recognized card is not an eGK",
+                        if (readPersonalData) {
+                            cardLinkAuthResult.personalData = readPersonalData(can) ?: readError("Personal data")
+                        }
+                        if (readInsurerData) {
+                            cardLinkAuthResult.insurerData = readInsurerData(can) ?: readError("Insurer data")
+                        }
+
+                        val readMfData =
+                            readMfData(can)?.apply {
+                                cardLinkAuthResult.iccsn = readIccsnFrom(gdo) ?: readError("ICCSN")
+                            } ?: readError("MF")
+
+                        val cert = readCert(can) ?: readError("Certificate")
+
+                        sendEgkData(
+                            sessionInfo.cardSessionId,
+                            mfData = readMfData,
+                            cert,
                         )
+
+                        handleRemoteApdus()
+                        // no errors break retry loop
+                        cardCommunicationResult = null
                     }
-
-                    if (CardlinkAuthenticationConfig.readPersonalData) {
-                        cardLinkAuthResult.personalData = readPersonalData(can) ?: readError("Personal data")
-                    }
-                    if (CardlinkAuthenticationConfig.readInsurerData) {
-                        cardLinkAuthResult.insurerData = readInsurerData(can) ?: readError("Insurer data")
-                    }
-
-                    val readMfData =
-                        readMfData(can)?.apply {
-                            cardLinkAuthResult.iccsn = readIccsnFrom(gdo) ?: readError("ICCSN")
-                        } ?: readError("MF")
-
-                    val cert = readCert(can) ?: readError("Certificate")
-
-                    sendEgkData(
-                        sessionInfo.cardSessionId,
-                        mfData = readMfData,
-                        cert,
-                    )
-
-                    handleRemoteApdus()
+                } catch (_: PaceError) {
+                    cardCommunicationResult = CardCommunicationResultCode.CAN_INCORRECT
                 }
-            }
+            } while (
+                cardCommunicationResult in listOf(CardCommunicationResultCode.CAN_INCORRECT)
+            )
+
             // no error means success
             cardLinkAuthResult
         }
 
     private fun readError(toBeRead: String): Nothing =
-        throw CardlinkAuthenticationClientException(
-            CardLinkErrorCodes.ClientCodes.OTHER_NFC_ERROR,
+        throw OtherNfcError(
             "Could not read $toBeRead.",
         )
 
-    private suspend fun mapErrors(block: suspend () -> CardlinkAuthResult): CardlinkAuthResult {
+    // move this maybe
+    // don't forget throws for funcs which use this is CardlinkError, is CardlinkClientError, cancellation
+    private inline fun mapErrors(block: () -> CardlinkAuthResult): CardlinkAuthResult {
         try {
             return block()
         } catch (e: Exception) {
-            when (e) {
-                is CardlinkAuthenticationException,
-                is CardlinkAuthenticationClientException,
+            throw when (e) {
+                is CancellationException,
+                is CardLinkError,
+                is CardLinkClientError,
                 -> throw e
-                is TimeoutCancellationException -> {
-                    throw CardlinkAuthenticationClientException(
-                        CardLinkErrorCodes.ClientCodes.CLIENT_TIMEOUT,
-                        "Timeout during cardlink authentication",
-                        e,
-                    )
-                }
-                // wrong card
-                is DeviceUnsupported -> {
-                    interaction.onCardInsufficient()
-                    throw CardlinkAuthenticationClientException(
-                        CardLinkErrorCodes.ClientCodes.OTHER_NFC_ERROR,
-                        "Card not usable.",
-                    )
-                }
-                // appears if card gets lost
-                is DeviceUnavailable -> {
-                    interaction.onCardRemoved()
-                    throw CardlinkAuthenticationClientException(
-                        CardLinkErrorCodes.ClientCodes.CARD_REMOVED,
-                        "Card connection lost.",
-                    )
-                }
-                is CancellationException -> {
-                    logger.warn(e) { "Cancellation appeared. Not throwing further." }
-                    throw e
-                }
-                is SmartCardStackMissing -> {
-                    throw CardlinkAuthenticationClientException(
-                        CardLinkErrorCodes.ClientCodes.OTHER_NFC_ERROR,
-                        "NFC not available",
-                    )
-                }
-                else -> {
-                    logger.error(e) { "Unknown exception" }
-                    throw CardlinkAuthenticationClientException(
-                        CardLinkErrorCodes.ClientCodes.OTHER_CLIENT_ERROR,
-                        "${e.message}",
-                        e,
-                    )
-                }
-            }
-        }
-    }
 
-    private suspend fun retryIfPossible(
-        cardCommunication: suspend (
-            lastResultCode: CardLinkErrorCodes.ClientCodes?,
-            errorMessage: String?,
-        ) -> Unit,
-    ) {
-        try {
-            cardCommunication(null, null)
-        } catch (e: CardlinkAuthenticationClientException) {
-            // Errors where a retry makes sense can be added here
-            when (e.code) {
-                CardLinkErrorCodes.ClientCodes.CAN_INCORRECT -> {
-                    retryIfPossible { _, _ ->
-                        cardCommunication(e.code, e.message)
-                    }
-                }
-                else -> {
-                    throw e
-                }
+                is TimeoutCancellationException -> Timeout(cause = e)
+                // wrong card
+                is DeviceUnsupported -> CardInsufficient(cause = e)
+                // appears if card gets lost
+                is DeviceUnavailable -> CardRemoved(cause = e)
+                is SmartCardStackMissing -> OtherNfcError(cause = e)
+
+                else -> OtherClientError(cause = e)
             }
         }
     }
@@ -292,7 +248,7 @@ class CardlinkAuthenticationProtocol(
                     if (correlationId == envelope.correlationId) {
                         envelope
                     } else {
-                        throw Exception("Correlation ids don't match")
+                        throw CorrelationIdMismatch()
                     }
                 } else {
                     envelope
@@ -337,12 +293,8 @@ class CardlinkAuthenticationProtocol(
         confirmTan()
     }
 
-    private fun handleTaskListError(egkPayload: TasklistErrorPayload): Unit =
-        throw CardlinkAuthenticationException(
-            CardLinkErrorCodes.CardLinkCodes.byStatus(egkPayload.status)
-                ?: CardLinkErrorCodes.CardLinkCodes.UNKNOWN_ERROR,
-            egkPayload.errormessage ?: "Received an unknown error from CardLink service.",
-        )
+    private fun handleTaskListError(egkPayload: TasklistErrorPayload): Nothing =
+        throw CardLinkError.byCode(egkPayload.status, egkPayload.errormessage)
 
     private suspend fun requestTan(
         lastResultCode: ResultCode? = null,
@@ -393,10 +345,7 @@ class CardlinkAuthenticationProtocol(
         logger.debug {
             "Message was $egkPayload which is no valid message at this step."
         }
-        throw CardlinkAuthenticationException(
-            CardLinkErrorCodes.CardLinkCodes.INVALID_WEBSOCKET_MESSAGE,
-            errMsg,
-        )
+        throw InvalidWebsocketMessage()
     }
 
     private fun handleInvalidResultCode(code: ResultCode?) {
@@ -405,10 +354,7 @@ class CardlinkAuthenticationProtocol(
         logger.debug {
             "Result code was $code which is no valid answer at this step."
         }
-        throw CardlinkAuthenticationException(
-            CardLinkErrorCodes.CardLinkCodes.INVALID_WEBSOCKET_MESSAGE,
-            errMsg,
-        )
+        throw InvalidWebsocketMessage()
     }
 
     private suspend fun confirmTan(
@@ -421,7 +367,7 @@ class CardlinkAuthenticationProtocol(
                 else -> {
                     interaction.onTanRetry(
                         lastResultCode,
-                        lastErrorMessage ?: "",
+                        lastErrorMessage,
                     )
                 }
             }
@@ -445,18 +391,8 @@ class CardlinkAuthenticationProtocol(
                         // retry
                         confirmTan(egkPayload.resultCode, egkPayload.errorMessage)
                     }
-                    ResultCode.TAN_EXPIRED -> {
-                        throw CardlinkAuthenticationException(
-                            resultCode.toCardLinkErrorCode(),
-                            egkPayload.errorMessage ?: "Tan expired.",
-                        )
-                    }
-                    ResultCode.TAN_RETRY_LIMIT_EXCEEDED -> {
-                        throw CardlinkAuthenticationException(
-                            resultCode.toCardLinkErrorCode(),
-                            egkPayload.errorMessage ?: "Tan retry limit exceeded.",
-                        )
-                    }
+                    ResultCode.TAN_EXPIRED -> throw TanExpired()
+                    ResultCode.TAN_RETRY_LIMIT_EXCEEDED -> throw TanRetryLimitExceeded()
 
                     else -> handleInvalidResultCode(resultCode)
                 }
@@ -466,22 +402,19 @@ class CardlinkAuthenticationProtocol(
         }
     }
 
-    private suspend fun getCheckedCan(
-        lastResultCode: CardLinkErrorCodes.ClientCodes? = null,
-        errorMessage: String? = null,
-    ): String {
+    private suspend fun getCheckedCan(lastResultCode: CardCommunicationResultCode?): String {
         val can =
             if (lastResultCode == null) {
                 interaction.onCanRequest()
             } else {
-                interaction.onCanRetry(lastResultCode, errorMessage)
+                interaction.onCanRetry(lastResultCode)
             }
         return if (can.isBlank()) {
-            getCheckedCan(CardLinkErrorCodes.ClientCodes.CAN_EMPTY, "Empty CAN provided.")
+            getCheckedCan(CardCommunicationResultCode.CAN_EMPTY)
         } else if (can.length > 6) {
-            getCheckedCan(CardLinkErrorCodes.ClientCodes.CAN_TOO_LONG, "Wrong size of CAN: ${can.length}.")
+            getCheckedCan(CardCommunicationResultCode.CAN_TOO_LONG)
         } else if (can.toIntOrNull() == null) {
-            getCheckedCan(CardLinkErrorCodes.ClientCodes.CAN_NOT_NUMERIC, "Provided CAN is not numeric.")
+            getCheckedCan(CardCommunicationResultCode.CAN_NOT_NUMERIC)
         } else {
             can
         }
@@ -494,10 +427,7 @@ class CardlinkAuthenticationProtocol(
 
             val terminal =
                 terminals.list().firstOrNull()
-                    ?: throw CardlinkAuthenticationClientException(
-                        CardLinkErrorCodes.ClientCodes.OTHER_NFC_ERROR,
-                        "The nfc stack could not be initialized",
-                    )
+                    ?: throw OtherNfcError("NFC stack could not be initialized")
 
             val session =
                 SmartcardSal(
@@ -574,28 +504,14 @@ class CardlinkAuthenticationProtocol(
                         ),
                     )
             when (missing) {
-                MissingAuthentications.Unsolveable -> throw CardlinkAuthenticationClientException(
-                    CardLinkErrorCodes.ClientCodes.OTHER_PACE_ERROR,
-                    "Card authentication could not be performed.",
-                )
+                MissingAuthentications.Unsolveable -> throw OtherPaceError()
                 is MissingAuthentications.MissingDidAuthentications -> {
                     val authOption = missing.options.first()
                     when (val did = authOption.first().authDid) {
                         is PaceDid -> {
-                            try {
-                                did.establishChannel(can, null, null)
-                            } catch (e: PaceError) {
-                                throw CardlinkAuthenticationClientException(
-                                    CardLinkErrorCodes.ClientCodes.CAN_INCORRECT,
-                                    "The given CAN lead to error: ${e.message}",
-                                )
-                            }
+                            did.establishChannel(can, null, null)
                         }
-
-                        else -> throw CardlinkAuthenticationClientException(
-                            CardLinkErrorCodes.ClientCodes.OTHER_PACE_ERROR,
-                            "Card authentication could not be performed.",
-                        )
+                        else -> throw OtherPaceError()
                     }
                 }
             }

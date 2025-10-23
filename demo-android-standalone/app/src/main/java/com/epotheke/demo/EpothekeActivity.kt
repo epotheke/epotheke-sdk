@@ -34,7 +34,6 @@ import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.epotheke.cardlink.CardLinkErrorCodes
 import com.epotheke.cardlink.CardlinkAuthResult
 import com.epotheke.cardlink.ResultCode
 import com.epotheke.cardlink.UserInteraction
@@ -48,6 +47,7 @@ import androidx.core.content.edit
 import com.epotheke.cardlink.CardlinkAuthenticationConfig
 import com.epotheke.prescription.model.RequestPrescriptionList
 import com.epotheke.Epotheke
+import com.epotheke.cardlink.CardCommunicationResultCode
 import kotlinx.coroutines.Job
 import com.epotheke.prescription.model.MedicationCompounding
 import com.epotheke.prescription.model.MedicationFreeText
@@ -335,9 +335,9 @@ class EpothekeActivity : AppCompatActivity() {
          * Information about what went wrong can be gathered by resultCode and message.
          */
         override suspend fun onCanRetry(
-            resultCode: CardLinkErrorCodes.ClientCodes, errorMessage: String?
+            resultCode: CardCommunicationResultCode
         ) = suspendCoroutine { continuation ->
-            getValueFromUser("$resultCode - Please provide CAN of card", storedValues.can) { value ->
+            getValueFromUser("${resultCode.msg} - Please provide CAN of card", storedValues.can) { value ->
                 storedValues.can = value
                 continuation.resume(value)
             }
@@ -360,23 +360,6 @@ class EpothekeActivity : AppCompatActivity() {
         override suspend fun onCardRecognized() = runOnUiThread {
             setBusy(true)
             showInfo("Card was detected. Try to avoid movement.")
-        }
-
-        /**
-         * Gets called, when the card is not sufficient for the process.
-         */
-        override suspend fun onCardInsufficient() = runOnUiThread {
-            setBusy(false)
-            showInfo("Card was insufficient")
-        }
-
-        /**
-         * Gets called, when the card is removed from the reader.
-         * The app may inform the user, that the app was removed.
-         */
-        override suspend fun onCardRemoved() = runOnUiThread {
-            setBusy(false)
-            showInfo("Card was removed or connection was lost.")
         }
 
     }

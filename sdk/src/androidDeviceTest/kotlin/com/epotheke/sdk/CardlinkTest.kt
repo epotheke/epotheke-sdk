@@ -3,13 +3,14 @@ package com.epotheke.sdk
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.Websocket
-import com.epotheke.cardlink.CardLinkErrorCodes
+import com.epotheke.cardlink.CardCommunicationResultCode
+import com.epotheke.cardlink.CardLinkClientError
+import com.epotheke.cardlink.CardLinkError
 import com.epotheke.cardlink.CardlinkAuthResult
-import com.epotheke.cardlink.CardlinkAuthenticationClientException
 import com.epotheke.cardlink.CardlinkAuthenticationConfig
-import com.epotheke.cardlink.CardlinkAuthenticationException
 import com.epotheke.cardlink.CardlinkAuthenticationProtocol
 import com.epotheke.cardlink.ResultCode
+import com.epotheke.cardlink.TanRetryLimitExceeded
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.answering.sequentially
@@ -24,8 +25,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.websocket.WebSocketException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -36,7 +37,6 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertInstanceOf
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
-import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
@@ -49,7 +49,6 @@ private val logger = KotlinLogging.logger {}
 class CardlinkTest {
     private val testTimeout = 10.seconds
 
-    // @Test
     @BeforeAll
     fun assureNfcOn() {
         runBlocking {
@@ -88,12 +87,12 @@ class CardlinkTest {
     }
 
     private fun runTestJobWithActivity(testJob: suspend CoroutineScope.(activity: TestActivity) -> Unit) {
-        runBlocking(Dispatchers.IO) {
+        runBlocking {
             launchActivity<TestActivity>().use { scenario ->
                 var j: Job? = null
                 scenario.onActivity { activity ->
                     j =
-                        launch {
+                        CoroutineScope(SupervisorJob()).launch {
                             testJob(activity)
                         }
                 }
@@ -127,7 +126,7 @@ class CardlinkTest {
                 TENANT_TOKEN_REVOKED_DEV,
             ).forEach {
                 assertInstanceOf<WebSocketException>(
-                    assertThrows<CardlinkAuthenticationClientException> {
+                    assertThrows<CardLinkClientError> {
                         callEstablishCardLink(
                             activity,
                             Websocket(SERVICE_URL_DEV, it),
@@ -293,13 +292,13 @@ class CardlinkTest {
             testJob =
                 launch {
                     val e =
-                        assertThrows<CardlinkAuthenticationException> {
+                        assertThrows<CardLinkError> {
                             callEstablishCardLink(
                                 activity,
                                 Websocket(SERVICE_URL_MOCK, null),
                             )
                         }
-                    assertEquals(CardLinkErrorCodes.CardLinkCodes.TAN_RETRY_LIMIT_EXCEEDED, e.code)
+                    assertInstanceOf<TanRetryLimitExceeded>(e)
                 }
             testJob.join()
 
@@ -322,7 +321,7 @@ class CardlinkTest {
             everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
 
             everySuspend { uiMock.onCanRequest() } returns ""
-            everySuspend { uiMock.onCanRetry(any(), any()) } sequentially {
+            everySuspend { uiMock.onCanRetry(any()) } sequentially {
                 returns("1234567")
                 returns("ABCDEF")
                 repeat(nbrWrongButValidTan) {
@@ -355,16 +354,16 @@ class CardlinkTest {
                 uiMock.onCanRequest()
             }
             verifySuspend {
-                uiMock.onCanRetry(eq(CardLinkErrorCodes.ClientCodes.CAN_EMPTY), matching { it != null })
+                uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_EMPTY))
             }
             verifySuspend {
-                uiMock.onCanRetry(eq(CardLinkErrorCodes.ClientCodes.CAN_TOO_LONG), matching { it != null })
+                uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_TOO_LONG))
             }
             verifySuspend {
-                uiMock.onCanRetry(eq(CardLinkErrorCodes.ClientCodes.CAN_NOT_NUMERIC), matching { it != null })
+                uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_NOT_NUMERIC))
             }
             verifySuspend(exactly(nbrWrongButValidTan)) {
-                uiMock.onCanRetry(eq(CardLinkErrorCodes.ClientCodes.CAN_INCORRECT), matching { it != null })
+                uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_INCORRECT))
             }
             verifySuspend { uiMock.requestCardInsertion() }
         }
@@ -379,13 +378,11 @@ class CardlinkTest {
 
                 everySuspend { uiMock.onCanRequest() } returns CAN_WRONG
 
-                everySuspend { uiMock.onCanRetry(any(), any()) } calls {
+                everySuspend { uiMock.onCanRetry(any()) } calls {
                     countDown(activity, "Remove card", 5.seconds)
                     CAN_CORRECT
                 }
-                everySuspend { uiMock.onCardRemoved() } calls {
-                    activity.msg("Card removed")
-                }
+
                 everySuspend { uiMock.requestCardInsertion() } calls {
                     activity.msg("Insert Card")
                 }

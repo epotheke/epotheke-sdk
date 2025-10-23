@@ -5,28 +5,21 @@ interface UserInteraction {
 
     suspend fun onCardRecognized()
 
-    suspend fun onCardInsufficient()
-
-    suspend fun onCardRemoved()
-
     suspend fun onCanRequest(): String
 
-    suspend fun onCanRetry(
-        resultCode: CardLinkErrorCodes.ClientCodes,
-        errorMessage: String?,
-    ): String
+    suspend fun onCanRetry(resultCode: CardCommunicationResultCode): String
 
     suspend fun onPhoneNumberRequest(): String
 
     suspend fun onPhoneNumberRetry(
         resultCode: ResultCode,
-        errorMessage: String?,
+        msg: String?,
     ): String
 
     suspend fun onTanRequest(): String
 
     suspend fun onTanRetry(
         resultCode: ResultCode,
-        errorMessage: String?,
+        msg: String?,
     ): String
 }
