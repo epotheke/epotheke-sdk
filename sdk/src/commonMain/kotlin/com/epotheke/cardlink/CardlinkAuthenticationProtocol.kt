@@ -40,6 +40,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private val MESSAGE_TIMEOUT_DURATION = 5.seconds
+internal const val CAN_LEN = 6
 
 private val logger = KotlinLogging.logger { }
 
@@ -411,8 +412,8 @@ class CardlinkAuthenticationProtocol(
             }
         return if (can.isBlank()) {
             getCheckedCan(CardCommunicationResultCode.CAN_EMPTY)
-        } else if (can.length > 6) {
-            getCheckedCan(CardCommunicationResultCode.CAN_TOO_LONG)
+        } else if (can.length != CAN_LEN) {
+            getCheckedCan(CardCommunicationResultCode.CAN_LEN_WRONG)
         } else if (can.toIntOrNull() == null) {
             getCheckedCan(CardCommunicationResultCode.CAN_NOT_NUMERIC)
         } else {

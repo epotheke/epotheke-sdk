@@ -357,7 +357,7 @@ class CardlinkTest {
                 uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_EMPTY))
             }
             verifySuspend {
-                uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_TOO_LONG))
+                uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_LEN_WRONG))
             }
             verifySuspend {
                 uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_NOT_NUMERIC))

@@ -6,8 +6,6 @@ enum class CardCommunicationResultCode(
     CAN_INCORRECT("Provided CAN was not correct."),
 
     CAN_EMPTY("Empty CAN provided."),
-    CAN_TOO_LONG("Can too long."),
+    CAN_LEN_WRONG("Can must have $CAN_LEN digits."),
     CAN_NOT_NUMERIC("Provided CAN is not numeric."),
 }
-
-// TODO error happend on client side if can too short
