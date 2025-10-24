@@ -45,15 +45,11 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import androidx.core.content.edit
 import com.epotheke.cardlink.CardlinkAuthenticationConfig
-import com.epotheke.prescription.model.RequestPrescriptionList
 import com.epotheke.Epotheke
 import com.epotheke.cardlink.CardCommunicationResultCode
+import com.epotheke.prescription.*
 import kotlinx.coroutines.Job
-import com.epotheke.prescription.model.MedicationCompounding
-import com.epotheke.prescription.model.MedicationFreeText
-import com.epotheke.prescription.model.MedicationIngredient
-import com.epotheke.prescription.model.MedicationPzn
-import com.epotheke.prescription.model.PrescriptionBundle
+
 
 
 private val logger = KotlinLogging.logger { }
