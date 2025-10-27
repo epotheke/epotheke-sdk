@@ -166,8 +166,6 @@ class CardLinkAuthenticationProtocol(
             "Could not read $toBeRead.",
         )
 
-    // move this maybe
-    // don't forget throws for funcs which use this is CardlinkError, is CardlinkClientError, cancellation
     private inline fun mapErrors(block: () -> CardLinkAuthResult): CardLinkAuthResult {
         try {
             return block()

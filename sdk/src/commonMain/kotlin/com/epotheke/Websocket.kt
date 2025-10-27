@@ -104,7 +104,7 @@ class Websocket(
                 }
         }
 
-    // Not that the protocols is initialised containing the wsSessionIdProtocol
+    // Note that the protocols is initialised containing the wsSessionIdProtocol
     private val protocols = mutableListOf<CardLinkProtocol>(wsSessionIdProtocol)
 
     private val client: HttpClient = getHttpClient(tenantToken)
