@@ -3,14 +3,20 @@ package com.epotheke.sdk
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.Epotheke
+import com.epotheke.Websocket
+import com.epotheke.cardlink.CardLinkClientError
+import com.epotheke.prescription.PrescriptionProtocolException
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
 import dev.mokkery.spy
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.plugins.websocket.WebSocketException
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.assertInstanceOf
+import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -40,6 +46,29 @@ class EpothekeTest {
     }
 
     val uiMock = spy(userInterActionStub())
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun testInvalidTokens() =
+        runTestJobWithActivity { activity ->
+            listOf(
+                TENANT_TOKEN_INVALID_DEV,
+                TENANT_TOKEN_EXPIRED_DEV,
+                TENANT_TOKEN_REVOKED_DEV,
+            ).forEach {
+                assertInstanceOf<WebSocketException>(
+                    assertThrows<PrescriptionProtocolException> {
+                        val epotheke =
+                            Epotheke(
+                                assertNotNull(activity.factory),
+                                SERVICE_URL_DEV,
+                                it,
+                            )
+                        epotheke.prescriptionProtocol.requestPrescriptions()
+                    }.cause,
+                )
+            }
+        }
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test

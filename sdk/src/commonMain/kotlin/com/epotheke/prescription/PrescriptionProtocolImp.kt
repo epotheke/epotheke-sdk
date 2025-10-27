@@ -27,6 +27,7 @@ import com.epotheke.CardLinkProtocolBase
 import com.epotheke.Websocket
 import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.plugins.websocket.WebSocketException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.SerializationException
@@ -41,7 +42,8 @@ private val logger = KotlinLogging.logger {}
 private const val RECEIVE_TIMEOUT_SECONDS = 30L
 
 class PrescriptionProtocolException(
-    val genericErrorMessage: GenericErrorMessage,
+    val genericErrorMessage: GenericErrorMessage? = null,
+    override val cause: Exception? = null,
 ) : Exception()
 
 interface PrescriptionProtocol : CardLinkProtocol {
@@ -152,6 +154,9 @@ class PrescriptionProtocolImp(
         } catch (e: Exception) {
             when (e) {
                 is PrescriptionProtocolException -> throw e
+                is WebSocketException -> throw PrescriptionProtocolException(
+                    cause = e,
+                )
                 else -> {
                     logger.error(e) { "Unspecified error" }
                     throw PrescriptionProtocolException(
@@ -160,6 +165,7 @@ class PrescriptionProtocolImp(
                             errorMessage = "Unspecified error",
                             correlationId = req.messageId,
                         ),
+                        cause = e,
                     )
                 }
             }
@@ -176,6 +182,9 @@ class PrescriptionProtocolImp(
         } catch (e: Exception) {
             when (e) {
                 is PrescriptionProtocolException -> throw e
+                is WebSocketException -> throw PrescriptionProtocolException(
+                    cause = e,
+                )
                 else -> {
                     logger.error(e) { "Unspecified error" }
                     throw PrescriptionProtocolException(
@@ -184,6 +193,7 @@ class PrescriptionProtocolImp(
                             errorMessage = "Unspecified error",
                             correlationId = selection.messageId,
                         ),
+                        cause = e,
                     )
                 }
             }
