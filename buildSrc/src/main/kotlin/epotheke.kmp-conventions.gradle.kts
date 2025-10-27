@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     id("org.jlleitschuh.gradle.ktlint")
     // TODO: add coverage convention when https://github.com/Kotlin/kotlinx-kover/issues/747 is solved
+    // it is - still doesn't work and leads to a null-error regarding build variants
     // id("openecard.coverage-conventions")
     id("dev.mokkery")
     kotlin("plugin.serialization")
