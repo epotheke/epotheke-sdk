@@ -241,7 +241,7 @@ struct ContentView: View {
 
                 switch error.kotlinError {
                 case let e as PrescriptionProtocolException:
-                    status = e.genericErrorMessage.errorMessage
+                    status = e.genericErrorMessage?.errorMessage ?? "missing error message"
                 case .some(let e):
                     status = (e as? KotlinException)?.message ?? "missing error message"
                 case .none:
