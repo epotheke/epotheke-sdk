@@ -34,7 +34,7 @@ import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.epotheke.cardlink.CardlinkAuthResult
+import com.epotheke.cardlink.CardLinkAuthResult
 import com.epotheke.cardlink.ResultCode
 import com.epotheke.cardlink.UserInteraction
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -44,7 +44,7 @@ import org.openecard.sc.pcsc.AndroidTerminalFactory
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import androidx.core.content.edit
-import com.epotheke.cardlink.CardlinkAuthenticationConfig
+import com.epotheke.cardlink.CardLinkAuthenticationConfig
 import com.epotheke.Epotheke
 import com.epotheke.cardlink.CardCommunicationResultCode
 import com.epotheke.prescription.*
@@ -115,7 +115,7 @@ class EpothekeActivity : AppCompatActivity() {
      * Via epotheke we can add multiple eGKs to a carldink-session.
      * We here store the results of each such authentication process for later use.
      */
-    private var authenticationResults: MutableList<CardlinkAuthResult> = mutableListOf()
+    private var authenticationResults: MutableList<CardLinkAuthResult> = mutableListOf()
 
     private var currentJob: Job? = null
 
@@ -459,11 +459,11 @@ class EpothekeActivity : AppCompatActivity() {
         return lifecycleScope.launch(Dispatchers.IO) {
             try {
                 //Switch on reading of personal data during authentication
-                CardlinkAuthenticationConfig.readPersonalData = true
-                CardlinkAuthenticationConfig.readInsurerData = true
+                CardLinkAuthenticationConfig.readPersonalData = true
+                CardLinkAuthenticationConfig.readInsurerData = true
 
-                epotheke?.cardlinkAuthenticationProtocol?.establishCardlink(interaction = userInteraction)
-                    ?.let { result: CardlinkAuthResult ->
+                epotheke?.cardLinkAuthenticationProtocol?.establishCardLink(interaction = userInteraction)
+                    ?.let { result: CardLinkAuthResult ->
                         authenticationResults.add(result)
                         showInfo(
                             listOf(
@@ -485,7 +485,7 @@ class EpothekeActivity : AppCompatActivity() {
                     }
 
             } catch (e: Exception) {
-                showInfo("Error ${e.message}")
+                showInfo("Error: ${e.message}")
                 logger.error(e) { "Exception authenticating" }
             }
             switchInputs(false)

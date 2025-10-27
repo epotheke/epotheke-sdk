@@ -28,6 +28,7 @@ import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sal.sc.SmartcardSal
 import org.openecard.sal.sc.recognition.DirectCardRecognition
 import org.openecard.sc.apdu.toCommandApdu
+import org.openecard.sc.iface.ReaderUnavailable
 import org.openecard.sc.iface.SecureMessagingException
 import org.openecard.sc.iface.SmartCardStackMissing
 import org.openecard.sc.iface.TerminalFactory
@@ -182,6 +183,7 @@ class CardLinkAuthenticationProtocol(
                 is DeviceUnsupported -> CardInsufficient(cause = e)
                 // appears if card gets lost
                 is DeviceUnavailable -> CardRemoved(cause = e)
+                is ReaderUnavailable -> OtherNfcError(cause = e, message = "NFC not available or turned off.")
                 is SmartCardStackMissing -> OtherNfcError(cause = e)
 
                 else -> OtherClientError(cause = e)
