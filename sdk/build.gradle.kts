@@ -60,31 +60,3 @@ kotlin {
         }
     }
 }
-
-// TODO needed?
-
-// android {
-//    namespace = "com.epotheke"
-//
-//    packaging {
-//        resources.excludes.add("cif-repo/repo-config.properties")
-//    }
-//
-//    buildTypes {
-//        defaultConfig {
-//            consumerProguardFiles("./consumer-proguard.txt")
-//        }
-//    }
-// }
-
-// TODO needed?
-
-// publishing {
-//    publications {
-//        register<MavenPublication>("release") {
-//            afterEvaluate {
-//                from(components["release"])
-//            }
-//        }
-//    }
-// }
