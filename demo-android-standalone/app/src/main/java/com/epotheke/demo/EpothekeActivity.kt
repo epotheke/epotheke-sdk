@@ -544,7 +544,10 @@ class EpothekeActivity : AppCompatActivity() {
 
             } catch (e: Exception) {
                 logger.debug(e) { "Error in request" }
-                showInfo("Error in request ${e.message}")
+                when (e) {
+                    is PrescriptionProtocolException -> showInfo("Error in request: ${e.genericErrorMessage?.errorMessage ?: e.cause?.message}")
+                     else -> showInfo("Error in request: ${e.message}")
+                }
             }
             switchInputs(false)
             setBusy(false)
