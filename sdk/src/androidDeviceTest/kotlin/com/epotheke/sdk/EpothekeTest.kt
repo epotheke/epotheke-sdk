@@ -8,6 +8,8 @@ import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
 import dev.mokkery.spy
+import dev.mokkery.verify.VerifyMode.Companion.exactly
+import dev.mokkery.verifySuspend
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.websocket.WebSocketException
 import kotlinx.coroutines.runBlocking
@@ -137,6 +139,38 @@ class EpothekeTest {
                 )
 
             assertEquals(2, prescriptions.availablePrescriptionLists.size)
+        }
+
+    @OptIn(ExperimentalUnsignedTypes::class, ExperimentalUuidApi::class)
+    @Test
+    fun testSecondCardHasNoSMSTAN() =
+        runTestJobWithActivity { activity ->
+            val wsSessionId = Uuid.random().toString()
+            everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
+            everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
+            everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
+
+            everySuspend { uiMock.requestCardInsertion() } calls {
+                activity.msg("insert card")
+            }
+            everySuspend { uiMock.onCardRecognized() } calls {
+                activity.msg("don't move")
+            }
+
+            val epotheke =
+                Epotheke(
+                    assertNotNull(activity.factory),
+                    SERVICE_URL_DEV,
+                    TENANT_TOKEN_VALID_DEV,
+                    wsSessionId,
+                )
+
+            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+
+            verifySuspend(exactly(1)) {
+                uiMock.onPhoneNumberRequest()
+            }
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
