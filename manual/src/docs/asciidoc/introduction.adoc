@@ -12,9 +12,28 @@ The following has to be provided for creating an instance of `Epotheke`:
 - A tenantToken for accessing the service
 - An optional wsSessionId to reconnect to previous session
 
-Once created the protocol implementations `CardlinkAuthenticationProtocol` and `PrescriptionProtocol` can be obtained.
+Once created the protocol implementations `CardlinkAuthenticationProtocol` and `PrescriptionProtocol` can be obtained, which provide functions for different use-cases described below.
 
-=== Cardlink
+==== Tenant token
+The tenant token is used for access control at the epotheke service and can be gathered from the service provider.
+
+==== Sessions
+Within one session in the cardlink context, up to 10 eGK cards can be added to fetch available prescriptions for all of them simultaneously.
+A session is bound to a phone number using an SMS/TAN validation procedure, which is valid for 15 minutes.
+This means that adding a new card in the same session within 15 minutes doesn't require another SMS/TAN procedure.
+
+A session will be invalidated by the service, if within 15 minutes no messages arrive.
+
+A session can be resumed by the client app if `Epotheke` instance is created with a previous `wsSessionId` which can be gathered from a `CardlinkAuthResult`.
+However, if this `wsSessionId` is invalid or not known by the server, a new session will be created and a new `wsSessionId` will be returned in the next `CardlinkAuthResult`.
+
+An `Epotheke` instance created by an app always attempts to use the same session.
+This only changes if the service invalidated a session and returned a new `wsSessionId` to be used, which happens internally.
+
+If the client app wants to create a new session, a new `Epotheke` instance has to be created.
+
+
+=== Cardlink authentication
 The `CardlinkAuthenticationProtocol` allows to call `establishCardlink()` which creates a new cardlink session at the server and registers and associates an eGK card with it by using an SMS/Tan procedure.
 A second call with the same session can be used to add another eGK card to the session.
 The function returns a `CardlinkAuthResult` which contains information about the session and the registered card.
