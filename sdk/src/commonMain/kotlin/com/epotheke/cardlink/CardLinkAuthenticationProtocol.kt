@@ -64,7 +64,6 @@ object CardLinkAuthenticationConfig {
 class CardLinkAuthResult(
     var personalData: PersoenlicheVersichertendaten? = null,
     var insurerData: AllgemeineVersicherungsdaten? = null,
-    var cardSessionId: String? = null,
     var iccsn: String? = null,
     var iccsnReassignmentTimestamp: String? = null,
     var wsSessionId: String? = null,
@@ -111,7 +110,6 @@ class CardLinkAuthenticationProtocol(
 
             sessionInfo =
                 receiveSessionInformation().apply {
-                    cardLinkAuthResult.cardSessionId = cardSessionId
                     cardLinkAuthResult.wsSessionId = webSocketId
                 }
 

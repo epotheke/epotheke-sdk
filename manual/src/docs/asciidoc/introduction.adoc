@@ -52,9 +52,6 @@ The `CardlinkAuthResult` carries the following properties.
 |insurerData: AllgemeineVersicherungsdaten
 |The xml data of the insurance as specified by eGK specifications
 
-|cardSessionId: String,
-|A session token
-
 |iccsn: String,
 |The iccsn of the used card.
 
