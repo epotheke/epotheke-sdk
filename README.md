@@ -5,7 +5,7 @@ It takes care of the communication with the CardLink service and the handling of
 
 Demo applications for native android and ios apps can be found in folders: 
 - [demo-android-standalone](demo-android-standalone)
-- [demo-ios-standalone](demo-ios-standalone) (upcoming)
+- [demo-ios-standalone](demo-ios-standalone)
 
 The latest documentation can be found at https://mvn.ecsec.de/repository/data-public/epotheke/sdk/doc/latest/.
 
@@ -17,15 +17,16 @@ The epotheke SDK provides an API which can be integrated directly using the `Epo
 - The service url
 - A tenant token for access to the service
 - An optional `websocketSessionId` to reconnect to an existing session.
-- On android, an instance of `AndroidTerminaFactory` for NFC communication
+- An instance of `AndroidTerminaFactory` for NFC communication
 
 `AndroidTerminaFactory` can be gathered by calling `AndroidTerminalFactory.instance(activity)` providing a reference to the android activity.
+`IosTerminalFactory` by IosTerminalFactory.companion.instance.
 
 An instance of `Epotheke` class provides instances of: 
 - `CardlinkAuthenticationProtocol`
 - `PrescriptionProtocol`
  
-which can be used to perform use-cases.
+which can be used to perform different functions.
  
 `CardlinkAuthenticationProtocol` allows to call `establishCadrlink(interaction)` which performs an authentication process 
 with epotheke using SMS/Tan verification and an eGK card. `interaction` has to be an implementation of `CardlinkInteraction` interface.
@@ -33,8 +34,6 @@ This instance of `CardlinkInteraction` enables the protocol to get needed data a
 Since it is implemented by a consumer of the sdk, it has full control of how the process is presented to the user etc.
 
 `PrescriptionProtocol` allows to call `requestPrescriptions()` which fetches available Prescriptions for registered eGK cards in the session.
-
-For cleanup resources `close()` close can be called on the instance of epotheke.
 
 Note: On android a consuming app hast to ensure that intents in `onNewIntent()` function is handed to the `AndroidTerminalFactory` to allow 
 reading eGK cards via NFC. Filtering for appropriate tags and switching managing the NFC stack is done in the sdk.
