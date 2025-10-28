@@ -104,6 +104,9 @@ class CardLinkAuthenticationProtocol(
     suspend fun establishCardLink(interaction: UserInteraction): CardLinkAuthResult =
         mapErrors {
             this.interaction = interaction
+            // note: We do a reconnect here. Sine the service informs us about whether phone is registered or not only
+            // on a fresh connect with the sessionInfo message. Since we however store the wsSession-id we use the same
+            // session as long as it is not overridden by the server or Epotheke instance was recreated with another one
             ws.connectWithTimeout()
 
             sessionInfo =
