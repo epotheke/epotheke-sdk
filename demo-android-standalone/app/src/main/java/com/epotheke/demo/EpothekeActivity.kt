@@ -26,12 +26,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.view.View
 import android.view.View.VISIBLE
 import android.view.View.INVISIBLE
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import androidx.lifecycle.lifecycleScope
 import android.widget.ProgressBar
 import android.widget.RadioButton
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.epotheke.cardlink.CardLinkAuthResult
@@ -54,23 +58,6 @@ import kotlinx.coroutines.Job
 
 private val logger = KotlinLogging.logger { }
 
-enum class Service(val url: String, val tenantToken: String?) {
-    MOCK(
-        "https://mock.test.epotheke.com/cardlink", null
-    ),
-    DEV("https://service.dev.epotheke.com/cardlink", null),
-
-    STAGE(
-        "https://service.staging.epotheke.com/cardlink",
-        "eyJraWQiOiJ0ZXN0LXRlbmFudC1zaWduZXItMjAyNDEwMDgiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5MmRlMjktMjZhMi03MDAwLTkyMjAtMGFlMDU4YWY2NjE0IiwiaWF0IjoxNzMwMzA0MTE0LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTc5MzM3NjExNCwianRpIjoiNGFjMjExN2MtZWVmMC00ZGU1LWI0YTAtMDQ0YjEwMGViNDM3In0.ApEv-ThtB1Z3UbXZoRDpP5YPIM3kIqGGat5qXwPGxhsvT-w5lokaca4w3G_8lmTgZ_FSXCksudOCXhTf2bw6wA"
-    ),
-
-    PROD(
-        "https://service.epotheke.com/cardlink",
-        "eyJraWQiOiJ0ZW5hbnQtc2lnbmVyLTIwMjQxMTA2IiwiYWxnIjoiRVMyNTYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzZXJ2aWNlLmVwb3RoZWtlLmNvbSIsImF1ZCI6InNlcnZpY2UuZXBvdGhla2UuY29tIiwic3ViIjoiMDE5M2NlZTMtMTdkOC03MDAwLTkwOTktZmM4NGNlMjYyNzk1IiwiaWF0IjoxNzQxMTczNzM4LCJncm91cHMiOlsidGVuYW50Il0sImV4cCI6MTgwNDI0NTczOCwianRpIjoiYWE2NDA5NWMtY2NlNy00N2FjLWEzZDItYzA2ZThlYjE2MmVmIn0.L0D7XGchxtkv_rzvzvru6t80MJy8aQKhbiTReH69MNBVgp9Z-wUlDgIPdpbySmhDSTVEbp1rCwQAOyXje1dntQ"
-    ),
-}
-
 class InputStore(activity: EpothekeActivity) {
     val preferences: SharedPreferences = activity.getPreferences(Context.MODE_PRIVATE)
 
@@ -84,7 +71,12 @@ class InputStore(activity: EpothekeActivity) {
 
     var env: Service
         get() = preferences.getString("ENV", "MOCK")?.let {
-            Service.valueOf(it)
+            //we catch if the last stored Service does not exist anymore due to updated resources
+            try {
+                Service.valueOf(it)
+            } catch (_: IllegalArgumentException) {
+                Service.MOCK
+            }
         } ?: Service.MOCK
         set(v) = preferences.edit { putString("ENV", v.name) }
 }
@@ -157,6 +149,7 @@ class EpothekeActivity : AppCompatActivity() {
         showInfo("Current environment: $env")
     }
 
+    var ignoreFirstSpinner = true
     public override fun onCreate(savedInstanceState: Bundle?) {
         storedValues = InputStore(this)
 
@@ -170,28 +163,30 @@ class EpothekeActivity : AppCompatActivity() {
             isEnabled = true
         }
 
-        findViewById<RadioButton>(R.id.radBtnMock).apply {
-            isChecked = storedValues.env == Service.MOCK
-            setOnClickListener {
-                switchEnv(Service.MOCK)
-            }
-        }
-        findViewById<RadioButton>(R.id.radBtnDev).apply {
-            isChecked = storedValues.env == Service.DEV
-            setOnClickListener {
-                switchEnv(Service.DEV)
-            }
-        }
-        findViewById<RadioButton>(R.id.radBtnStaging).apply {
-            isChecked = storedValues.env == Service.STAGE
-            setOnClickListener {
-                switchEnv(Service.STAGE)
-            }
-        }
-        findViewById<RadioButton>(R.id.radBtnProd).apply {
-            isChecked = storedValues.env == Service.PROD
-            setOnClickListener {
-                switchEnv(Service.PROD)
+        findViewById<Spinner>(R.id.envSpinner).apply {
+
+            val options = Service.entries
+
+            adapter = ArrayAdapter(
+                this@EpothekeActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                options
+            )
+
+            setSelection(options.indexOf(storedValues.env))
+
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                   switchEnv(options[position])
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+
             }
         }
 

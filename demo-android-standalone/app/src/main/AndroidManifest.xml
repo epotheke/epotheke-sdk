@@ -12,7 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="com.epotheke.demo.MainActivity"
+            android:windowSoftInputMode="adjustResize"
+            android:name="com.epotheke.demo.EpothekeActivity"
+            android:launchMode="singleTop"
             android:clearTaskOnLaunch="true"
             android:configChanges="orientation|screenSize"
             android:exported="true">
@@ -21,12 +23,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:windowSoftInputMode="adjustResize"
-            android:name="com.epotheke.demo.EpothekeActivity"
-            android:launchMode="singleTop"
-            android:clearTaskOnLaunch="true"
-            android:configChanges="orientation|screenSize" />
     </application>
-
 </manifest>
