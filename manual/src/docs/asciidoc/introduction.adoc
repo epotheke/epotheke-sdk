@@ -7,7 +7,7 @@ image::SDK_interfaces.svg[title="epotheke SDK Overview", width=900, align=center
 === Epotheke
 The following has to be provided for creating an instance of `Epotheke`:
 
-- An instance of `TerminalFactory` for NFC functionality which can be obtained by calling `instance()` function of the `AndroidTerminalFactory` class for android and `IosTerminalFactory` for iOS.
+- An instance of `TerminalFactory` for NFC functionality which can be obtained by calling `instance()` function of the `AndroidTerminalFactory` class for android and `IosTerminalFactory.companion.instance` for iOS.
 - The serviceUrl of the epotheke service
 - A tenantToken for accessing the service
 - An optional wsSessionId to reconnect to previous session
@@ -15,7 +15,7 @@ The following has to be provided for creating an instance of `Epotheke`:
 Once created the protocol implementations `CardlinkAuthenticationProtocol` and `PrescriptionProtocol` can be obtained, which provide functions for different use-cases described below.
 
 ==== Tenant token
-The tenant token is used for access control at the epotheke service and can be gathered from the service provider.
+The tenant token is used for access control at the epotheke service and can be obtained from the service provider.
 
 ==== Sessions
 Within one session in the cardlink context, up to 10 eGK cards can be added to fetch available prescriptions for all of them simultaneously.
@@ -31,7 +31,6 @@ An `Epotheke` instance created by an app always attempts to use the same session
 This only changes if the service invalidated a session and returned a new `wsSessionId` to be used, which happens internally.
 
 If the client app wants to create a new session, a new `Epotheke` instance has to be created.
-
 
 === Cardlink authentication
 The `CardlinkAuthenticationProtocol` allows to call `establishCardlink()` which creates a new cardlink session at the server and registers and associates an eGK card with it by using an SMS/Tan procedure.
@@ -52,18 +51,18 @@ The `CardlinkAuthResult` carries the following properties.
 |insurerData: AllgemeineVersicherungsdaten
 |The xml data of the insurance as specified by eGK specifications
 
-|iccsn: String,
+|iccsn: String
 |The iccsn of the used card.
 
-|iccsnReassignmentTimestamp: String,
+|iccsnReassignmentTimestamp: String
 |If the card was used in the past with a different phone number, this timestamp shows when the new phonenumber was associated with the card.
 
-|wsSessionId: String,
+|wsSessionId: String
 |A session token for the connection. This token can be used to reestablish a past session, if the `Epotheke` instance is newly instantiated.
 
 |===
 
-Note that the reading of `personalData` and `insurerData` is switched off by default and the corresponding properties will be null.
+Note that the reading of `personalData` and `insurerData` is switched off by default and the corresponding properties will be `null`.
 To configure the reading, a reference of  `CardlinkAuthenticationConfig` can be obtained which has the properties: `readPersonalData` and `readInsurerdata`.
 Setting those properties to `true` before calling `establishCardLink` will result in reading the values during card communications.
 
@@ -113,3 +112,4 @@ The `PrescriptionProtocol` allows to call `requestPrescriptions()` which will fe
 The result of `requestPrescriptions()` is an `AvailablePrescriptionLists` object which provides a list of `AvailablePrescriptionList` objects, one for each card which is added to a cardlink session.
 The latter contains a list of `PrescriptionBundle` available for the eGK card.
 Details of these objects and their attributes can be found in the `PrescriptionModel.kt` file.
+

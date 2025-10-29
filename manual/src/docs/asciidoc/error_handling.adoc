@@ -1,11 +1,8 @@
 == Error Handling
 
-Except `PrescriptionFetchError` (see below) all possible errors during executions of SDK functionality can be handled by catching exceptions thrown by the functions of `CardLinkProtocols`.
-Note that an exception always means that the ongoing call is aborted and can't be recovered.
-A new attempt means calling the function again, starting over.
-
 === establishCardLink()
 `establishCardLink` can throw two types of Exceptions:
+
 - `CardLinkClientError` which indicates a problem on client side without server communication
 - `CardLinkError` indicating that the epotheke service responded with an error
 
@@ -130,7 +127,7 @@ The possible codes are:
 ==== PrescriptionFetchError
 In addition to the `prescriptionBundelList` in `AvailablePrescriptionList` there is an optional property `fetchErrors` which may contain a list of `PrescriptionFetchError`.
 These errors indicate errors which did not happen in epotheke service but in third-party services and are associated to specific prescriptions.
-A `PrescriptionFetchError` object contains the `prescriptionId` of the associated Prescription, an `errorCode` and an `errorMessage`.
+A `PrescriptionFetchError` object contains the `prescriptionId` of the associated prescription, an `errorCode` and an `errorMessage`.
 The possible codes are:
 
 - TI_FORBIDDEN
