@@ -1,6 +1,5 @@
 package com.epotheke.sdk
 
-import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.Epotheke
 import dev.mokkery.answering.calls
@@ -11,7 +10,6 @@ import dev.mokkery.verify.VerifyMode.Companion.exactly
 import dev.mokkery.verifySuspend
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.websocket.WebSocketException
-import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
 import org.junit.runner.RunWith
 import kotlin.test.Test
@@ -52,7 +50,9 @@ class EpothekeTest {
                             assertNotNull(activity.factory),
                             SERVICE_URL_DEV,
                             it,
-                        ).prescriptionProtocol.requestPrescriptions()
+                        ).use { epotheke ->
+                            epotheke.prescriptionProtocol.requestPrescriptions()
+                        }
                     }.cause,
                 )
             }
@@ -73,20 +73,19 @@ class EpothekeTest {
                 activity.msg("don't move")
             }
 
-            val epotheke =
-                Epotheke(
-                    assertNotNull(activity.factory),
-                    SERVICE_URL_DEV,
-                    null,
-                )
+            Epotheke(
+                assertNotNull(activity.factory),
+                SERVICE_URL_DEV,
+                null,
+            ).use { epotheke ->
+                assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+                val prescriptions =
+                    assertNotNull(
+                        epotheke.prescriptionProtocol.requestPrescriptions(),
+                    )
 
-            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
-            val prescriptions =
-                assertNotNull(
-                    epotheke.prescriptionProtocol.requestPrescriptions(),
-                )
-
-            assertTrue { prescriptions.availablePrescriptionLists.isNotEmpty() }
+                assertTrue { prescriptions.availablePrescriptionLists.isNotEmpty() }
+            }
         }
 
     @OptIn(ExperimentalUnsignedTypes::class, ExperimentalUuidApi::class)
@@ -111,22 +110,21 @@ class EpothekeTest {
                 activity.msg("don't move")
             }
 
-            val epotheke =
-                Epotheke(
-                    assertNotNull(activity.factory),
-                    SERVICE_URL_DEV,
-                    null,
-                    wsSessionId,
-                )
+            Epotheke(
+                assertNotNull(activity.factory),
+                SERVICE_URL_DEV,
+                null,
+                wsSessionId,
+            ).use { epotheke ->
+                assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+                assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+                val prescriptions =
+                    assertNotNull(
+                        epotheke.prescriptionProtocol.requestPrescriptions(),
+                    )
 
-            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
-            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
-            val prescriptions =
-                assertNotNull(
-                    epotheke.prescriptionProtocol.requestPrescriptions(),
-                )
-
-            assertEquals(2, prescriptions.availablePrescriptionLists.size)
+                assertEquals(2, prescriptions.availablePrescriptionLists.size)
+            }
         }
 
     @OptIn(ExperimentalUnsignedTypes::class, ExperimentalUuidApi::class)
@@ -145,19 +143,19 @@ class EpothekeTest {
                 activity.msg("don't move")
             }
 
-            val epotheke =
-                Epotheke(
-                    assertNotNull(activity.factory),
-                    SERVICE_URL_DEV,
-                    null,
-                    wsSessionId,
-                )
+            Epotheke(
+                assertNotNull(activity.factory),
+                SERVICE_URL_DEV,
+                null,
+                wsSessionId,
+            ).use { epotheke ->
 
-            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
-            assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+                assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+                assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
 
-            verifySuspend(exactly(1)) {
-                uiMock.onPhoneNumberRequest()
+                verifySuspend(exactly(1)) {
+                    uiMock.onPhoneNumberRequest()
+                }
             }
         }
 
@@ -176,30 +174,30 @@ class EpothekeTest {
                 activity.msg("don't move")
             }
 
-            val epotheke =
-                Epotheke(
-                    assertNotNull(activity.factory),
-                    SERVICE_URL_DEV,
-                    null,
-                    null,
-                )
+            Epotheke(
+                assertNotNull(activity.factory),
+                SERVICE_URL_DEV,
+                null,
+                null,
+            ).use { epotheke ->
 
-            val res = assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
+                val res = assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
 
-            // new instance and connection with session id from last result
-            val epothekeNew =
-                Epotheke(
-                    assertNotNull(activity.factory),
-                    SERVICE_URL_DEV,
-                    null,
-                    res.wsSessionId,
-                )
+                // new instance and connection with session id from last result
+                val epothekeNew =
+                    Epotheke(
+                        assertNotNull(activity.factory),
+                        SERVICE_URL_DEV,
+                        null,
+                        res.wsSessionId,
+                    )
 
-            val prescriptions =
-                assertNotNull(
-                    epothekeNew.prescriptionProtocol.requestPrescriptions(),
-                )
+                val prescriptions =
+                    assertNotNull(
+                        epothekeNew.prescriptionProtocol.requestPrescriptions(),
+                    )
 
-            assertEquals(1, prescriptions.availablePrescriptionLists.size)
+                assertEquals(1, prescriptions.availablePrescriptionLists.size)
+            }
         }
 }
