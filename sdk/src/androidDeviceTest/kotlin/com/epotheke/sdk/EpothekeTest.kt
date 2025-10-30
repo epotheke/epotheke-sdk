@@ -89,7 +89,7 @@ class EpothekeTest {
                 Epotheke(
                     assertNotNull(activity.factory),
                     SERVICE_URL_DEV,
-                    TENANT_TOKEN_VALID_DEV,
+                    null,
                 )
 
             assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
@@ -127,7 +127,7 @@ class EpothekeTest {
                 Epotheke(
                     assertNotNull(activity.factory),
                     SERVICE_URL_DEV,
-                    TENANT_TOKEN_VALID_DEV,
+                    null,
                     wsSessionId,
                 )
 
@@ -161,7 +161,7 @@ class EpothekeTest {
                 Epotheke(
                     assertNotNull(activity.factory),
                     SERVICE_URL_DEV,
-                    TENANT_TOKEN_VALID_DEV,
+                    null,
                     wsSessionId,
                 )
 
@@ -192,7 +192,7 @@ class EpothekeTest {
                 Epotheke(
                     assertNotNull(activity.factory),
                     SERVICE_URL_DEV,
-                    TENANT_TOKEN_VALID_DEV,
+                    null,
                     null,
                 )
 
@@ -203,7 +203,7 @@ class EpothekeTest {
                 Epotheke(
                     assertNotNull(activity.factory),
                     SERVICE_URL_DEV,
-                    TENANT_TOKEN_VALID_DEV,
+                    null,
                     res.wsSessionId,
                 )
 

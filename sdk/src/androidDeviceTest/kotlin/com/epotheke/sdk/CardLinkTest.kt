@@ -151,7 +151,7 @@ class CardLinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        Websocket(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                        Websocket(SERVICE_URL_DEV, null),
                     )
                 }
 
@@ -192,7 +192,7 @@ class CardLinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        Websocket(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                        Websocket(SERVICE_URL_DEV, null),
                     )
                 }
 
@@ -340,7 +340,7 @@ class CardLinkTest {
                 launch {
                     callEstablishCardLink(
                         activity,
-                        Websocket(SERVICE_URL_DEV, TENANT_TOKEN_VALID_DEV),
+                        Websocket(SERVICE_URL_DEV, null),
                     )
                 }
             testJob.join()
@@ -489,7 +489,7 @@ class CardLinkTest {
                             activity,
                             Websocket(
                                 SERVICE_URL_DEV,
-                                TENANT_TOKEN_VALID_DEV,
+                                null,
                             ),
                         ),
                         "cardlink was not established.",
@@ -588,7 +588,7 @@ class CardLinkTest {
                             activity,
                             Websocket(
                                 SERVICE_URL_DEV,
-                                TENANT_TOKEN_VALID_DEV,
+                                null,
                             ),
                         ),
                         "cardlink was not established.",
