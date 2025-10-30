@@ -61,7 +61,7 @@ interface PrescriptionProtocol : CardLinkProtocol {
     suspend fun selectPrescriptions(selection: SelectedPrescriptionList): SelectedPrescriptionListResponse
 }
 
-class PrescriptionProtocolImp(
+class PrescriptionProtocolImp internal constructor(
     private val ws: Websocket,
 ) : CardLinkProtocolBase(ws),
     PrescriptionProtocol {

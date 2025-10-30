@@ -41,45 +41,20 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-private val MESSAGE_TIMEOUT_DURATION = 5.seconds
-internal const val CAN_LEN = 6
+internal val MESSAGE_TIMEOUT_DURATION = 5.seconds
 
 private val logger = KotlinLogging.logger { }
 
-@OptIn(ExperimentalUnsignedTypes::class)
-fun gunzip(data: UByteArray) =
-    Buffer()
-        .also {
-            it.writeAll(
-                GzipSource(
-                    Buffer().also { b -> b.write(data.toByteArray()) },
-                ),
-            )
-        }.readByteArray()
-
-object CardLinkAuthenticationConfig {
-    var readPersonalData = false
-    var readInsurerData = false
-}
-
-class CardLinkAuthResult(
-    var personalData: PersoenlicheVersichertendaten? = null,
-    var insurerData: AllgemeineVersicherungsdaten? = null,
-    var iccsn: String? = null,
-    var iccsnReassignmentTimestamp: String? = null,
-    var wsSessionId: String? = null,
-)
-
-internal data class SessionInfo(
-    val cardSessionId: String,
-    val webSocketId: String? = null,
-    val phoneRegistered: Boolean = false,
-)
-
-class CardLinkAuthenticationProtocol(
+class CardLinkAuthenticationProtocol internal constructor(
     private val terminalFactory: TerminalFactory,
     private val ws: Websocket,
 ) : CardLinkProtocolBase(ws) {
+    data class SessionInfo(
+        val cardSessionId: String,
+        val webSocketId: String? = null,
+        val phoneRegistered: Boolean = false,
+    )
+
     private val inputChannel = protocolChannel<GematikEnvelope>()
 
     override fun messageHandler(msg: String): (suspend () -> Unit)? {
@@ -91,9 +66,9 @@ class CardLinkAuthenticationProtocol(
         }
     }
 
-    internal lateinit var sessionInfo: SessionInfo
+    private lateinit var sessionInfo: SessionInfo
     private val cardLinkAuthResult = CardLinkAuthResult()
-    lateinit var interaction: UserInteraction
+    private lateinit var interaction: UserInteraction
 
     @Throws(
         CardLinkError::class,
@@ -200,11 +175,11 @@ class CardLinkAuthenticationProtocol(
         val registerEgkData =
             RegisterEgk(
                 cardSessionId = cardSessionId,
-                gdo = mfData.gdo!!.toByteArray(),
-                cardVersion = mfData.cardVersion!!.toByteArray(),
-                cvcAuth = mfData.cvcAuth!!.toByteArray(),
-                cvcCA = mfData.cvcCA!!.toByteArray(),
-                atr = mfData.atr!!.toByteArray(),
+                gdo = mfData.gdo.toByteArray(),
+                cardVersion = mfData.cardVersion.toByteArray(),
+                cvcAuth = mfData.cvcAuth.toByteArray(),
+                cvcCA = mfData.cvcCA.toByteArray(),
+                atr = mfData.atr.toByteArray(),
                 x509AuthECC = cert.toByteArray(),
                 x509AuthRSA = null,
             )
@@ -447,7 +422,7 @@ class CardLinkAuthenticationProtocol(
     }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private suspend fun SmartcardApplication.readDataSet(
+    private fun SmartcardApplication.readDataSet(
         can: String,
         name: String,
     ): UByteArray? =
@@ -458,19 +433,19 @@ class CardLinkAuthenticationProtocol(
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private suspend fun SmartcardDeviceConnection.readPersonalData(can: String): PersoenlicheVersichertendaten? =
+    private fun SmartcardDeviceConnection.readPersonalData(can: String): PersoenlicheVersichertendaten? =
         applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
             readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efPd)?.toPersonalData()
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private suspend fun SmartcardDeviceConnection.readInsurerData(can: String): AllgemeineVersicherungsdaten? =
+    private fun SmartcardDeviceConnection.readInsurerData(can: String): AllgemeineVersicherungsdaten? =
         applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
             readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efVd)?.toInsurerData()
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    class MFData(
+    private class MFData(
         val gdo: UByteArray,
         val cardVersion: UByteArray,
         val cvcAuth: UByteArray,
@@ -479,7 +454,7 @@ class CardLinkAuthenticationProtocol(
     )
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private suspend fun SmartcardDeviceConnection.readMfData(can: String) =
+    private fun SmartcardDeviceConnection.readMfData(can: String) =
         applications.find { it.name == EgkCifDefinitions.Apps.Mf.name }?.run {
             MFData(
                 gdo = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efGdo) ?: UByteArray(0),
@@ -491,13 +466,13 @@ class CardLinkAuthenticationProtocol(
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    private suspend fun SmartcardDeviceConnection.readCert(can: String) =
+    private fun SmartcardDeviceConnection.readCert(can: String) =
         applications
             .find { it.name == EgkCifDefinitions.Apps.ESign.name }
             ?.readDataSet(can, EgkCifDefinitions.Apps.ESign.Datasets.ef_c_ch_aut_e256)
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    suspend fun SmartcardDataset.authenticate(can: String) {
+    private fun SmartcardDataset.authenticate(can: String) {
         if (!missingReadAuthentications.isSolved) {
             val missing =
                 missingReadAuthentications
