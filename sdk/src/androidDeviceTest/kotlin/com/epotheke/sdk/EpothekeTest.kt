@@ -12,6 +12,7 @@ import dev.mokkery.verifySuspend
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.websocket.WebSocketException
 import kotlinx.coroutines.runBlocking
+import org.junit.BeforeClass
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,20 +27,11 @@ private val logger = KotlinLogging.logger {}
 
 @RunWith(AndroidJUnit4::class)
 class EpothekeTest {
-    @Test
-    fun assureNfcOn() {
-        runBlocking {
-            launchActivity<TestActivity>().use {
-                it.onActivity { activity ->
-                    activity.factory?.load()
-                    assert(activity.factory?.nfcAvailable == true) {
-                        "NFC not available"
-                    }
-                    assert(activity.factory?.nfcEnabled == true) {
-                        "NFC not enabled"
-                    }
-                }
-            }
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun checkNfc() {
+            ensureNFCOn()
         }
     }
 

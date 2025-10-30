@@ -29,6 +29,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.BeforeClass
 import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertFails
@@ -45,20 +46,11 @@ private val logger = KotlinLogging.logger {}
 class CardLinkTest {
     private val testTimeout = 10.seconds
 
-    @Test
-    fun assureNfcOn() {
-        runBlocking {
-            launchActivity<TestActivity>().use {
-                it.onActivity { activity ->
-                    activity.factory?.load()
-                    assert(activity.factory?.nfcAvailable == true) {
-                        "NFC not available"
-                    }
-                    assert(activity.factory?.nfcEnabled == true) {
-                        "NFC not enabled"
-                    }
-                }
-            }
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun checkNfc() {
+            ensureNFCOn()
         }
     }
 

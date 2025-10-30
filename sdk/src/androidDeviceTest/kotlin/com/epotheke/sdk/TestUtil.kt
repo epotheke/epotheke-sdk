@@ -234,6 +234,20 @@ private suspend fun countDown(
     whenOver()
 }
 
+fun ensureNFCOn() =
+    runBlocking {
+        launchActivity<TestActivity>().use {
+            it.onActivity { activity ->
+                assert(activity.factory?.nfcAvailable == true) {
+                    "NFC not available"
+                }
+                assert(activity.factory?.nfcEnabled == true) {
+                    "NFC not enabled"
+                }
+            }
+        }
+    }
+
 fun runTestJobWithActivity(testJob: suspend CoroutineScope.(activity: TestActivity) -> Unit) {
     runBlocking(Dispatchers.IO) {
         launchActivity<TestActivity>().use { scenario ->
