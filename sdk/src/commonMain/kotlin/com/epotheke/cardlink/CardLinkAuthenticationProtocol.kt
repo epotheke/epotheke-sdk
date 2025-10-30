@@ -36,6 +36,7 @@ import org.openecard.sc.iface.feature.PaceError
 import org.openecard.sc.iface.withContextSuspend
 import org.openecard.sc.pace.PaceFeatureSoftwareFactory
 import org.openecard.sc.tlv.toTlvSimple
+import kotlin.UByteArray
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -470,22 +471,22 @@ class CardLinkAuthenticationProtocol(
 
     @OptIn(ExperimentalUnsignedTypes::class)
     class MFData(
-        val gdo: UByteArray? = null,
-        val cardVersion: UByteArray? = null,
-        val cvcAuth: UByteArray? = null,
-        val cvcCA: UByteArray? = null,
-        val atr: UByteArray? = null,
+        val gdo: UByteArray,
+        val cardVersion: UByteArray,
+        val cvcAuth: UByteArray,
+        val cvcCA: UByteArray,
+        val atr: UByteArray,
     )
 
     @OptIn(ExperimentalUnsignedTypes::class)
     private suspend fun SmartcardDeviceConnection.readMfData(can: String) =
         applications.find { it.name == EgkCifDefinitions.Apps.Mf.name }?.run {
             MFData(
-                gdo = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efGdo),
-                cardVersion = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efVersion2),
-                cvcAuth = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_eGK_aut_cvc_e256),
-                cvcCA = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_ca_cs_e256),
-                atr = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efAtr),
+                gdo = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efGdo) ?: UByteArray(0),
+                cardVersion = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efVersion2) ?: UByteArray(0),
+                cvcAuth = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_eGK_aut_cvc_e256) ?: UByteArray(0),
+                cvcCA = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_ca_cs_e256) ?: UByteArray(0),
+                atr = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efAtr) ?: UByteArray(0),
             )
         }
 
