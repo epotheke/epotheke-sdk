@@ -7,8 +7,6 @@ import com.epotheke.cardlink.CardCommunicationResultCode
 import com.epotheke.cardlink.CardLinkAuthResult
 import com.epotheke.cardlink.CardLinkAuthenticationConfig
 import com.epotheke.cardlink.CardLinkAuthenticationProtocol
-import com.epotheke.cardlink.CardLinkClientError
-import com.epotheke.cardlink.CardLinkError
 import com.epotheke.cardlink.ResultCode
 import com.epotheke.cardlink.TanRetryLimitExceeded
 import dev.mokkery.answering.calls
@@ -31,12 +29,10 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.jupiter.api.assertInstanceOf
-import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
+import kotlin.test.Test
+import kotlin.test.assertFails
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
@@ -49,7 +45,7 @@ private val logger = KotlinLogging.logger {}
 class CardLinkTest {
     private val testTimeout = 10.seconds
 
-    @BeforeAll
+    @Test
     fun assureNfcOn() {
         runBlocking {
             launchActivity<TestActivity>().use {
@@ -125,8 +121,8 @@ class CardLinkTest {
                 TENANT_TOKEN_EXPIRED_DEV,
                 TENANT_TOKEN_REVOKED_DEV,
             ).forEach {
-                assertInstanceOf<WebSocketException>(
-                    assertThrows<CardLinkClientError> {
+                assertIs<WebSocketException>(
+                    assertFails {
                         callEstablishCardLink(
                             activity,
                             Websocket(SERVICE_URL_DEV, it),
@@ -292,13 +288,13 @@ class CardLinkTest {
             testJob =
                 launch {
                     val e =
-                        assertThrows<CardLinkError> {
+                        assertFails {
                             callEstablishCardLink(
                                 activity,
                                 Websocket(SERVICE_URL_MOCK, null),
                             )
                         }
-                    assertInstanceOf<TanRetryLimitExceeded>(e)
+                    assertIs<TanRetryLimitExceeded>(e)
                 }
             testJob.join()
 
@@ -540,14 +536,12 @@ class CardLinkTest {
 
                 job =
                     launch {
-                        assertDoesNotThrow {
-                            try {
-                                callEstablishCardLink(
-                                    activity,
-                                    ws,
-                                )
-                            } catch (e: CancellationException) {
-                            }
+                        try {
+                            callEstablishCardLink(
+                                activity,
+                                ws,
+                            )
+                        } catch (e: CancellationException) {
                         }
                     }
                 job.join()

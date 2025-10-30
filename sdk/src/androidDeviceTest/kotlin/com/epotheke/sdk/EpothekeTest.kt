@@ -3,7 +3,6 @@ package com.epotheke.sdk
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.Epotheke
-import com.epotheke.prescription.PrescriptionProtocolException
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
@@ -13,12 +12,11 @@ import dev.mokkery.verifySuspend
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.websocket.WebSocketException
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.assertInstanceOf
-import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
+import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
@@ -28,7 +26,7 @@ private val logger = KotlinLogging.logger {}
 
 @RunWith(AndroidJUnit4::class)
 class EpothekeTest {
-    @BeforeAll
+    @Test
     fun assureNfcOn() {
         runBlocking {
             launchActivity<TestActivity>().use {
@@ -56,15 +54,13 @@ class EpothekeTest {
                 TENANT_TOKEN_EXPIRED_DEV,
                 TENANT_TOKEN_REVOKED_DEV,
             ).forEach {
-                assertInstanceOf<WebSocketException>(
-                    assertThrows<PrescriptionProtocolException> {
-                        val epotheke =
-                            Epotheke(
-                                assertNotNull(activity.factory),
-                                SERVICE_URL_DEV,
-                                it,
-                            )
-                        epotheke.prescriptionProtocol.requestPrescriptions()
+                assertIs<WebSocketException>(
+                    assertFails {
+                        Epotheke(
+                            assertNotNull(activity.factory),
+                            SERVICE_URL_DEV,
+                            it,
+                        ).prescriptionProtocol.requestPrescriptions()
                     }.cause,
                 )
             }
