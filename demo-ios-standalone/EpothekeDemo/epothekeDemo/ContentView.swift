@@ -86,7 +86,8 @@ struct ContentView: View {
             } message: {
                 Text(inputMsg)
             }
-
+        }.onDisappear {
+            epotheke?.close_()
         }
     }
 
