@@ -113,7 +113,7 @@ class CardLinkAuthenticationProtocol internal constructor(
                         val readMfData =
                             readMfData(can)?.apply {
                                 cardLinkAuthResult.iccsn = readIccsnFrom(gdo) ?: readError("ICCSN")
-                            } ?: readError("MF")
+                            } ?: readError("MFData")
 
                         val cert = readCert(can) ?: readError("Certificate")
 
@@ -139,7 +139,7 @@ class CardLinkAuthenticationProtocol internal constructor(
         }
 
     private fun readError(toBeRead: String): Nothing =
-        throw OtherNfcError(
+        throw CardInsufficient(
             "Could not read $toBeRead.",
         )
 
@@ -433,6 +433,12 @@ class CardLinkAuthenticationProtocol internal constructor(
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
+    private fun SmartcardApplication.readDataSetChecked(
+        can: String,
+        name: String,
+    ): UByteArray = readDataSet(can, name) ?: readError(name)
+
+    @OptIn(ExperimentalUnsignedTypes::class)
     private fun SmartcardDeviceConnection.readPersonalData(can: String): PersoenlicheVersichertendaten? =
         applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
             readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efPd)?.toPersonalData()
@@ -457,11 +463,11 @@ class CardLinkAuthenticationProtocol internal constructor(
     private fun SmartcardDeviceConnection.readMfData(can: String) =
         applications.find { it.name == EgkCifDefinitions.Apps.Mf.name }?.run {
             MFData(
-                gdo = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efGdo) ?: UByteArray(0),
-                cardVersion = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efVersion2) ?: UByteArray(0),
-                cvcAuth = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_eGK_aut_cvc_e256) ?: UByteArray(0),
-                cvcCA = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_ca_cs_e256) ?: UByteArray(0),
-                atr = readDataSet(can, EgkCifDefinitions.Apps.Mf.Datasets.efAtr) ?: UByteArray(0),
+                gdo = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.efGdo),
+                cardVersion = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.efVersion2),
+                cvcAuth = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_eGK_aut_cvc_e256),
+                cvcCA = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_ca_cs_e256),
+                atr = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.efAtr),
             )
         }
 
