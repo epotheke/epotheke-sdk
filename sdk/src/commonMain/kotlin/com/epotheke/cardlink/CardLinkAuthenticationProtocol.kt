@@ -96,24 +96,23 @@ class CardLinkAuthenticationProtocol internal constructor(
             do {
                 val can = getCheckedCan(cardCommunicationResult)
                 try {
-                    withConnectedCard {
+                    withEgk(
+                        terminalFactory,
+                        interaction,
+                        can,
+                    ) {
                         if (readPersonalData) {
-                            cardLinkAuthResult.personalData = readPersonalData(can) ?: readError("Personal data")
+                            cardLinkAuthResult.personalData = personalData
                         }
                         if (readInsurerData) {
-                            cardLinkAuthResult.insurerData = readInsurerData(can) ?: readError("Insurer data")
+                            cardLinkAuthResult.insurerData = insurerData
                         }
 
-                        val readMfData =
-                            readMfData(can)?.apply {
-                                cardLinkAuthResult.iccsn = readIccsnFrom(gdo) ?: readError("ICCSN")
-                            } ?: readError("MFData")
-
-                        val cert = readCert(can) ?: readError("Certificate")
+                        cardLinkAuthResult.iccsn = iccsn
 
                         sendEgkData(
                             sessionInfo.cardSessionId,
-                            mfData = readMfData,
+                            mfData = mfData,
                             cert,
                         )
 
@@ -131,11 +130,6 @@ class CardLinkAuthenticationProtocol internal constructor(
             // no error means success
             cardLinkAuthResult
         }
-
-    private fun readError(toBeRead: String): Nothing =
-        throw CardInsufficient(
-            "Could not read $toBeRead.",
-        )
 
     private inline fun mapErrors(block: () -> CardLinkAuthResult): CardLinkAuthResult {
         try {
@@ -179,16 +173,6 @@ class CardLinkAuthenticationProtocol internal constructor(
             )
         sendEnvelope(registerEgkData)
     }
-
-    @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
-    private fun readIccsnFrom(gdoDs: UByteArray?) =
-        gdoDs?.toTlvSimple()?.tlv.let {
-            if (it?.tag?.tagNumWithClass == 0x5f5A.toULong()) {
-                it.contentAsBytesBer.toHexString()
-            } else {
-                null
-            }
-        }
 
     @OptIn(ExperimentalUuidApi::class)
     private suspend fun sendEnvelope(
@@ -392,111 +376,7 @@ class CardLinkAuthenticationProtocol internal constructor(
         }
     }
 
-    private suspend fun withConnectedCard(block: suspend SmartcardDeviceConnection.() -> Unit) {
-        terminalFactory.load().withContextSuspend { terminals ->
-            val recognition =
-                DirectCardRecognition(CompleteTree.calls.removeUnsupported(setOf(EgkCifDefinitions.cardType)))
-
-            val terminal =
-                terminals.list().firstOrNull()
-                    ?: throw OtherNfcError("NFC stack could not be initialized")
-
-            val session =
-                SmartcardSal(
-                    terminals,
-                    setOf(EgkCif),
-                    recognition,
-                    PaceFeatureSoftwareFactory(),
-                ).startSession()
-            interaction.requestCardInsertion()
-            terminal.waitForCardPresent()
-            interaction.onCardRecognized()
-            session.connect(terminal.name).block()
-        }
-    }
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardApplication.readDataSet(
-        can: String,
-        name: String,
-    ): UByteArray? =
-        datasets.find { it.name == name }?.run {
-            authenticate(can)
-            this@readDataSet.connect()
-            read()
-        }
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardApplication.readDataSetChecked(
-        can: String,
-        name: String,
-    ): UByteArray = readDataSet(can, name) ?: readError(name)
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardDeviceConnection.readPersonalData(can: String): PersoenlicheVersichertendaten? =
-        applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
-            readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efPd)?.toPersonalData()
-        }
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardDeviceConnection.readInsurerData(can: String): AllgemeineVersicherungsdaten? =
-        applications.find { it.name == EgkCifDefinitions.Apps.Hca.name }?.run {
-            readDataSet(can, EgkCifDefinitions.Apps.Hca.Datasets.efVd)?.toInsurerData()
-        }
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private class MFData(
-        val gdo: UByteArray,
-        val cardVersion: UByteArray,
-        val cvcAuth: UByteArray,
-        val cvcCA: UByteArray,
-        val atr: UByteArray,
-    )
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardDeviceConnection.readMfData(can: String) =
-        applications.find { it.name == EgkCifDefinitions.Apps.Mf.name }?.run {
-            MFData(
-                gdo = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.efGdo),
-                cardVersion = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.efVersion2),
-                cvcAuth = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_eGK_aut_cvc_e256),
-                cvcCA = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.ef_c_ca_cs_e256),
-                atr = readDataSetChecked(can, EgkCifDefinitions.Apps.Mf.Datasets.efAtr),
-            )
-        }
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardDeviceConnection.readCert(can: String) =
-        applications
-            .find { it.name == EgkCifDefinitions.Apps.ESign.name }
-            ?.readDataSet(can, EgkCifDefinitions.Apps.ESign.Datasets.ef_c_ch_aut_e256)
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardDataset.authenticate(can: String) {
-        if (!missingReadAuthentications.isSolved) {
-            val missing =
-                missingReadAuthentications
-                    .removeUnsupported(
-                        listOf(
-                            DidStateReference.forName(EgkCifDefinitions.Apps.Mf.Dids.autPace),
-                        ),
-                    )
-            when (missing) {
-                MissingAuthentications.Unsolveable -> throw OtherPaceError()
-                is MissingAuthentications.MissingDidAuthentications -> {
-                    val authOption = missing.options.first()
-                    when (val did = authOption.first().authDid) {
-                        is PaceDid -> {
-                            did.establishChannel(can, null, null)
-                        }
-                        else -> throw OtherPaceError()
-                    }
-                }
-            }
-        }
-    }
-
-    private suspend fun SmartcardDeviceConnection.handleRemoteApdus() {
+    private suspend fun Egk.handleRemoteApdus() {
         val envelope = receiveEnvelope()
         when (val payload = envelope.payload) {
             is ICCSNReassignment -> {
@@ -528,20 +408,6 @@ class CardLinkAuthenticationProtocol internal constructor(
                 logger.warn { "Received unexpected message: $payload - will continue." }
                 handleRemoteApdus()
             }
-        }
-    }
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private fun SmartcardDeviceConnection.sendApduToCard(apdu: ByteArrayAsBase64): ByteArray {
-        val cApdu = apdu.toCommandApdu()
-        logger.debug { "APDU from service: $cApdu" }
-        return try {
-            val responseApdu = channel.transmit(cApdu)
-            logger.debug { "Response APDU: $responseApdu" }
-            responseApdu.toBytes.toByteArray()
-        } catch (e: SecureMessagingException) {
-            logger.debug(e) { "Error communicating with card." }
-            throw e
         }
     }
 }
