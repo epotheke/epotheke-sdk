@@ -97,12 +97,6 @@ class CardLinkAuthenticationProtocol internal constructor(
                 val can = getCheckedCan(cardCommunicationResult)
                 try {
                     withConnectedCard {
-                        if (EgkCif.metadata.id != cardType) {
-                            throw CardInsufficient(
-                                "Recognized card is not an eGK",
-                            )
-                        }
-
                         if (readPersonalData) {
                             cardLinkAuthResult.personalData = readPersonalData(can) ?: readError("Personal data")
                         }
