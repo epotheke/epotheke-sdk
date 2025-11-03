@@ -50,10 +50,11 @@ import kotlin.coroutines.suspendCoroutine
 import androidx.core.content.edit
 import com.epotheke.cardlink.CardLinkAuthenticationConfig
 import com.epotheke.Epotheke
+import com.epotheke.SmartCardConnector
 import com.epotheke.cardlink.CardCommunicationResultCode
 import com.epotheke.prescription.*
 import kotlinx.coroutines.Job
-
+import org.openecard.sal.sc.SmartcardDeviceConnection
 
 
 private val logger = KotlinLogging.logger { }
@@ -90,7 +91,7 @@ class EpothekeActivity : AppCompatActivity() {
      * Epotheke uses NFC to communicate with eGK cards.
      * The AndroidTerminalFactory is provided by the used open-ecard library and enables NFC usage.
      */
-    private var terminalFactory: AndroidTerminalFactory? = null
+    private lateinit var terminalFactory: AndroidTerminalFactory
 
     /**
      * The epotheke instance which can be used for authenticating or adding eGK cards to a cardlink session and to
@@ -122,11 +123,11 @@ class EpothekeActivity : AppCompatActivity() {
      */
     private fun createEpotheke() {
 
-
+        AndroidTerminalFactory.instance(this).also { fact ->
+            terminalFactory = fact
+        }
         epotheke = Epotheke(
-            AndroidTerminalFactory.instance(this).also { fact ->
-                terminalFactory = fact
-            }, storedValues.env.url, storedValues.env.tenantToken, null
+            storedValues.env.url, storedValues.env.tenantToken, null
         )
 
         //just for showing the current environment
@@ -339,18 +340,13 @@ class EpothekeActivity : AppCompatActivity() {
          * The method is called to enable the app to inform the user, to bring the card to
          * the devices nfc sensor.
          */
-        override suspend fun requestCardInsertion() = runOnUiThread {
+        override suspend fun requestCardInsertion() : SmartcardDeviceConnection {
             setBusy(false)
             showInfo("Please provide card")
-        }
-
-        /**
-         * Gets called, when the intent from android of a detected card, is consumed by the SDK.
-         * The app may inform the user, that the card was detected.
-         */
-        override suspend fun onCardRecognized() = runOnUiThread {
+            val connection = SmartCardConnector(terminalFactory).connectCard()
+            showInfo("Card connected. Don't move")
             setBusy(true)
-            showInfo("Card was detected. Try to avoid movement.")
+            return connection
         }
 
     }

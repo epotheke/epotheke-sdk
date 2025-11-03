@@ -25,6 +25,7 @@ kotlin {
             implementation(libs.bundles.oec.cardlink)
 
             implementation(libs.okio)
+            api(libs.oec.smartcard.sal)
         }
 
         commonTest.dependencies {
@@ -56,6 +57,7 @@ kotlin {
         framework {
             baseName = "epotheke"
             export(libs.oec.smartcard.pcsc.ios)
+            export(libs.oec.smartcard.sal)
             binaryOption("bundleId", "com.epotheke.sdk")
         }
     }
