@@ -7,7 +7,6 @@ image::SDK_interfaces.svg[title="epotheke SDK Overview", width=900, align=center
 === Epotheke
 The following has to be provided for creating an instance of `Epotheke`:
 
-- An instance of `TerminalFactory` for NFC functionality which can be obtained by calling `instance()` function of the `AndroidTerminalFactory` class for android and `IosTerminalFactory.companion.instance` for iOS.
 - The serviceUrl of the epotheke service
 - A tenantToken for accessing the service
 - An optional wsSessionId to reconnect to previous session
@@ -89,14 +88,6 @@ The `UserInteraction` interface consists of the following functions.
 |There was a problem with the provided TAN.
 |Retrying is possible. The provided `resultCode` and `msg` provide information about what went wrong.,
 
-|requestCardInsertion()
-|The eGK should be presented.
-|
-
-|onCardRecognized()
-|A connection with the card was established.
-|
-
 |onCanRequest(): String
 |The CAN for the card is needed.
 |
@@ -104,6 +95,11 @@ The `UserInteraction` interface consists of the following functions.
 |onCanRetry(resultCode: CardCommunicationResultCode): String
 |The CAN was wrong or invalid.
 |Retrying is possible. The `resultCode` provides information about what went wrong.
+
+|requestCardInsertion(): SmartCardDeviceConnection
+|A connection to the eGK has to be provided.
+|A connection can be established by the use of TerminalFactory instances.
+There is a default implementation `SmartCardConnector` which can be used in mobile cases.
 
 |===
 

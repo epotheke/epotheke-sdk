@@ -17,10 +17,7 @@ The epotheke SDK provides an API which can be integrated directly using the `Epo
 - The service url
 - A tenant token for access to the service
 - An optional `websocketSessionId` to reconnect to an existing session.
-- An instance of `AndroidTerminaFactory` for NFC communication
 
-`AndroidTerminaFactory` can be gathered by calling `AndroidTerminalFactory.instance(activity)` providing a reference to the android activity.
-`IosTerminalFactory` by IosTerminalFactory.companion.instance.
 
 An instance of `Epotheke` class provides instances of: 
 - `CardlinkAuthenticationProtocol`
@@ -30,8 +27,12 @@ which can be used to perform different functions.
  
 `CardlinkAuthenticationProtocol` allows to call `establishCadrlink(interaction)` which performs an authentication process 
 with epotheke using SMS/Tan verification and an eGK card. `interaction` has to be an implementation of `CardlinkInteraction` interface.
-This instance of `CardlinkInteraction` enables the protocol to get needed data and inform calling code about current steps.
-Since it is implemented by a consumer of the sdk, it has full control of how the process is presented to the user etc.
+An instance of `CardlinkInteraction` enables the protocol to get needed data and inform calling code about current steps.
+In addition, it has to provide a `SmartCardDeviceConnection` when the process needs to communicate with the eGK.
+To establish a `SmartCardDeviceConnection` instances of `TerminalFactory` can be used.
+`AndroidTerminaFactory` can be gathered by calling `AndroidTerminalFactory.instance(activity)` providing a reference to the android activity.
+`IosTerminalFactory` by IosTerminalFactory.companion.instance.
+For mobile cases there is a default implementation `SmartCardConnector` that can be instantiated with such a `TerminalFactory` and used directly.
 
 `PrescriptionProtocol` allows to call `requestPrescriptions()` which fetches available Prescriptions for registered eGK cards in the session.
 
