@@ -8,12 +8,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
-import org.openecard.sc.iface.TerminalFactory
 
 private val logger = KotlinLogging.logger {}
 
 class Epotheke(
-    terminalFactory: TerminalFactory,
     serviceUrl: String,
     tenantToken: String?,
     wsSessionId: String? = null,
@@ -22,7 +20,6 @@ class Epotheke(
 
     val cardLinkAuthenticationProtocol =
         CardLinkAuthenticationProtocol(
-            terminalFactory,
             ws,
         )
     val prescriptionProtocol = PrescriptionProtocolImp(ws)

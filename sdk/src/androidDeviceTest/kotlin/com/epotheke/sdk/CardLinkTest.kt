@@ -2,6 +2,7 @@ package com.epotheke.sdk
 
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.epotheke.SmartCardConnector
 import com.epotheke.Websocket
 import com.epotheke.cardlink.CardCommunicationResultCode
 import com.epotheke.cardlink.CardLinkAuthResult
@@ -91,18 +92,8 @@ class CardLinkTest {
 
     val uiMock = spy(userInterActionStub())
 
-    private suspend fun callEstablishCardLink(
-        activity: TestActivity,
-        ws: Websocket,
-    ): CardLinkAuthResult {
-        val proto =
-            CardLinkAuthenticationProtocol(
-                assertNotNull(activity.factory),
-                ws,
-            )
-
-        return proto.establishCardLink(uiMock)
-    }
+    private suspend fun callEstablishCardLink(ws: Websocket): CardLinkAuthResult =
+        CardLinkAuthenticationProtocol(ws).establishCardLink(uiMock)
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
@@ -116,7 +107,6 @@ class CardLinkTest {
                 assertIs<WebSocketException>(
                     assertFails {
                         callEstablishCardLink(
-                            activity,
                             Websocket(SERVICE_URL_DEV, it),
                         )
                     }.cause,
@@ -138,7 +128,6 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
-                        activity,
                         Websocket(SERVICE_URL_DEV, null),
                     )
                 }
@@ -179,7 +168,6 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
-                        activity,
                         Websocket(SERVICE_URL_DEV, null),
                     )
                 }
@@ -222,7 +210,6 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
-                        activity,
                         Websocket(SERVICE_URL_MOCK, null),
                     )
                 }
@@ -252,7 +239,6 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
-                        activity,
                         Websocket(SERVICE_URL_MOCK, null),
                     )
                 }
@@ -282,7 +268,6 @@ class CardLinkTest {
                     val e =
                         assertFails {
                             callEstablishCardLink(
-                                activity,
                                 Websocket(SERVICE_URL_MOCK, null),
                             )
                         }
@@ -319,15 +304,18 @@ class CardLinkTest {
             }
 
             everySuspend { uiMock.requestCardInsertion() } calls {
-                activity.msg("Bring card to device.")
+                activity.msg("insert card")
+                val connection =
+                    SmartCardConnector(
+                        assertNotNull(activity.factory),
+                    ).connectCard()
+                activity.msg("Card connected - don't move.")
+                connection
             }
-            everySuspend { uiMock.onCardRecognized() } calls {
-                activity.msg("found card - don't move.")
-            }
+
             testJob =
                 launch {
                     callEstablishCardLink(
-                        activity,
                         Websocket(SERVICE_URL_DEV, null),
                     )
                 }
@@ -372,16 +360,18 @@ class CardLinkTest {
                 }
 
                 everySuspend { uiMock.requestCardInsertion() } calls {
-                    activity.msg("Insert Card")
-                }
-                everySuspend { uiMock.onCardRecognized() } calls {
-                    activity.msg("Card detected. Don't move")
+                    activity.msg("insert card")
+                    val connection =
+                        SmartCardConnector(
+                            assertNotNull(activity.factory),
+                        ).connectCard()
+                    activity.msg("Card connected - don't move.")
+                    connection
                 }
 
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
-                            activity,
                             Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
@@ -404,16 +394,18 @@ class CardLinkTest {
                 everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
                 everySuspend { uiMock.requestCardInsertion() } calls {
                     activity.msg("Insert Card")
-                }
-                everySuspend { uiMock.onCardRecognized() } calls {
-                    activity.msg("Card detected. Don't move")
+                    val connection =
+                        SmartCardConnector(
+                            assertNotNull(activity.factory),
+                        ).connectCard()
+                    activity.msg("Card connected - don't move.")
+                    connection
                 }
 
                 CardLinkAuthenticationConfig.readPersonalData = true
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
-                            activity,
                             Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
@@ -435,16 +427,18 @@ class CardLinkTest {
                 everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
                 everySuspend { uiMock.requestCardInsertion() } calls {
                     activity.msg("Insert Card")
-                }
-                everySuspend { uiMock.onCardRecognized() } calls {
-                    activity.msg("Card detected. Don't move")
+                    val connection =
+                        SmartCardConnector(
+                            assertNotNull(activity.factory),
+                        ).connectCard()
+                    activity.msg("Card connected - don't move.")
+                    connection
                 }
 
                 CardLinkAuthenticationConfig.readInsurerData = true
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
-                            activity,
                             Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
@@ -466,15 +460,17 @@ class CardLinkTest {
                 everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
                 everySuspend { uiMock.requestCardInsertion() } calls {
                     activity.msg("Insert Card")
-                }
-                everySuspend { uiMock.onCardRecognized() } calls {
-                    activity.msg("Card detected. Don't move")
+                    val connection =
+                        SmartCardConnector(
+                            assertNotNull(activity.factory),
+                        ).connectCard()
+                    activity.msg("Card connected - don't move.")
+                    connection
                 }
 
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
-                            activity,
                             Websocket(
                                 SERVICE_URL_DEV,
                                 null,
@@ -519,18 +515,14 @@ class CardLinkTest {
                     TAN_CORRECT
                 }
                 everySuspend { uiMock.onCanRequest() } calls {
-                    CAN_CORRECT
-                }
-
-                everySuspend { uiMock.requestCardInsertion() } calls {
                     job?.cancelAndJoin()
+                    CAN_CORRECT
                 }
 
                 job =
                     launch {
                         try {
                             callEstablishCardLink(
-                                activity,
                                 ws,
                             )
                         } catch (e: CancellationException) {
@@ -563,15 +555,17 @@ class CardLinkTest {
                 }
                 everySuspend { uiMock.requestCardInsertion() } calls {
                     activity.msg("Insert Card")
-                }
-                everySuspend { uiMock.onCardRecognized() } calls {
-                    activity.msg("Card detected. Don't move")
+                    val connection =
+                        SmartCardConnector(
+                            assertNotNull(activity.factory),
+                        ).connectCard()
+                    activity.msg("Card connected - don't move.")
+                    connection
                 }
 
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
-                            activity,
                             Websocket(
                                 SERVICE_URL_DEV,
                                 null,
@@ -593,15 +587,17 @@ class CardLinkTest {
                 everySuspend { uiMock.onCanRequest() } calls { activity.getCan() }
                 everySuspend { uiMock.requestCardInsertion() } calls {
                     activity.msg("Insert Card")
-                }
-                everySuspend { uiMock.onCardRecognized() } calls {
-                    activity.msg("Card detected. Don't move")
+                    val connection =
+                        SmartCardConnector(
+                            assertNotNull(activity.factory),
+                        ).connectCard()
+                    activity.msg("Card connected - don't move.")
+                    connection
                 }
 
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
-                            activity,
                             Websocket(
                                 SERVICE_URL_PROD,
                                 TENANT_TOKEN_VALID_PROD,

@@ -10,32 +10,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
-import okio.Buffer
-import okio.GzipSource
-import org.openecard.cif.bundled.CompleteTree
-import org.openecard.cif.bundled.EgkCif
-import org.openecard.cif.bundled.EgkCifDefinitions
-import org.openecard.cif.bundled.EgkCifDefinitions.cardType
-import org.openecard.cif.definition.acl.DidStateReference
-import org.openecard.cif.definition.recognition.removeUnsupported
 import org.openecard.sal.iface.DeviceUnavailable
 import org.openecard.sal.iface.DeviceUnsupported
-import org.openecard.sal.iface.MissingAuthentications
-import org.openecard.sal.iface.dids.PaceDid
-import org.openecard.sal.sc.SmartcardApplication
-import org.openecard.sal.sc.SmartcardDataset
-import org.openecard.sal.sc.SmartcardDeviceConnection
-import org.openecard.sal.sc.SmartcardSal
-import org.openecard.sal.sc.recognition.DirectCardRecognition
-import org.openecard.sc.apdu.toCommandApdu
 import org.openecard.sc.iface.ReaderUnavailable
-import org.openecard.sc.iface.SecureMessagingException
 import org.openecard.sc.iface.SmartCardStackMissing
-import org.openecard.sc.iface.TerminalFactory
 import org.openecard.sc.iface.feature.PaceError
-import org.openecard.sc.iface.withContextSuspend
-import org.openecard.sc.pace.PaceFeatureSoftwareFactory
-import org.openecard.sc.tlv.toTlvSimple
 import kotlin.UByteArray
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
@@ -46,7 +25,6 @@ internal val MESSAGE_TIMEOUT_DURATION = 5.seconds
 private val logger = KotlinLogging.logger { }
 
 class CardLinkAuthenticationProtocol internal constructor(
-    private val terminalFactory: TerminalFactory,
     private val ws: Websocket,
 ) : CardLinkProtocolBase(ws) {
     data class SessionInfo(
@@ -95,10 +73,10 @@ class CardLinkAuthenticationProtocol internal constructor(
             var cardCommunicationResult: CardCommunicationResultCode? = null
             do {
                 val can = getCheckedCan(cardCommunicationResult)
+                val connection = interaction.requestCardInsertion()
                 try {
                     withEgk(
-                        terminalFactory,
-                        interaction,
+                        connection,
                         can,
                     ) {
                         if (readPersonalData) {

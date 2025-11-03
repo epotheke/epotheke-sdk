@@ -2,6 +2,7 @@ package com.epotheke.sdk
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.epotheke.Epotheke
+import com.epotheke.SmartCardConnector
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
@@ -47,7 +48,6 @@ class EpothekeTest {
                 assertIs<WebSocketException>(
                     assertFails {
                         Epotheke(
-                            assertNotNull(activity.factory),
                             SERVICE_URL_DEV,
                             it,
                         ).use { epotheke ->
@@ -68,13 +68,15 @@ class EpothekeTest {
 
             everySuspend { uiMock.requestCardInsertion() } calls {
                 activity.msg("insert card")
-            }
-            everySuspend { uiMock.onCardRecognized() } calls {
-                activity.msg("don't move")
+                val connection =
+                    SmartCardConnector(
+                        assertNotNull(activity.factory),
+                    ).connectCard()
+                activity.msg("Card connected - don't move.")
+                connection
             }
 
             Epotheke(
-                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
                 null,
             ).use { epotheke ->
@@ -100,18 +102,20 @@ class EpothekeTest {
             var first = true
             everySuspend { uiMock.requestCardInsertion() } calls {
                 if (first) {
-                    activity.msg("insert card")
                     first = false
+                    activity.msg("insert card")
                 } else {
                     activity.msg("insert different card")
                 }
-            }
-            everySuspend { uiMock.onCardRecognized() } calls {
-                activity.msg("don't move")
+                val connection =
+                    SmartCardConnector(
+                        assertNotNull(activity.factory),
+                    ).connectCard()
+                activity.msg("Card connected - don't move.")
+                connection
             }
 
             Epotheke(
-                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
                 null,
                 wsSessionId,
@@ -138,13 +142,15 @@ class EpothekeTest {
 
             everySuspend { uiMock.requestCardInsertion() } calls {
                 activity.msg("insert card")
-            }
-            everySuspend { uiMock.onCardRecognized() } calls {
-                activity.msg("don't move")
+                val connection =
+                    SmartCardConnector(
+                        assertNotNull(activity.factory),
+                    ).connectCard()
+                activity.msg("Card connected - don't move.")
+                connection
             }
 
             Epotheke(
-                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
                 null,
                 wsSessionId,
@@ -169,13 +175,15 @@ class EpothekeTest {
 
             everySuspend { uiMock.requestCardInsertion() } calls {
                 activity.msg("insert card")
-            }
-            everySuspend { uiMock.onCardRecognized() } calls {
-                activity.msg("don't move")
+                val connection =
+                    SmartCardConnector(
+                        assertNotNull(activity.factory),
+                    ).connectCard()
+                activity.msg("Card connected - don't move.")
+                connection
             }
 
             Epotheke(
-                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
                 null,
                 null,
@@ -186,7 +194,6 @@ class EpothekeTest {
                 // new instance and connection with session id from last result
                 val epothekeNew =
                     Epotheke(
-                        assertNotNull(activity.factory),
                         SERVICE_URL_DEV,
                         null,
                         res.wsSessionId,

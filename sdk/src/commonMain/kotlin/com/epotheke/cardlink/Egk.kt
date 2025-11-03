@@ -1,24 +1,12 @@
 package com.epotheke.cardlink
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.openecard.cif.bundled.CompleteTree
-import org.openecard.cif.bundled.EgkCif
 import org.openecard.cif.bundled.EgkCifDefinitions
-import org.openecard.cif.definition.acl.DidStateReference
-import org.openecard.cif.definition.recognition.removeUnsupported
-import org.openecard.sal.iface.MissingAuthentications
 import org.openecard.sal.iface.dids.PaceDid
 import org.openecard.sal.sc.SmartcardApplication
 import org.openecard.sal.sc.SmartcardDeviceConnection
-import org.openecard.sal.sc.SmartcardSal
-import org.openecard.sal.sc.recognition.CardRecognition
-import org.openecard.sal.sc.recognition.DirectCardRecognition
 import org.openecard.sc.apdu.toCommandApdu
-import org.openecard.sc.iface.CardChannel
 import org.openecard.sc.iface.SecureMessagingException
-import org.openecard.sc.iface.TerminalFactory
-import org.openecard.sc.iface.withContextSuspend
-import org.openecard.sc.pace.PaceFeatureSoftwareFactory
 import org.openecard.sc.tlv.toTlvSimple
 import kotlin.ExperimentalUnsignedTypes
 import kotlin.OptIn
@@ -33,14 +21,6 @@ internal class MFData(
     val cvcCA: UByteArray,
     val atr: UByteArray,
 )
-
-/*
-* Effectively switch off card recognition but assume eGK - if wrong card is presented an error will happen later.
-*/
-internal val cardRecognitionStub =
-    object : CardRecognition {
-        override fun recognizeCard(channel: CardChannel) = EgkCif.metadata.id
-    }
 
 internal class Egk(
     private val connection: SmartcardDeviceConnection,
@@ -130,29 +110,12 @@ internal class Egk(
 }
 
 internal suspend fun withEgk(
-    terminalFactory: TerminalFactory,
-    interaction: UserInteraction,
+    connection: SmartcardDeviceConnection,
     can: String,
     block: suspend Egk.() -> Unit,
 ) {
-    terminalFactory.load().withContextSuspend { terminals ->
-
-        val terminal =
-            terminals.list().firstOrNull()
-                ?: throw OtherNfcError("NFC stack could not be initialized")
-
-        val session =
-            SmartcardSal(
-                terminals,
-                setOf(EgkCif),
-                cardRecognitionStub,
-                PaceFeatureSoftwareFactory(),
-            ).startSession()
-        interaction.requestCardInsertion()
-        terminal.waitForCardPresent()
-        Egk(session.connect(terminal.name)).run {
-            authenticate(can)
-            block()
-        }
+    Egk(connection).run {
+        authenticate(can)
+        block()
     }
 }
