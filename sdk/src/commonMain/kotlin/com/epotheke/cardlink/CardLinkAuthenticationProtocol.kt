@@ -14,8 +14,6 @@ import org.openecard.sal.iface.DeviceUnavailable
 import org.openecard.sal.iface.DeviceUnsupported
 import org.openecard.sc.iface.ReaderUnavailable
 import org.openecard.sc.iface.SmartCardStackMissing
-import org.openecard.sc.iface.feature.PaceError
-import kotlin.UByteArray
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -68,44 +66,34 @@ class CardLinkAuthenticationProtocol internal constructor(
                 }
 
             if (!sessionInfo.phoneRegistered) {
-                registerPhone()
+                requestTan()
+                confirmTan()
             }
-            var cardCommunicationResult: CardCommunicationResultCode? = null
-            do {
-                val can = getCheckedCan(cardCommunicationResult)
-                val connection = interaction.requestCardInsertion()
-                try {
-                    withEgk(
-                        connection,
-                        can,
-                    ) {
-                        if (readPersonalData) {
-                            cardLinkAuthResult.personalData = personalData
-                        }
-                        if (readInsurerData) {
-                            cardLinkAuthResult.insurerData = insurerData
-                        }
 
-                        cardLinkAuthResult.iccsn = iccsn
-
-                        sendEgkData(
-                            sessionInfo.cardSessionId,
-                            mfData = mfData,
-                            cert,
-                        )
-
-                        handleRemoteApdus()
-                        // no errors break retry loop
-                        cardCommunicationResult = null
-                    }
-                } catch (_: PaceError) {
-                    cardCommunicationResult = CardCommunicationResultCode.CAN_INCORRECT
+            withAuthenticatedEgk(interaction) {
+                if (readPersonalData) {
+                    cardLinkAuthResult.personalData = personalData
                 }
-            } while (
-                cardCommunicationResult in listOf(CardCommunicationResultCode.CAN_INCORRECT)
-            )
+                if (readInsurerData) {
+                    cardLinkAuthResult.insurerData = insurerData
+                }
 
-            // no error means success
+                cardLinkAuthResult.iccsn = iccsn
+
+                RegisterEgk(
+                    sessionInfo.cardSessionId,
+                    gdo = mfData.gdo.toByteArray(),
+                    cardVersion = mfData.cardVersion.toByteArray(),
+                    cvcAuth = mfData.cvcAuth.toByteArray(),
+                    cvcCA = mfData.cvcCA.toByteArray(),
+                    atr = mfData.atr.toByteArray(),
+                    x509AuthECC = cert.toByteArray(),
+                    x509AuthRSA = null,
+                ).send()
+
+                handleRemoteApdus()
+            }
+
             cardLinkAuthResult
         }
 
@@ -132,39 +120,18 @@ class CardLinkAuthenticationProtocol internal constructor(
         }
     }
 
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private suspend fun sendEgkData(
-        cardSessionId: String,
-        mfData: MFData,
-        cert: UByteArray,
-    ) {
-        val registerEgkData =
-            RegisterEgk(
-                cardSessionId = cardSessionId,
-                gdo = mfData.gdo.toByteArray(),
-                cardVersion = mfData.cardVersion.toByteArray(),
-                cvcAuth = mfData.cvcAuth.toByteArray(),
-                cvcCA = mfData.cvcCA.toByteArray(),
-                atr = mfData.atr.toByteArray(),
-                x509AuthECC = cert.toByteArray(),
-                x509AuthRSA = null,
-            )
-        sendEnvelope(registerEgkData)
+    @OptIn(ExperimentalUuidApi::class)
+    private suspend fun CardLinkPayload.send(correlationId: String? = Uuid.random().toString()) {
+        GematikEnvelope(
+            this,
+            correlationId,
+            sessionInfo.cardSessionId,
+        ).send()
     }
 
-    @OptIn(ExperimentalUuidApi::class)
-    private suspend fun sendEnvelope(
-        payload: CardLinkPayload,
-        correlationId: String? = Uuid.random().toString(),
-    ) {
+    private suspend fun GematikEnvelope.send() {
         ws.send(
-            cardLinkJsonFormatter.encodeToString(
-                GematikEnvelope(
-                    payload,
-                    correlationId,
-                    sessionInfo.cardSessionId,
-                ),
-            ),
+            cardLinkJsonFormatter.encodeToString(this),
         )
     }
 
@@ -222,11 +189,6 @@ class CardLinkAuthenticationProtocol internal constructor(
         }
     }
 
-    private suspend fun registerPhone() {
-        requestTan()
-        confirmTan()
-    }
-
     private fun handleTaskListError(egkPayload: TasklistErrorPayload): Nothing =
         throw CardLinkError.byCode(egkPayload.status, egkPayload.errormessage)
 
@@ -242,11 +204,9 @@ class CardLinkAuthenticationProtocol internal constructor(
                 else ->
                     interaction.onPhoneNumberRetry(lastResultCode, lastErrorMessage ?: "")
             }
-        sendEnvelope(
-            SendPhoneNumber(
-                number,
-            ),
-        )
+        SendPhoneNumber(
+            number,
+        ).send()
 
         val egkEnvelopeResponse = receiveEnvelope()
 
@@ -306,12 +266,11 @@ class CardLinkAuthenticationProtocol internal constructor(
                 }
             }
 
-        sendEnvelope(
-            SendTan(
-                smsCode = userEnteredTan,
-                tan = userEnteredTan,
-            ),
-        )
+        SendTan(
+            smsCode = userEnteredTan,
+            tan = userEnteredTan,
+        ).send()
+
         val response = receiveEnvelope()
         when (val egkPayload = response.payload) {
             is TasklistErrorPayload -> handleTaskListError(egkPayload)
@@ -336,24 +295,6 @@ class CardLinkAuthenticationProtocol internal constructor(
         }
     }
 
-    private suspend fun getCheckedCan(lastResultCode: CardCommunicationResultCode?): String {
-        val can =
-            if (lastResultCode == null) {
-                interaction.onCanRequest()
-            } else {
-                interaction.onCanRetry(lastResultCode)
-            }
-        return if (can.isBlank()) {
-            getCheckedCan(CardCommunicationResultCode.CAN_EMPTY)
-        } else if (can.length != CAN_LEN) {
-            getCheckedCan(CardCommunicationResultCode.CAN_LEN_WRONG)
-        } else if (can.toIntOrNull() == null) {
-            getCheckedCan(CardCommunicationResultCode.CAN_NOT_NUMERIC)
-        } else {
-            can
-        }
-    }
-
     private suspend fun Egk.handleRemoteApdus() {
         val envelope = receiveEnvelope()
         when (val payload = envelope.payload) {
@@ -368,13 +309,12 @@ class CardLinkAuthenticationProtocol internal constructor(
                 return
             }
             is SendApdu -> {
-                sendEnvelope(
-                    SendApduResponse(
-                        payload.cardSessionId,
-                        sendApduToCard(payload.apdu),
-                    ),
-                    correlationId = envelope.correlationId,
-                )
+                val cardResponse = sendApduToCard(payload.apdu)
+                SendApduResponse(
+                    payload.cardSessionId,
+                    cardResponse,
+                ).send(envelope.correlationId)
+
                 handleRemoteApdus()
             }
 

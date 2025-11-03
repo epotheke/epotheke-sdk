@@ -288,7 +288,7 @@ class CardLinkTest {
     fun testCanSanitizing() =
 
         runTestJobWithActivity { activity ->
-            val nbrWrongButValidTan = 3
+            val nbrWrongButValidCan = 3
             var testJob: Job? = null
             everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
             everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
@@ -297,7 +297,7 @@ class CardLinkTest {
             everySuspend { uiMock.onCanRetry(any()) } sequentially {
                 returns("1234567")
                 returns("ABCDEF")
-                repeat(nbrWrongButValidTan) {
+                repeat(nbrWrongButValidCan) {
                     returns(CAN_WRONG)
                 }
                 returns(CAN_CORRECT)
@@ -338,7 +338,7 @@ class CardLinkTest {
             verifySuspend {
                 uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_NOT_NUMERIC))
             }
-            verifySuspend(exactly(nbrWrongButValidTan)) {
+            verifySuspend(exactly(nbrWrongButValidCan)) {
                 uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_INCORRECT))
             }
             verifySuspend { uiMock.requestCardInsertion() }

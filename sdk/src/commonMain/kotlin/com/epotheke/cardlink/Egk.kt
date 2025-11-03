@@ -7,6 +7,7 @@ import org.openecard.sal.sc.SmartcardApplication
 import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sc.apdu.toCommandApdu
 import org.openecard.sc.iface.SecureMessagingException
+import org.openecard.sc.iface.feature.PaceError
 import org.openecard.sc.tlv.toTlvSimple
 import kotlin.ExperimentalUnsignedTypes
 import kotlin.OptIn
@@ -109,13 +110,60 @@ internal class Egk(
     }
 }
 
-internal suspend fun withEgk(
-    connection: SmartcardDeviceConnection,
-    can: String,
+internal suspend fun withAuthenticatedEgk(
+    interaction: UserInteraction,
     block: suspend Egk.() -> Unit,
 ) {
-    Egk(connection).run {
-        authenticate(can)
-        block()
+    repeatIfWrongCan(interaction) { can ->
+        val connection = interaction.requestCardInsertion()
+        Egk(connection).run {
+            authenticate(can)
+            block()
+        }
+    }
+}
+
+private suspend fun repeatIfWrongCan(
+    interaction: UserInteraction,
+    block: suspend (can: String) -> Unit,
+) {
+    doRepetition(null, interaction, block)
+}
+
+private suspend fun doRepetition(
+    cardCommunicationResult: CardCommunicationResultCode?,
+    interaction: UserInteraction,
+    block: suspend (can: String) -> Unit,
+) {
+    try {
+        val can = getCheckedCan(interaction, cardCommunicationResult)
+        block(can)
+    } catch (_: PaceError) {
+        doRepetition(
+            CardCommunicationResultCode.CAN_INCORRECT,
+            interaction,
+            block,
+        )
+    }
+}
+
+private suspend fun getCheckedCan(
+    interaction: UserInteraction,
+    lastResultCode: CardCommunicationResultCode?,
+): String {
+    val can =
+        if (lastResultCode == null) {
+            interaction.onCanRequest()
+        } else {
+            interaction.onCanRetry(lastResultCode)
+        }
+    return if (can.isBlank()) {
+        getCheckedCan(interaction, CardCommunicationResultCode.CAN_EMPTY)
+    } else if (can.length != CAN_LEN) {
+        getCheckedCan(interaction, CardCommunicationResultCode.CAN_LEN_WRONG)
+    } else if (can.toIntOrNull() == null) {
+        getCheckedCan(interaction, CardCommunicationResultCode.CAN_NOT_NUMERIC)
+    } else {
+        can
     }
 }
