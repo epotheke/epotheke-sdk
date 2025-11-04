@@ -12,6 +12,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import org.openecard.sal.iface.DeviceUnavailable
 import org.openecard.sal.iface.DeviceUnsupported
+import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.iface.ReaderUnavailable
 import org.openecard.sc.iface.SmartCardStackMissing
 import kotlin.time.Duration.Companion.seconds
@@ -24,6 +25,7 @@ private val logger = KotlinLogging.logger { }
 
 class CardLinkAuthenticationProtocol internal constructor(
     private val ws: Websocket,
+    private val salSession: SmartcardSalSession,
 ) : CardLinkProtocolBase(ws) {
     data class SessionInfo(
         val cardSessionId: String,
@@ -70,7 +72,10 @@ class CardLinkAuthenticationProtocol internal constructor(
                 confirmTan()
             }
 
-            withAuthenticatedEgk(interaction) {
+            withAuthenticatedEgk(
+                salSession,
+                interaction,
+            ) {
                 if (readPersonalData) {
                     cardLinkAuthResult.personalData = personalData
                 }
@@ -101,6 +106,7 @@ class CardLinkAuthenticationProtocol internal constructor(
         try {
             return block()
         } catch (e: Exception) {
+            logger.error(e) { "Mapping error" }
             throw when (e) {
                 is CancellationException,
                 is CardLinkError,

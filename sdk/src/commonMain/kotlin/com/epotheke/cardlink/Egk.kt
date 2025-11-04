@@ -5,6 +5,7 @@ import org.openecard.cif.bundled.EgkCifDefinitions
 import org.openecard.sal.iface.dids.PaceDid
 import org.openecard.sal.sc.SmartcardApplication
 import org.openecard.sal.sc.SmartcardDeviceConnection
+import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.apdu.toCommandApdu
 import org.openecard.sc.iface.SecureMessagingException
 import org.openecard.sc.iface.feature.PaceError
@@ -111,11 +112,12 @@ internal class Egk(
 }
 
 internal suspend fun withAuthenticatedEgk(
+    salSession: SmartcardSalSession,
     interaction: UserInteraction,
     block: suspend Egk.() -> Unit,
 ) {
-    repeatIfWrongCan(interaction) { can ->
-        val connection = interaction.requestCardInsertion()
+    repeatIfWrongCan(salSession, interaction) { can ->
+        val connection = interaction.requestCardInsertion(salSession)
         Egk(connection).run {
             authenticate(can)
             block()
@@ -124,26 +126,37 @@ internal suspend fun withAuthenticatedEgk(
 }
 
 private suspend fun repeatIfWrongCan(
+    salSession: SmartcardSalSession,
     interaction: UserInteraction,
     block: suspend (can: String) -> Unit,
 ) {
-    doRepetition(null, interaction, block)
+    doRepetition(salSession, null, interaction, block)
 }
 
 private suspend fun doRepetition(
+    salSession: SmartcardSalSession,
     cardCommunicationResult: CardCommunicationResultCode?,
     interaction: UserInteraction,
     block: suspend (can: String) -> Unit,
 ) {
     try {
         val can = getCheckedCan(interaction, cardCommunicationResult)
+        salSession.initializeStack()
         block(can)
-    } catch (_: PaceError) {
-        doRepetition(
-            CardCommunicationResultCode.CAN_INCORRECT,
-            interaction,
-            block,
-        )
+        salSession.shutdownStack()
+    } catch (e: Exception) {
+        salSession.shutdownStack()
+        when (e) {
+            is PaceError -> {
+                doRepetition(
+                    salSession,
+                    CardCommunicationResultCode.CAN_INCORRECT,
+                    interaction,
+                    block,
+                )
+            }
+            else -> throw e
+        }
     }
 }
 

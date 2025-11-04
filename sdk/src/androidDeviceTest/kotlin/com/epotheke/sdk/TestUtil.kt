@@ -24,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.openecard.sal.sc.SmartcardDeviceConnection
+import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.pcsc.AndroidTerminalFactory
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -170,7 +171,7 @@ class TestActivity : Activity() {
 
 fun userInterActionStub() =
     object : UserInteraction {
-        override suspend fun requestCardInsertion(): SmartcardDeviceConnection {
+        override suspend fun requestCardInsertion(session: SmartcardSalSession): SmartcardDeviceConnection {
             logger.debug { "requestCardInsertion" }
             throw NotImplementedError("Methods returning must be mocked.")
         }

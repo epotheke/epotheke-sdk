@@ -1,11 +1,14 @@
 package com.epotheke.sdk
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.epotheke.Epotheke
-import com.epotheke.SmartCardConnector
+import com.epotheke.Epotheke.Companion.createEpothekeService
+import com.epotheke.cardlink.SmartcardSalHelper
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.everySuspend
+import dev.mokkery.matcher.capture.Capture
+import dev.mokkery.matcher.capture.capture
+import dev.mokkery.matcher.capture.get
 import dev.mokkery.spy
 import dev.mokkery.verify.VerifyMode.Companion.exactly
 import dev.mokkery.verifySuspend
@@ -13,6 +16,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.plugins.websocket.WebSocketException
 import org.junit.BeforeClass
 import org.junit.runner.RunWith
+import org.openecard.sal.sc.SmartcardSalSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -47,7 +51,8 @@ class EpothekeTest {
             ).forEach {
                 assertIs<WebSocketException>(
                     assertFails {
-                        Epotheke(
+                        createEpothekeService(
+                            assertNotNull(activity.factory),
                             SERVICE_URL_DEV,
                             it,
                         ).use { epotheke ->
@@ -65,18 +70,17 @@ class EpothekeTest {
             everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
             everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
             everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
-
-            everySuspend { uiMock.requestCardInsertion() } calls {
-                activity.msg("insert card")
+            val salSessionCap = Capture.slot<SmartcardSalSession>()
+            everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
+                activity.msg("Insert Card")
                 val connection =
-                    SmartCardConnector(
-                        assertNotNull(activity.factory),
-                    ).connectCard()
+                    SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                 activity.msg("Card connected - don't move.")
                 connection
             }
-
-            Epotheke(
+            createEpothekeService(
+                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
                 null,
             ).use { epotheke ->
@@ -100,7 +104,8 @@ class EpothekeTest {
             everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
 
             var first = true
-            everySuspend { uiMock.requestCardInsertion() } calls {
+            val salSessionCap = Capture.slot<SmartcardSalSession>()
+            everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
                 if (first) {
                     first = false
                     activity.msg("insert card")
@@ -108,17 +113,15 @@ class EpothekeTest {
                     activity.msg("insert different card")
                 }
                 val connection =
-                    SmartCardConnector(
-                        assertNotNull(activity.factory),
-                    ).connectCard()
+                    SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                 activity.msg("Card connected - don't move.")
                 connection
             }
-
-            Epotheke(
+            createEpothekeService(
+                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
                 null,
-                wsSessionId,
             ).use { epotheke ->
                 assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
                 assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
@@ -140,22 +143,20 @@ class EpothekeTest {
             everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
             everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
 
-            everySuspend { uiMock.requestCardInsertion() } calls {
-                activity.msg("insert card")
+            val salSessionCap = Capture.slot<SmartcardSalSession>()
+            everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
+                activity.msg("Insert Card")
                 val connection =
-                    SmartCardConnector(
-                        assertNotNull(activity.factory),
-                    ).connectCard()
+                    SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                 activity.msg("Card connected - don't move.")
                 connection
             }
-
-            Epotheke(
+            createEpothekeService(
+                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
                 null,
-                wsSessionId,
             ).use { epotheke ->
-
                 assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
                 assertNotNull(epotheke.cardLinkAuthenticationProtocol.establishCardLink(uiMock))
 
@@ -172,20 +173,18 @@ class EpothekeTest {
             everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
             everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
             everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
-
-            everySuspend { uiMock.requestCardInsertion() } calls {
-                activity.msg("insert card")
+            val salSessionCap = Capture.slot<SmartcardSalSession>()
+            everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
+                activity.msg("Insert Card")
                 val connection =
-                    SmartCardConnector(
-                        assertNotNull(activity.factory),
-                    ).connectCard()
+                    SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                 activity.msg("Card connected - don't move.")
                 connection
             }
-
-            Epotheke(
+            createEpothekeService(
+                assertNotNull(activity.factory),
                 SERVICE_URL_DEV,
-                null,
                 null,
             ).use { epotheke ->
 
@@ -193,7 +192,8 @@ class EpothekeTest {
 
                 // new instance and connection with session id from last result
                 val epothekeNew =
-                    Epotheke(
+                    createEpothekeService(
+                        assertNotNull(activity.factory),
                         SERVICE_URL_DEV,
                         null,
                         res.wsSessionId,

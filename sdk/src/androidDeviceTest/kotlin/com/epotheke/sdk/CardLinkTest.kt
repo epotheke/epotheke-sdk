@@ -2,19 +2,22 @@ package com.epotheke.sdk
 
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.epotheke.SmartCardConnector
 import com.epotheke.Websocket
 import com.epotheke.cardlink.CardCommunicationResultCode
 import com.epotheke.cardlink.CardLinkAuthResult
 import com.epotheke.cardlink.CardLinkAuthenticationConfig
 import com.epotheke.cardlink.CardLinkAuthenticationProtocol
 import com.epotheke.cardlink.ResultCode
+import com.epotheke.cardlink.SmartcardSalHelper
 import com.epotheke.cardlink.TanRetryLimitExceeded
 import dev.mokkery.answering.calls
 import dev.mokkery.answering.returns
 import dev.mokkery.answering.sequentially
 import dev.mokkery.everySuspend
 import dev.mokkery.matcher.any
+import dev.mokkery.matcher.capture.Capture
+import dev.mokkery.matcher.capture.capture
+import dev.mokkery.matcher.capture.get
 import dev.mokkery.matcher.eq
 import dev.mokkery.matcher.matching
 import dev.mokkery.spy
@@ -32,6 +35,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.BeforeClass
 import org.junit.runner.RunWith
+import org.openecard.cif.bundled.EgkCif
+import org.openecard.sal.sc.SmartcardSal
+import org.openecard.sal.sc.SmartcardSalSession
+import org.openecard.sal.sc.recognition.CardRecognition
+import org.openecard.sc.iface.CardChannel
+import org.openecard.sc.iface.TerminalFactory
+import org.openecard.sc.pace.PaceFeatureSoftwareFactory
 import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.test.assertIs
@@ -92,8 +102,21 @@ class CardLinkTest {
 
     val uiMock = spy(userInterActionStub())
 
-    private suspend fun callEstablishCardLink(ws: Websocket): CardLinkAuthResult =
-        CardLinkAuthenticationProtocol(ws).establishCardLink(uiMock)
+    private suspend fun callEstablishCardLink(
+        terminalFactory: TerminalFactory,
+        ws: Websocket,
+    ): CardLinkAuthResult {
+        val sal =
+            SmartcardSal(
+                terminalFactory.load(),
+                setOf(EgkCif),
+                object : CardRecognition {
+                    override fun recognizeCard(channel: CardChannel) = EgkCif.metadata.id
+                },
+                PaceFeatureSoftwareFactory(),
+            )
+        return CardLinkAuthenticationProtocol(ws, sal.startSession()).establishCardLink(uiMock)
+    }
 
     @OptIn(ExperimentalUnsignedTypes::class)
     @Test
@@ -107,6 +130,7 @@ class CardLinkTest {
                 assertIs<WebSocketException>(
                     assertFails {
                         callEstablishCardLink(
+                            assertNotNull(activity.factory),
                             Websocket(SERVICE_URL_DEV, it),
                         )
                     }.cause,
@@ -128,6 +152,7 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
+                        assertNotNull(activity.factory),
                         Websocket(SERVICE_URL_DEV, null),
                     )
                 }
@@ -168,6 +193,7 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
+                        assertNotNull(activity.factory),
                         Websocket(SERVICE_URL_DEV, null),
                     )
                 }
@@ -210,6 +236,7 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
+                        assertNotNull(activity.factory),
                         Websocket(SERVICE_URL_MOCK, null),
                     )
                 }
@@ -239,6 +266,7 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
+                        assertNotNull(activity.factory),
                         Websocket(SERVICE_URL_MOCK, null),
                     )
                 }
@@ -268,6 +296,7 @@ class CardLinkTest {
                     val e =
                         assertFails {
                             callEstablishCardLink(
+                                assertNotNull(activity.factory),
                                 Websocket(SERVICE_URL_MOCK, null),
                             )
                         }
@@ -302,13 +331,12 @@ class CardLinkTest {
                 }
                 returns(CAN_CORRECT)
             }
-
-            everySuspend { uiMock.requestCardInsertion() } calls {
-                activity.msg("insert card")
+            val salSessionCap = Capture.slot<SmartcardSalSession>()
+            everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
+                activity.msg("Insert Card")
                 val connection =
-                    SmartCardConnector(
-                        assertNotNull(activity.factory),
-                    ).connectCard()
+                    SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                 activity.msg("Card connected - don't move.")
                 connection
             }
@@ -316,6 +344,7 @@ class CardLinkTest {
             testJob =
                 launch {
                     callEstablishCardLink(
+                        assertNotNull(activity.factory),
                         Websocket(SERVICE_URL_DEV, null),
                     )
                 }
@@ -341,7 +370,7 @@ class CardLinkTest {
             verifySuspend(exactly(nbrWrongButValidCan)) {
                 uiMock.onCanRetry(eq(CardCommunicationResultCode.CAN_INCORRECT))
             }
-            verifySuspend { uiMock.requestCardInsertion() }
+            verifySuspend { uiMock.requestCardInsertion(any()) }
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
@@ -358,13 +387,12 @@ class CardLinkTest {
                     countDown(activity, "Remove card", 5.seconds)
                     CAN_CORRECT
                 }
-
-                everySuspend { uiMock.requestCardInsertion() } calls {
-                    activity.msg("insert card")
+                val salSessionCap = Capture.slot<SmartcardSalSession>()
+                everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
+                    activity.msg("Insert Card")
                     val connection =
-                        SmartCardConnector(
-                            assertNotNull(activity.factory),
-                        ).connectCard()
+                        SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                     activity.msg("Card connected - don't move.")
                     connection
                 }
@@ -372,6 +400,7 @@ class CardLinkTest {
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
+                            assertNotNull(activity.factory),
                             Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
@@ -392,12 +421,12 @@ class CardLinkTest {
                 everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
                 everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
                 everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
-                everySuspend { uiMock.requestCardInsertion() } calls {
+                val salSessionCap = Capture.slot<SmartcardSalSession>()
+                everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
                     activity.msg("Insert Card")
                     val connection =
-                        SmartCardConnector(
-                            assertNotNull(activity.factory),
-                        ).connectCard()
+                        SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                     activity.msg("Card connected - don't move.")
                     connection
                 }
@@ -406,6 +435,7 @@ class CardLinkTest {
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
+                            assertNotNull(activity.factory),
                             Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
@@ -425,12 +455,12 @@ class CardLinkTest {
                 everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
                 everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
                 everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
-                everySuspend { uiMock.requestCardInsertion() } calls {
+                val salSessionCap = Capture.slot<SmartcardSalSession>()
+                everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
                     activity.msg("Insert Card")
                     val connection =
-                        SmartCardConnector(
-                            assertNotNull(activity.factory),
-                        ).connectCard()
+                        SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                     activity.msg("Card connected - don't move.")
                     connection
                 }
@@ -439,6 +469,7 @@ class CardLinkTest {
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
+                            assertNotNull(activity.factory),
                             Websocket(
                                 SERVICE_URL_MOCK,
                                 null,
@@ -458,12 +489,12 @@ class CardLinkTest {
                 everySuspend { uiMock.onPhoneNumberRequest() } returns PHONE_NUMBER_VALID
                 everySuspend { uiMock.onTanRequest() } returns TAN_CORRECT
                 everySuspend { uiMock.onCanRequest() } returns CAN_CORRECT
-                everySuspend { uiMock.requestCardInsertion() } calls {
+                val salSessionCap = Capture.slot<SmartcardSalSession>()
+                everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
                     activity.msg("Insert Card")
                     val connection =
-                        SmartCardConnector(
-                            assertNotNull(activity.factory),
-                        ).connectCard()
+                        SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                     activity.msg("Card connected - don't move.")
                     connection
                 }
@@ -471,6 +502,7 @@ class CardLinkTest {
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
+                            assertNotNull(activity.factory),
                             Websocket(
                                 SERVICE_URL_DEV,
                                 null,
@@ -523,6 +555,7 @@ class CardLinkTest {
                     launch {
                         try {
                             callEstablishCardLink(
+                                assertNotNull(activity.factory),
                                 ws,
                             )
                         } catch (e: CancellationException) {
@@ -553,12 +586,12 @@ class CardLinkTest {
                     advicePauseResume(activity)
                     CAN_CORRECT
                 }
-                everySuspend { uiMock.requestCardInsertion() } calls {
+                val salSessionCap = Capture.slot<SmartcardSalSession>()
+                everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
                     activity.msg("Insert Card")
                     val connection =
-                        SmartCardConnector(
-                            assertNotNull(activity.factory),
-                        ).connectCard()
+                        SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                     activity.msg("Card connected - don't move.")
                     connection
                 }
@@ -566,6 +599,7 @@ class CardLinkTest {
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
+                            assertNotNull(activity.factory),
                             Websocket(
                                 SERVICE_URL_DEV,
                                 null,
@@ -585,12 +619,13 @@ class CardLinkTest {
                 everySuspend { uiMock.onPhoneNumberRequest() } calls { activity.getPhoneNumber() }
                 everySuspend { uiMock.onTanRequest() } calls { activity.getTan() }
                 everySuspend { uiMock.onCanRequest() } calls { activity.getCan() }
-                everySuspend { uiMock.requestCardInsertion() } calls {
+
+                val salSessionCap = Capture.slot<SmartcardSalSession>()
+                everySuspend { uiMock.requestCardInsertion(capture(salSessionCap)) } calls {
                     activity.msg("Insert Card")
                     val connection =
-                        SmartCardConnector(
-                            assertNotNull(activity.factory),
-                        ).connectCard()
+                        SmartcardSalHelper.connectFirstTerminalOnInsertCard(salSessionCap.get())
+
                     activity.msg("Card connected - don't move.")
                     connection
                 }
@@ -598,6 +633,7 @@ class CardLinkTest {
                 val result =
                     assertNotNull(
                         callEstablishCardLink(
+                            assertNotNull(activity.factory),
                             Websocket(
                                 SERVICE_URL_PROD,
                                 TENANT_TOKEN_VALID_PROD,

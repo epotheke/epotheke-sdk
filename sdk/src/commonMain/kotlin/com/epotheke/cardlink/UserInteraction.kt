@@ -1,6 +1,7 @@
 package com.epotheke.cardlink
 
 import org.openecard.sal.sc.SmartcardDeviceConnection
+import org.openecard.sal.sc.SmartcardSalSession
 
 interface UserInteraction {
     suspend fun onPhoneNumberRequest(): String
@@ -21,5 +22,5 @@ interface UserInteraction {
 
     suspend fun onCanRetry(resultCode: CardCommunicationResultCode): String
 
-    suspend fun requestCardInsertion(): SmartcardDeviceConnection
+    suspend fun requestCardInsertion(session: SmartcardSalSession): SmartcardDeviceConnection
 }
