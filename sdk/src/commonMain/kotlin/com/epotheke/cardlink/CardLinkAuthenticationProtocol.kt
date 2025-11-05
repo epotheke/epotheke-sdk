@@ -8,7 +8,10 @@ import com.epotheke.prescription.prescriptionJsonFormatter
 import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.openecard.sal.iface.DeviceUnavailable
 import org.openecard.sal.iface.DeviceUnsupported
@@ -55,51 +58,53 @@ class CardLinkAuthenticationProtocol internal constructor(
     )
     @OptIn(ExperimentalUnsignedTypes::class)
     suspend fun establishCardLink(interaction: UserInteraction): CardLinkAuthResult =
-        mapErrors {
-            this.interaction = interaction
-            // note: We do a reconnect here. Sine the service informs us about whether phone is registered or not only
-            // on a fresh connect with the sessionInfo message. Since we however store the wsSession-id we use the same
-            // session as long as it is not overridden by the server or Epotheke instance was recreated with another one
-            ws.connectWithTimeout()
+        withContext(Dispatchers.IO) {
+            mapErrors {
+                this@CardLinkAuthenticationProtocol.interaction = interaction
+                // note: We do a reconnect here. Sine the service informs us about whether phone is registered or not only
+                // on a fresh connect with the sessionInfo message. Since we however store the wsSession-id we use the same
+                // session as long as it is not overridden by the server or Epotheke instance was recreated with another one
+                ws.connectWithTimeout()
 
-            sessionInfo =
-                receiveSessionInformation().apply {
-                    cardLinkAuthResult.wsSessionId = webSocketId
+                sessionInfo =
+                    receiveSessionInformation().apply {
+                        cardLinkAuthResult.wsSessionId = webSocketId
+                    }
+
+                if (!sessionInfo.phoneRegistered) {
+                    requestTan()
+                    confirmTan()
                 }
 
-            if (!sessionInfo.phoneRegistered) {
-                requestTan()
-                confirmTan()
+                withAuthenticatedEgk(
+                    salSession,
+                    interaction,
+                ) {
+                    if (readPersonalData) {
+                        cardLinkAuthResult.personalData = personalData
+                    }
+                    if (readInsurerData) {
+                        cardLinkAuthResult.insurerData = insurerData
+                    }
+
+                    cardLinkAuthResult.iccsn = iccsn
+
+                    RegisterEgk(
+                        sessionInfo.cardSessionId,
+                        gdo = mfData.gdo.toByteArray(),
+                        cardVersion = mfData.cardVersion.toByteArray(),
+                        cvcAuth = mfData.cvcAuth.toByteArray(),
+                        cvcCA = mfData.cvcCA.toByteArray(),
+                        atr = mfData.atr.toByteArray(),
+                        x509AuthECC = cert.toByteArray(),
+                        x509AuthRSA = null,
+                    ).send()
+
+                    handleRemoteApdus()
+                }
+
+                cardLinkAuthResult
             }
-
-            withAuthenticatedEgk(
-                salSession,
-                interaction,
-            ) {
-                if (readPersonalData) {
-                    cardLinkAuthResult.personalData = personalData
-                }
-                if (readInsurerData) {
-                    cardLinkAuthResult.insurerData = insurerData
-                }
-
-                cardLinkAuthResult.iccsn = iccsn
-
-                RegisterEgk(
-                    sessionInfo.cardSessionId,
-                    gdo = mfData.gdo.toByteArray(),
-                    cardVersion = mfData.cardVersion.toByteArray(),
-                    cvcAuth = mfData.cvcAuth.toByteArray(),
-                    cvcCA = mfData.cvcCA.toByteArray(),
-                    atr = mfData.atr.toByteArray(),
-                    x509AuthECC = cert.toByteArray(),
-                    x509AuthRSA = null,
-                ).send()
-
-                handleRemoteApdus()
-            }
-
-            cardLinkAuthResult
         }
 
     private inline fun mapErrors(block: () -> CardLinkAuthResult): CardLinkAuthResult {

@@ -80,6 +80,7 @@ internal class Egk(
             ?.find { it.name == EgkCifDefinitions.Apps.Mf.Dids.autPace }
             ?.let {
                 check(it is PaceDid)
+                it.application.takeUnless { app -> app.isConnected }?.connect()
                 it.establishChannel(can, null, null)
             } ?: throw IllegalStateException("PaceDid not found in Cif")
     }

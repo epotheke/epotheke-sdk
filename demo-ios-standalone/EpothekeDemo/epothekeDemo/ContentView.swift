@@ -186,6 +186,9 @@ struct ContentView: View {
             print("onCardRecognized")
         }
 
+        func requestCardInsertion(session: SmartcardSalSession) async throws -> SmartcardDeviceConnection {
+            try await SmartcardSalHelper().connectFirstTerminalOnInsertCard(salSession: session)
+        }
     }
 
     func performEpo(
@@ -194,8 +197,15 @@ struct ContentView: View {
     ) {
 
         let terminalFactory = IosTerminalFactory.companion.instance
-        let epo = Epotheke(
-            terminalFactory: terminalFactory, serviceUrl: url, tenantToken: tenantToken, wsSessionId: nil)
+        let epo = Epotheke.companion
+            .createEpothekeService(
+                terminalFactory: terminalFactory,
+                serviceUrl: url,
+                tenantToken: tenantToken,
+                wsSessionId: nil,
+                cifs: nil,
+                recognition: nil
+            )
         let authProt = epo.cardLinkAuthenticationProtocol
         CardLinkAuthenticationConfig().readPersonalData = true
         CardLinkAuthenticationConfig().readInsurerData = false
