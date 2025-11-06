@@ -5,11 +5,15 @@ For exact details please refer to the `android-demo-standalone` or `ios-demo-sta
 image::SDK_interfaces.svg[title="epotheke SDK Overview", width=900, align=center]
 
 === Epotheke
-The following has to be provided for creating an instance of `Epotheke`:
+The epotheke SDK provides an API which can be integrated directly using the `Epotheke` class.
 
-- The serviceUrl of the epotheke service
-- A tenantToken for accessing the service
-- An optional wsSessionId to reconnect to previous session
+`Epotheke` provides a factory method `createEpothekeService` which needs as parameters:
+- terminalFactory: for NFC functionality
+- serviceUrl: the url of the epotheke service
+- tenantToken: An access token
+- wsSessionId: Optional which can be used to reconnect to an existing session.
+- cifs: Optional which allows to change CardDefinition configurations, defaults to eGK
+- recognition: Optional which allows to control if card recognition is used, default switches off recognition.
 
 Once created the protocol implementations `CardlinkAuthenticationProtocol` and `PrescriptionProtocol` can be obtained, which provide functions for different use-cases described below.
 
@@ -96,10 +100,10 @@ The `UserInteraction` interface consists of the following functions.
 |The CAN was wrong or invalid.
 |Retrying is possible. The `resultCode` provides information about what went wrong.
 
-|requestCardInsertion(): SmartCardDeviceConnection
+|requestCardInsertion(session: SmartCardSalSession): SmartCardDeviceConnection
 |A connection to the eGK has to be provided.
-|A connection can be established by the use of TerminalFactory instances.
-There is a default implementation `SmartCardConnector` which can be used in mobile cases.
+|A connection can be established by the use of provided `SmartCardSalSession` object.
+There is a default implementation `SmartcardSalHelper.connectFirstTerminalOnInsertCard` which can be used if there is only one terminal and a card should be connected, as soon as it is detected.
 
 |===
 
