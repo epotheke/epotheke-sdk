@@ -178,14 +178,6 @@ struct ContentView: View {
             }
         }
 
-        func requestCardInsertion() async throws {
-            print("requestCardInsertion")
-        }
-
-        func onCardRecognized() async throws {
-            print("onCardRecognized")
-        }
-
         func requestCardInsertion(session: SmartcardSalSession) async throws -> SmartcardDeviceConnection {
             try await SmartcardSalHelper().connectFirstTerminalOnInsertCard(salSession: session)
         }
