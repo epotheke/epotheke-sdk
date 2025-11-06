@@ -8,4 +8,6 @@ enum class CardCommunicationResultCode(
     CAN_EMPTY("Empty CAN provided."),
     CAN_LEN_WRONG("Can must have $CAN_LEN digits."),
     CAN_NOT_NUMERIC("Provided CAN is not numeric."),
+
+    CARD_ERROR("Error communicating with card."),
 }

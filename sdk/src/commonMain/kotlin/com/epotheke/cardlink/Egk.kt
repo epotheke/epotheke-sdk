@@ -6,6 +6,7 @@ import org.openecard.sal.iface.dids.PaceDid
 import org.openecard.sal.sc.SmartcardApplication
 import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sal.sc.SmartcardSalSession
+import org.openecard.sc.apdu.ApduProcessingError
 import org.openecard.sc.apdu.toCommandApdu
 import org.openecard.sc.iface.SecureMessagingException
 import org.openecard.sc.iface.feature.PaceError
@@ -148,7 +149,17 @@ private suspend fun doRepetition(
     } catch (e: Exception) {
         salSession.shutdownStack()
         when (e) {
-            is PaceError -> {
+            is ApduProcessingError,
+            -> {
+                doRepetition(
+                    salSession,
+                    CardCommunicationResultCode.CARD_ERROR,
+                    interaction,
+                    block,
+                )
+            }
+            is PaceError,
+            -> {
                 doRepetition(
                     salSession,
                     CardCommunicationResultCode.CAN_INCORRECT,
