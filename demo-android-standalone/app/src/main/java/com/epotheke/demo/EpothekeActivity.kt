@@ -34,7 +34,6 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import androidx.lifecycle.lifecycleScope
 import android.widget.ProgressBar
-import android.widget.RadioButton
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -50,11 +49,12 @@ import kotlin.coroutines.suspendCoroutine
 import androidx.core.content.edit
 import com.epotheke.cardlink.CardLinkAuthenticationConfig
 import com.epotheke.Epotheke
-import com.epotheke.SmartCardConnector
 import com.epotheke.cardlink.CardCommunicationResultCode
+import com.epotheke.cardlink.SmartcardSalHelper
 import com.epotheke.prescription.*
 import kotlinx.coroutines.Job
 import org.openecard.sal.sc.SmartcardDeviceConnection
+import org.openecard.sal.sc.SmartcardSalSession
 
 
 private val logger = KotlinLogging.logger { }
@@ -126,8 +126,14 @@ class EpothekeActivity : AppCompatActivity() {
         AndroidTerminalFactory.instance(this).also { fact ->
             terminalFactory = fact
         }
-        epotheke = Epotheke(
-            storedValues.env.url, storedValues.env.tenantToken, null
+
+        epotheke = Epotheke.createEpothekeService(
+            terminalFactory = terminalFactory,
+            serviceUrl = storedValues.env.url,
+            tenantToken = storedValues.env.tenantToken,
+            wsSessionId = null,
+            cifs = null,
+            recognition = null
         )
 
         //just for showing the current environment
@@ -150,7 +156,6 @@ class EpothekeActivity : AppCompatActivity() {
         showInfo("Current environment: $env")
     }
 
-    var ignoreFirstSpinner = true
     public override fun onCreate(savedInstanceState: Bundle?) {
         storedValues = InputStore(this)
 
@@ -228,7 +233,7 @@ class EpothekeActivity : AppCompatActivity() {
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        terminalFactory?.tagIntentHandler?.invoke(intent)
+        terminalFactory.tagIntentHandler.invoke(intent)
     }
 
     /**
@@ -271,7 +276,7 @@ class EpothekeActivity : AppCompatActivity() {
          * Information can be gathered by errCode and errMsg.
          */
         override suspend fun onPhoneNumberRetry(
-            resultCode: ResultCode, errorMessage: String?
+            resultCode: ResultCode, msg: String?
         ) = suspendCoroutine { continuation ->
             getValueFromUser(
                 "Problem with phone number: $resultCode. Please try again", storedValues.phoneNumber
@@ -301,7 +306,7 @@ class EpothekeActivity : AppCompatActivity() {
          * Information can be gathered by errCode and errMsg.
          */
         override suspend fun onTanRetry(
-            resultCode: ResultCode, errorMessage: String?
+            resultCode: ResultCode, msg: String?
         ) = suspendCoroutine { continuation ->
             getValueFromUser(
                 "Problem with TAN: $resultCode. Please provide TAN from sms (mock accepts all)",
@@ -337,14 +342,19 @@ class EpothekeActivity : AppCompatActivity() {
 
         /**
          * Called during the connection establishment, when the SDK has to communicate with the card.
-         * The method is called to enable the app to inform the user, to bring the card to
-         * the devices nfc sensor.
+         * It is called to enable the app to inform the user, to bring the card to the devices nfc sensor.
+         * It gets a reference to the SmartcardSalSession which provides control over smartcard and NFC terminal functionality
+         * and with which a connection to a card can be established.
+         * Such a connection has to be returned to go on with the process.
+         * Since in the mobile case there most probably is only one NFC terminal and it also gets activated on demand,
+         * there is a helper "SmartcardSalHelper.connectFirstTerminalOnInsertCard" which connects to this single terminal
+         * and establishes a connection to a smartcard as soon as it get's detected at that terminal.
          */
-        override suspend fun requestCardInsertion() : SmartcardDeviceConnection {
-            setBusy(false)
+        override suspend fun requestCardInsertion(session: SmartcardSalSession): SmartcardDeviceConnection {
             showInfo("Please provide card")
-            val connection = SmartCardConnector(terminalFactory).connectCard()
-            showInfo("Card connected. Don't move")
+            setBusy(false)
+            val connection =  SmartcardSalHelper.connectFirstTerminalOnInsertCard(session)
+            showInfo("Card connected. Avoid movement")
             setBusy(true)
             return connection
         }
@@ -353,10 +363,6 @@ class EpothekeActivity : AppCompatActivity() {
 
     /**
      * Shows inputfield and button to let the user enter data.
-     *
-     * @param infoText
-     * @param defaultValue
-     * @param action
      */
     fun getValueFromUser(
         infoText: String, defaultValue: String, btnAction: (value: String) -> Unit
@@ -402,7 +408,7 @@ class EpothekeActivity : AppCompatActivity() {
                 R.id.input,
                 R.id.btn_ok
             ).map {
-                findViewById<android.view.View>(it)
+                findViewById<View>(it)
             }.forEach {
                 it.visibility = if (active) VISIBLE else INVISIBLE
             }
@@ -411,7 +417,7 @@ class EpothekeActivity : AppCompatActivity() {
                 R.id.btn_establishCardlink,
                 R.id.btn_getPrescriptions,
             ).map {
-                findViewById<android.view.View>(it)
+                findViewById<View>(it)
             }.forEach {
                 it.visibility = if (!active && (currentJob == null || currentJob?.isActive == false) ) VISIBLE else INVISIBLE
             }
