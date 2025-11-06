@@ -19,89 +19,113 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.5">
 
+
+        <Spinner
+            android:id="@+id/envSpinner"
+            android:layout_width="339dp"
+            android:layout_height="70dp"
+            android:gravity="center|center_horizontal"
+            app:layout_constraintBottom_toTopOf="@+id/statusText"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/service" />
+
         <TextView
             android:id="@+id/service"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="80dp"
             android:gravity="center"
             android:text="Service: "
             android:textSize="18sp"
+            app:layout_constraintBottom_toTopOf="@+id/envSpinner"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-
         <TextView
             android:id="@+id/statusText"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="80dp"
             android:gravity="center"
-            android:text="Initialising..."
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="@+id/service"
-            app:layout_constraintStart_toStartOf="@+id/service"
-            app:layout_constraintTop_toBottomOf="@+id/service" />
-
-        <EditText
-            android:id="@+id/input"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
-            android:ems="10"
-            android:enabled="false"
-            android:gravity="center"
-            android:inputType="text"
-            app:layout_constraintEnd_toEndOf="@+id/statusText"
-            app:layout_constraintHorizontal_bias="0.45"
-            app:layout_constraintStart_toStartOf="@+id/statusText"
-            app:layout_constraintTop_toBottomOf="@+id/busy" />
-
-        <Button
-            android:id="@+id/btn_ok"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="OK"
-            app:layout_constraintEnd_toEndOf="@+id/input"
-            app:layout_constraintHorizontal_bias="0.459"
-            app:layout_constraintStart_toStartOf="@+id/input"
-            app:layout_constraintTop_toBottomOf="@+id/input" />
+            app:layout_constraintBottom_toTopOf="@+id/busy"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/envSpinner" />
 
         <ProgressBar
             android:id="@+id/busy"
             style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:layout_constraintEnd_toEndOf="@+id/statusText"
-            app:layout_constraintStart_toStartOf="@+id/statusText"
+            app:layout_constraintBottom_toTopOf="@+id/input"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/statusText" />
 
-        <Button
-            android:id="@+id/btn_cancel"
+        <EditText
+            android:id="@+id/input"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Cancel"
-            app:layout_constraintEnd_toEndOf="@+id/btn_getPrescriptions"
-            app:layout_constraintStart_toStartOf="@+id/btn_getPrescriptions"
-            app:layout_constraintTop_toBottomOf="@+id/btn_getPrescriptions" />
+            android:ems="10"
+            android:enabled="false"
+            android:gravity="center"
+            android:inputType="text"
+            app:layout_constraintBottom_toTopOf="@+id/btn_ok"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/busy" />
+
+        <Button
+            android:id="@+id/btn_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OK"
+            app:layout_constraintBottom_toTopOf="@+id/btn_establishCardlink"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/input" />
+
+        <Button
+            android:id="@+id/btn_establishCardlink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:text="establish cardlink"
+            app:layout_constraintBottom_toTopOf="@+id/btn_getPrescriptions"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btn_ok" />
 
         <Button
             android:id="@+id/btn_getPrescriptions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:enabled="false"
             android:text="Get prescriptions"
-            android:visibility="invisible"
-            app:layout_constraintEnd_toEndOf="@+id/btn_ok"
-            app:layout_constraintHorizontal_bias="0.4"
-            app:layout_constraintStart_toStartOf="@+id/btn_ok"
-            app:layout_constraintTop_toBottomOf="@+id/btn_ok"/>
+            app:layout_constraintBottom_toTopOf="@+id/btn_cancel"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btn_establishCardlink" />
+
+        <Button
+            android:id="@+id/btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btn_getPrescriptions" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

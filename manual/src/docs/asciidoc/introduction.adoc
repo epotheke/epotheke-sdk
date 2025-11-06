@@ -1,11 +1,115 @@
-The epotheke SDK provides an API which can be integrated directly using the `SdkCore` class.
-To eliminate the need to write platform specific glue code, there are platform specific classes, which can be used instead.
-On Android, the `SdkActivity` can be extended, so only the App specific interaction handlers need to be implemented.
+== Overview
+The epotheke SDK provides an API which can be integrated by using `Epotheke` class.
+For exact details please refer to the `android-demo-standalone` or `ios-demo-standalone` example apps.
 
-The epotheke SDK contains three handlers, that need to be implemented:
+image::SDK_interfaces.svg[title="epotheke SDK Overview", width=900, align=center]
 
-`SdkErrorHandler`:: for handling errors related to the SDK initialisation
-`CardLinkInteraction`:: for exchanging data between the user and the CardLink service
-`CardLinkControllerCallback`:: for providing the CardLink result and protocols for subsequent processes (e.i. Prescription retrieval/selection)
+=== Epotheke
+The epotheke SDK provides an API which can be integrated directly using the `Epotheke` class.
 
-image::SDK_interfaces.svg[title="epotheke SDK Interfaces", width=900, align=center]
+`Epotheke` provides a factory method `createEpothekeService` which needs as parameters:
+- terminalFactory: for NFC functionality
+- serviceUrl: the url of the epotheke service
+- tenantToken: An access token
+- wsSessionId: Optional which can be used to reconnect to an existing session.
+- cifs: Optional which allows to change CardDefinition configurations, defaults to eGK
+- recognition: Optional which allows to control if card recognition is used, default switches off recognition.
+
+Once created the protocol implementations `CardlinkAuthenticationProtocol` and `PrescriptionProtocol` can be obtained, which provide functions for different use-cases described below.
+
+==== Tenant token
+The tenant token is used for access control at the epotheke service and can be obtained from the service provider.
+
+==== Sessions
+Within one session in the cardlink context, up to 10 eGK cards can be added to fetch available prescriptions for all of them simultaneously.
+A session is bound to a phone number using an SMS/TAN validation procedure, which is valid for 15 minutes.
+This means that adding a new card in the same session within 15 minutes doesn't require another SMS/TAN procedure.
+
+A session will be invalidated by the service, if within 15 minutes no messages arrive.
+
+A session can be resumed by the client app if `Epotheke` instance is created with a previous `wsSessionId` which can be gathered from a `CardlinkAuthResult`.
+However, if this `wsSessionId` is invalid or not known by the server, a new session will be created and a new `wsSessionId` will be returned in the next `CardlinkAuthResult`.
+
+An `Epotheke` instance created by an app always attempts to use the same session.
+This only changes if the service invalidated a session and returned a new `wsSessionId` to be used, which happens internally.
+
+If the client app wants to create a new session, a new `Epotheke` instance has to be created.
+
+=== Cardlink authentication
+The `CardlinkAuthenticationProtocol` allows to call `establishCardlink()` which creates a new cardlink session at the server and registers and associates an eGK card with it by using an SMS/Tan procedure.
+A second call with the same session can be used to add another eGK card to the session.
+The function returns a `CardlinkAuthResult` which contains information about the session and the registered card.
+Since users have to provide data to this process and have to present the eGK card to the device when needed, an implementation of `UserInteraction` has to be provided.
+This allows the process to request data and give instructions when needed, but allows the application code to decide how these events are presented or performed exactly.
+
+==== CardLinkAuthResult
+The `CardlinkAuthResult` carries the following properties.
+|===
+|Property | Meaning
+
+
+|personalData: PersoenlicheVersichertendaten
+|The xml data of the insuree as specified by eGK specifications
+
+|insurerData: AllgemeineVersicherungsdaten
+|The xml data of the insurance as specified by eGK specifications
+
+|iccsn: String
+|The iccsn of the used card.
+
+|iccsnReassignmentTimestamp: String
+|If the card was used in the past with a different phone number, this timestamp shows when the new phonenumber was associated with the card.
+
+|wsSessionId: String
+|A session token for the connection. This token can be used to reestablish a past session, if the `Epotheke` instance is newly instantiated.
+
+|===
+
+Note that the reading of `personalData` and `insurerData` is switched off by default and the corresponding properties will be `null`.
+To configure the reading, a reference of  `CardlinkAuthenticationConfig` can be obtained which has the properties: `readPersonalData` and `readInsurerdata`.
+Setting those properties to `true` before calling `establishCardLink` will result in reading the values during card communications.
+
+
+==== User interaction
+The `UserInteraction` interface consists of the following functions.
+
+|===
+|Function | Meaning | Notes
+
+|onPhoneNumberRequest(): String
+|A phone number has to be provided.
+|
+
+|onPhoneNumberRetry(resultCode: ResultCode, msg: String?): String
+|The provided number was invalid.
+|Retrying is possible. The provided `resultCode` and `msg` provide information about what went wrong.
+
+|onTanRequest(): String
+|The TAN which was sent to the number via SMS has to be provided.
+|
+
+|onTanRetry(resultCode: ResultCode, msg: String?): String
+|There was a problem with the provided TAN.
+|Retrying is possible. The provided `resultCode` and `msg` provide information about what went wrong.,
+
+|onCanRequest(): String
+|The CAN for the card is needed.
+|
+
+|onCanRetry(resultCode: CardCommunicationResultCode): String
+|The CAN was wrong or invalid.
+|Retrying is possible. The `resultCode` provides information about what went wrong.
+
+|requestCardInsertion(session: SmartCardSalSession): SmartCardDeviceConnection
+|A connection to the eGK has to be provided.
+|A connection can be established by the use of provided `SmartCardSalSession` object.
+There is a default implementation `SmartcardSalHelper.connectFirstTerminalOnInsertCard` which can be used if there is only one terminal and a card should be connected, as soon as it is detected.
+
+|===
+
+=== Prescriptions
+The `PrescriptionProtocol` allows to call `requestPrescriptions()` which will fetch all available prescriptions for all cards added to a session.
+The result of `requestPrescriptions()` is an `AvailablePrescriptionLists` object which provides a list of `AvailablePrescriptionList` objects, one for each card which is added to a cardlink session.
+The latter contains a list of `PrescriptionBundle` available for the eGK card.
+Details of these objects and their attributes can be found in the `PrescriptionModel.kt` file.
+

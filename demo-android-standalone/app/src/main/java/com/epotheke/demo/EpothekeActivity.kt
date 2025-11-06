@@ -1,0 +1,553 @@
+/****************************************************************************
+ * Copyright (C) 2024 ecsec GmbH.
+ * All rights reserved.
+ * Contact: ecsec GmbH (info@ecsec.de)
+ *
+ * This file is part of the epotheke SDK.
+ *
+ * GNU General Public License Usage
+ * This file may be used under the terms of the GNU General Public
+ * License version 3.0 as published by the Free Software Foundation
+ * and appearing in the file LICENSE.GPL included in the packaging of
+ * this file. Please review the following information to ensure the
+ * GNU General Public License version 3.0 requirements will be met:
+ * http://www.gnu.org/copyleft/gpl.html.
+ *
+ * Other Usage
+ * Alternatively, this file may be used in accordance with the terms
+ * and conditions contained in a signed written agreement between
+ * you and ecsec GmbH.
+ *
+ ***************************************************************************/
+
+package com.epotheke.demo
+
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.os.Bundle
+import android.view.View
+import android.view.View.VISIBLE
+import android.view.View.INVISIBLE
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Button
+import androidx.lifecycle.lifecycleScope
+import android.widget.ProgressBar
+import android.widget.Spinner
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import com.epotheke.cardlink.CardLinkAuthResult
+import com.epotheke.cardlink.ResultCode
+import com.epotheke.cardlink.UserInteraction
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.openecard.sc.pcsc.AndroidTerminalFactory
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
+import androidx.core.content.edit
+import com.epotheke.cardlink.CardLinkAuthenticationConfig
+import com.epotheke.Epotheke
+import com.epotheke.cardlink.CardCommunicationResultCode
+import com.epotheke.cardlink.SmartcardSalHelper
+import com.epotheke.prescription.*
+import kotlinx.coroutines.Job
+import org.openecard.sal.sc.SmartcardDeviceConnection
+import org.openecard.sal.sc.SmartcardSalSession
+
+
+private val logger = KotlinLogging.logger { }
+
+class InputStore(activity: EpothekeActivity) {
+    val preferences: SharedPreferences = activity.getPreferences(Context.MODE_PRIVATE)
+
+    var phoneNumber: String
+        get() = preferences.getString("PHONE_$env", "+4915123456789") ?: "+4915123456789"
+        set(v) = preferences.edit { putString("PHONE_$env", v) }
+
+    var can: String
+        get() = preferences.getString("CAN_$env", "123123") ?: "123123"
+        set(v) = preferences.edit { putString("CAN_$env", v) }
+
+    var env: Service
+        get() = preferences.getString("ENV", "MOCK")?.let {
+            //we catch if the last stored Service does not exist anymore due to updated resources
+            try {
+                Service.valueOf(it)
+            } catch (_: IllegalArgumentException) {
+                Service.MOCK
+            }
+        } ?: Service.MOCK
+        set(v) = preferences.edit { putString("ENV", v.name) }
+}
+
+
+class EpothekeActivity : AppCompatActivity() {
+
+    lateinit var storedValues: InputStore
+
+    /**
+     * Epotheke uses NFC to communicate with eGK cards.
+     * The AndroidTerminalFactory is provided by the used open-ecard library and enables NFC usage.
+     */
+    private lateinit var terminalFactory: AndroidTerminalFactory
+
+    /**
+     * The epotheke instance which can be used for authenticating or adding eGK cards to a cardlink session and to
+     * request prescriptions for all registered cards in a session.
+     *
+     * For those use-cases epotheke provides the protocol instances:
+     * - cardlinkAuthenticationProtocol
+     * - prescriptionProtocol
+     * which provide functions to perform those actions.
+     */
+    private var epotheke: Epotheke? = null
+
+    /**
+     * Via epotheke we can add multiple eGKs to a carldink-session.
+     * We here store the results of each such authentication process for later use.
+     */
+    private var authenticationResults: MutableList<CardLinkAuthResult> = mutableListOf()
+
+    private var currentJob: Job? = null
+
+    /**
+     * To create an instance of epotheke we have to provide:
+     * - an instance of the AndroidTerminalFactory
+     * - the url to the service
+     * - a tenant-token for access
+     * - an optional wsSessionId enabling to reconnect to an existing session (can be obtained in an authentication Result)
+     *
+     * Note that the AndroidTerminalFactory needs a reference to the activity and we also store a referenced of it (see onNewIntent).
+     */
+    private fun createEpotheke() {
+
+        AndroidTerminalFactory.instance(this).also { fact ->
+            terminalFactory = fact
+        }
+
+        epotheke = Epotheke.createEpothekeService(
+            terminalFactory = terminalFactory,
+            serviceUrl = storedValues.env.url,
+            tenantToken = storedValues.env.tenantToken,
+            wsSessionId = null,
+            cifs = null,
+            recognition = null
+        )
+
+        //just for showing the current environment
+        findViewById<TextView>(R.id.service).apply {
+            text = "Service: ${storedValues.env.url}"
+        }
+    }
+
+    private fun switchEnv(env: Service) {
+
+        currentJob?.cancel()
+        currentJob = null
+
+        switchInputs(false)
+        setBusy(false)
+
+        storedValues.env = env
+
+        createEpotheke()
+        showInfo("Current environment: $env")
+    }
+
+    public override fun onCreate(savedInstanceState: Bundle?) {
+        storedValues = InputStore(this)
+
+        setContentView(R.layout.epo_layout)
+
+        findViewById<TextView>(R.id.input).setSelectAllOnFocus(true)
+
+        createEpotheke()
+
+        findViewById<TextView>(R.id.input).apply {
+            isEnabled = true
+        }
+
+        findViewById<Spinner>(R.id.envSpinner).apply {
+
+            val options = Service.entries
+
+            adapter = ArrayAdapter(
+                this@EpothekeActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                options
+            )
+
+            setSelection(options.indexOf(storedValues.env))
+
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                   switchEnv(options[position])
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+
+            }
+        }
+
+        findViewById<Button>(R.id.btn_establishCardlink).apply {
+            setOnClickListener {
+                currentJob = establishCardlink()
+            }
+        }
+
+        findViewById<Button>(R.id.btn_getPrescriptions).apply {
+            setOnClickListener {
+                currentJob = requestPrescriptions()
+            }
+        }
+
+        switchInputs(false)
+        findViewById<Button>(R.id.btn_cancel).apply {
+            setOnClickListener {
+                when (currentJob) {
+                    null -> finish()
+                    else -> switchEnv(storedValues.env)
+                }
+            }
+        }
+        setBusy(false)
+
+        super.onCreate(savedInstanceState)
+    }
+
+    /**
+     *  NFC handling is completely managed in the AndroidTerminalFactory except for the following.
+     *  Once NFC is activated and the android OS detects a card it pauses and reactivates this activity
+     *  with `onNewIntent` providing a reference to the card.
+     *  This intent has to be handed to the AndroidTerminalFactory instance to allow the sdk
+     *  communicating with the card.
+     *  One can only overwrite this function here, which is why this has to be done in the app, when
+     *  integrating epotheke.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        terminalFactory.tagIntentHandler.invoke(intent)
+    }
+
+    /**
+     * It is adviced to call close function to cleanup resources from epotheke.
+     */
+    public override fun onDestroy() {
+        super.onDestroy()
+        epotheke?.close()
+    }
+
+
+    /**
+     * During the cardlink authentication the SDK will control the process and call different methods
+     * to inform the app/user of the current step or ask the user for interaction.
+     * Implementing this interface gives the app developer the full control of how these steps are
+     * presented to the user or how the information is gathered.
+     *
+     * Note that there is no guarantee that each method is called, for the sequence or that a method is
+     * only called once.
+     */
+    private val userInteraction = object : UserInteraction {
+
+        /**
+         * The service needs the cellphone number of the users device to send an sms containing a TAN for verification.
+         *
+         * Note: The mock service won't send real sms to the given number but will accept 123123 as a correct TAN.
+         * The number must be in a format valid for german mobile numbers to be accepted by the mock service.
+         */
+        override suspend fun onPhoneNumberRequest() = suspendCoroutine { continuation ->
+            getValueFromUser(
+                "Please provide valid german phone number (mock won't send sms)", storedValues.phoneNumber
+            ) { value ->
+                storedValues.phoneNumber = value
+                continuation.resume(value)
+            }
+        }
+
+        /**
+         * Called if something went wrong in the onPhoneNumberRequest.
+         * Information can be gathered by errCode and errMsg.
+         */
+        override suspend fun onPhoneNumberRetry(
+            resultCode: ResultCode, msg: String?
+        ) = suspendCoroutine { continuation ->
+            getValueFromUser(
+                "Problem with phone number: $resultCode. Please try again", storedValues.phoneNumber
+            ) { value ->
+                storedValues.phoneNumber = value
+                continuation.resume(value)
+            }
+        }
+
+
+        /**
+         * After the user provided the phoneNumber an SMS containing a TAN gets sent by the service.
+         * onTanRequest is called to provide the TAN to the sdk for verification at the service.
+         *
+         * Note: The mock service will accept 123123 as valid TAN.
+         */
+        override suspend fun onTanRequest() = suspendCoroutine { continuation ->
+            getValueFromUser(
+                "Please provide TAN from sms (mock accepts 123123)", "123123"
+            ) { value ->
+                continuation.resume(value)
+            }
+        }
+
+        /**
+         * Called if something went wrong in onTanRequest.
+         * Information can be gathered by errCode and errMsg.
+         */
+        override suspend fun onTanRetry(
+            resultCode: ResultCode, msg: String?
+        ) = suspendCoroutine { continuation ->
+            getValueFromUser(
+                "Problem with TAN: $resultCode. Please provide TAN from sms (mock accepts all)",
+                "123123"
+            ) { value ->
+                continuation.resume(value)
+            }
+        }
+
+        /**
+         * Called when the SDK needs to communicates with the card
+         * and needs the CAN to establish NFC channel.
+         */
+        override suspend fun onCanRequest() = suspendCoroutine { continuation ->
+            getValueFromUser("Please provide CAN of card", storedValues.can) { value ->
+                storedValues.can = value
+                continuation.resume(value)
+            }
+        }
+
+        /**
+         * Called if something went wrong in a previous `onCanRequest`.
+         * Information about what went wrong can be gathered by resultCode and message.
+         */
+        override suspend fun onCanRetry(
+            resultCode: CardCommunicationResultCode
+        ) = suspendCoroutine { continuation ->
+            getValueFromUser("${resultCode.msg} - Please provide CAN of card", storedValues.can) { value ->
+                storedValues.can = value
+                continuation.resume(value)
+            }
+        }
+
+        /**
+         * Called during the connection establishment, when the SDK has to communicate with the card.
+         * It is called to enable the app to inform the user, to bring the card to the devices nfc sensor.
+         * It gets a reference to the SmartcardSalSession which provides control over smartcard and NFC terminal functionality
+         * and with which a connection to a card can be established.
+         * Such a connection has to be returned to go on with the process.
+         * Since in the mobile case there most probably is only one NFC terminal and it also gets activated on demand,
+         * there is a helper "SmartcardSalHelper.connectFirstTerminalOnInsertCard" which connects to this single terminal
+         * and establishes a connection to a smartcard as soon as it get's detected at that terminal.
+         */
+        override suspend fun requestCardInsertion(session: SmartcardSalSession): SmartcardDeviceConnection {
+            showInfo("Please provide card")
+            setBusy(false)
+            val connection =  SmartcardSalHelper.connectFirstTerminalOnInsertCard(session)
+            showInfo("Card connected. Avoid movement")
+            setBusy(true)
+            return connection
+        }
+
+    }
+
+    /**
+     * Shows inputfield and button to let the user enter data.
+     */
+    fun getValueFromUser(
+        infoText: String, defaultValue: String, btnAction: (value: String) -> Unit
+    ) {
+        runOnUiThread {
+            showInfo(infoText)
+
+            val inputField = findViewById<TextView>(R.id.input)
+            inputField.text = defaultValue
+
+            findViewById<Button>(R.id.btn_ok).apply {
+                setOnClickListener {
+                    switchInputs(false)
+                    btnAction(inputField.text.toString())
+                }
+            }
+            switchInputs(true)
+        }
+    }
+
+    /**
+     * Updates the info label to inform the user.
+     *
+     * @param text
+     */
+    fun showInfo(text: String?) {
+        runOnUiThread {
+            findViewById<TextView>(R.id.statusText).apply {
+                this.text = text
+            }
+        }
+    }
+
+    /**
+     * Shows and hides input elements
+     *
+     * @param active
+     */
+    private fun switchInputs(active: Boolean) {
+        runOnUiThread {
+
+            listOf(
+                R.id.input,
+                R.id.btn_ok
+            ).map {
+                findViewById<View>(it)
+            }.forEach {
+                it.visibility = if (active) VISIBLE else INVISIBLE
+            }
+
+            listOf(
+                R.id.btn_establishCardlink,
+                R.id.btn_getPrescriptions,
+            ).map {
+                findViewById<View>(it)
+            }.forEach {
+                it.visibility = if (!active && (currentJob == null || currentJob?.isActive == false) ) VISIBLE else INVISIBLE
+            }
+
+            setBusy(!active)
+        }
+    }
+
+    /**
+     * Shows and hides busy indicator.
+     *
+     * @param busy
+     */
+    private fun setBusy(busy: Boolean) = runOnUiThread {
+        findViewById<ProgressBar>(R.id.busy).apply {
+            visibility = if (busy) VISIBLE else INVISIBLE
+        }
+        listOf(
+            findViewById<Button>(R.id.btn_establishCardlink),
+            findViewById<Button>(R.id.btn_getPrescriptions),
+        ).forEach {
+            it.isEnabled = !busy
+        }
+    }
+
+
+    /**
+     * As mentioned before, epotheke provides an instance of cardlinkAuthenticationProtocol.
+     * This can be used to call establishCardlink() function as shown here.
+     */
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun establishCardlink(): Job {
+        showInfo("Performing carldink authentication")
+        setBusy(true)
+
+        return lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                //Switch on reading of personal data during authentication
+                CardLinkAuthenticationConfig.readPersonalData = true
+                CardLinkAuthenticationConfig.readInsurerData = true
+
+                epotheke?.cardLinkAuthenticationProtocol?.establishCardLink(interaction = userInteraction)
+                    ?.let { result: CardLinkAuthResult ->
+                        authenticationResults.add(result)
+                        showInfo(
+                            listOf(
+                                "Success",
+                                "\n",
+                                "\n",
+                                "Insuree: ",
+                                result.personalData?.versicherter?.person?.vorname,
+                                " ",
+                                result.personalData?.versicherter?.person?.nachname,
+                                "\n",
+                                "Insurer: ",
+                                result.insurerData?.versicherter?.versicherungsschutz?.kostentraeger?.name,
+                                "\n",
+                                "ICCSN: ",
+                                result.iccsn,
+                            ).joinToString(separator = "")
+                        )
+                    }
+
+            } catch (e: Exception) {
+                showInfo("Error: ${e.message}")
+                logger.error(e) { "Exception authenticating" }
+            }
+            switchInputs(false)
+            setBusy(false)
+        }
+    }
+
+    /**
+     * As mentioned before, epotheke provides an instance of prescriptionProtocol.
+     * This can be used to call requestPrescriptions() function as shown here.
+     */
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun requestPrescriptions(): Job {
+        logger.debug { "Start action for PrescriptionProtocol" }
+
+        return lifecycleScope.launch(Dispatchers.IO) {
+            setBusy(true)
+            try {
+                /**
+                 * Send request for available prescriptions via the PrescriptionProtocol object
+                 * We can use the default values of the constructor to get everything available.
+                 */
+                val result = epotheke?.prescriptionProtocol?.requestPrescriptions(
+                    RequestPrescriptionList()
+                )
+
+                /**
+                 * The answer message contains a list of lists.
+                 * Each outer list is associated with a card and contains available prescriptions for it.
+                 * The inner lists contains types describing prescriptions.
+                 *
+                 * For the showcase we simply build a string containing names of these elements from the lists associated witth iccsns.
+                 */
+                val text = result?.availablePrescriptionLists?.joinToString(separator = "\n") {
+                    val meds = it.prescriptionBundleList.joinToString(
+                        separator = "\n -",
+                        limit = 2,
+                    ) { bundle : PrescriptionBundle ->
+                        val medication = bundle.arzneimittel
+                        medication.medicationItem.joinToString { item ->
+                            when (item) {
+                                is MedicationCompounding -> item.rezepturname ?: "Unknown"
+                                is MedicationFreeText -> item.freitextverordnung
+                                is MedicationIngredient -> item.listeBestandteilWirkstoffverordnung.joinToString(
+                                    limit = 3
+                                ) { i -> i.wirkstoffname }
+
+                                is MedicationPzn -> item.handelsname
+                            }
+                        }
+                    }
+                    "${it.iccsn.toHexString()}: \n - $meds"
+                }
+
+                showInfo("Available prescriptions: \n$text")
+
+            } catch (e: Exception) {
+                logger.debug(e) { "Error in request" }
+                when (e) {
+                    is PrescriptionProtocolException -> showInfo("Error in request: ${e.genericErrorMessage?.errorMessage ?: e.cause?.message}")
+                     else -> showInfo("Error in request: ${e.message}")
+                }
+            }
+            switchInputs(false)
+            setBusy(false)
+        }
+    }
+}

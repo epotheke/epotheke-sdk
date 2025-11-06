@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2E93A8062EB376DC00138909 /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E93A8052EB376DC00138909 /* Tokens.swift */; };
 		2ECEAD292C6B596C0058CA63 /* EpothekeDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ECEAD282C6B596C0058CA63 /* EpothekeDemoApp.swift */; };
 		2ECEAD2B2C6B596C0058CA63 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ECEAD2A2C6B596C0058CA63 /* ContentView.swift */; };
 		2ECEAD2D2C6B596E0058CA63 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2ECEAD2C2C6B596E0058CA63 /* Assets.xcassets */; };
@@ -17,6 +18,7 @@
 /* Begin PBXFileReference section */
 		096AA89819A6FBA359C1B057 /* Pods-epothekeDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-epothekeDemo.release.xcconfig"; path = "Target Support Files/Pods-epothekeDemo/Pods-epothekeDemo.release.xcconfig"; sourceTree = "<group>"; };
 		1A43141B1CC1A9A8EDC695D3 /* Pods-epothekeDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-epothekeDemo.debug.xcconfig"; path = "Target Support Files/Pods-epothekeDemo/Pods-epothekeDemo.debug.xcconfig"; sourceTree = "<group>"; };
+		2E93A8052EB376DC00138909 /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
 		2ECEAD252C6B596C0058CA63 /* epothekeDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = epothekeDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2ECEAD282C6B596C0058CA63 /* EpothekeDemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpothekeDemoApp.swift; sourceTree = "<group>"; };
 		2ECEAD2A2C6B596C0058CA63 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -60,6 +62,7 @@
 		2ECEAD272C6B596C0058CA63 /* epothekeDemo */ = {
 			isa = PBXGroup;
 			children = (
+				2E93A8052EB376DC00138909 /* Tokens.swift */,
 				2EE48CFD2C6B6BC6009052E4 /* Info.plist */,
 				2ECEAD282C6B596C0058CA63 /* EpothekeDemoApp.swift */,
 				2ECEAD2A2C6B596C0058CA63 /* ContentView.swift */,
@@ -209,6 +212,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E93A8062EB376DC00138909 /* Tokens.swift in Sources */,
 				2ECEAD2B2C6B596C0058CA63 /* ContentView.swift in Sources */,
 				2ECEAD292C6B596C0058CA63 /* EpothekeDemoApp.swift in Sources */,
 			);

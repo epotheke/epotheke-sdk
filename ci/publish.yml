@@ -1,6 +1,6 @@
 publish-mvn-artifacts:
     stage: publish
-    image: docker.io/mobiledevops/android-sdk-image:34.0.1
+    image: public.docker.ecsec.de/ecsec/tools/cimg-android-jdk25:2025.10
     tags:
         - "podman"
     cache:

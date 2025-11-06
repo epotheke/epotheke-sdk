@@ -3,17 +3,16 @@ plugins {
     `kotlin-dsl`
 }
 
-
 dependencies {
-    implementation(libs.plugins.kotlinMultiplatform)
-    implementation(libs.plugins.kotlinCocoapods)
-    implementation(libs.plugins.androidLibrary)
-    implementation(libs.plugins.androidApplication)
-    implementation(libs.plugins.jetbrainsCompose)
-
+    implementation(libs.plugins.ktlint)
     implementation(libs.plugins.kotlinJvm)
     implementation(libs.plugins.kotlinAllOpen)
+    implementation(libs.plugins.kotlinMultiplatform)
+    implementation(libs.plugins.kotlinKover)
     implementation(libs.plugins.kotlinSerialization)
+    implementation(libs.plugins.mokkery)
+
+    implementation(libs.plugins.androidKmpLibrary)
 }
 
 fun DependencyHandlerScope.implementation(pluginProv: Provider<PluginDependency>) {

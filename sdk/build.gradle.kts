@@ -1,47 +1,50 @@
 description = "epotheke SDK Package"
 
 plugins {
-    //id("epotheke.lib-jvm-conventions")
-    id("epotheke.lib-android-conventions")
-    id("epotheke.lib-ios-conventions")
+    id("epotheke.kmp-lib-conventions")
+    // id("epotheke.kmp-jvm-lib-conventions")
+    id("epotheke.kmp-android-lib-conventions")
+    id("epotheke.kmp-ios-lib-conventions")
     id("epotheke.publish-conventions")
-
-    kotlin("plugin.serialization")
 }
 
 kotlin {
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlin.stdlib.common)
-                implementation(libs.kotlin.logging)
-                implementation(libs.kotlin.coroutines.core)
-                implementation(libs.kotlin.serialization.json)
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.websocket)
-                implementation(libs.ktor.client.auth)
 
-                implementation(libs.xmlutil.core)
-                implementation(libs.xmlutil.ser)
-                implementation(libs.fleeksoft.charset)
-            }
+        commonMain.dependencies {
+            implementation(libs.kotlin.logging)
+            implementation(libs.kotlin.coroutines.core)
+            implementation(libs.kotlin.serialization.json)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.websocket)
+            implementation(libs.ktor.client.auth)
+
+            implementation(libs.xmlutil.core)
+            implementation(libs.xmlutil.ser)
+            implementation(libs.fleeksoft.charset)
+            implementation(libs.bundles.oec.cardlink)
+
+            implementation(libs.okio)
+            api(libs.oec.smartcard.sal)
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.bundles.test.basics)
-            }
+
+        commonTest.dependencies {
+            implementation(libs.bundles.test.basics.kotlin)
         }
-        val androidMain by getting {
-            dependencies {
-                api(libs.oec.android)
-                implementation(libs.ktor.client.okhttp)
-            }
+
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+            api(libs.oec.smartcard.pcsc.android)
         }
-        val iosMain by getting {
-            dependencies {
-                implementation(libs.ktor.client.darwin)
-            }
+
+        androidHostTest.dependencies { }
+        androidDeviceTest.dependencies {
+            implementation(libs.bundles.test.android.kotlin)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+            api(libs.oec.smartcard.pcsc.ios)
         }
     }
 
@@ -53,38 +56,9 @@ kotlin {
         license = "GPLv3"
         framework {
             baseName = "epotheke"
+            export(libs.oec.smartcard.pcsc.ios)
+            export(libs.oec.smartcard.sal)
             binaryOption("bundleId", "com.epotheke.sdk")
-        }
-
-        pod("open-ecard") {
-            version = libs.versions.oec.get()
-            ios.deploymentTarget = "13.0"
-            moduleName = "OpenEcard"
-        }
-    }
-}
-
-android {
-    namespace = "com.epotheke"
-
-    packaging {
-        resources.excludes.add("cif-repo/repo-config.properties")
-    }
-
-    buildTypes {
-        defaultConfig {
-            consumerProguardFiles("./consumer-proguard.txt")
-        }
-    }
-
-}
-
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            afterEvaluate {
-                from(components["release"])
-            }
         }
     }
 }

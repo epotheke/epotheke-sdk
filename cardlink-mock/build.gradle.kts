@@ -1,20 +1,18 @@
-import java.text.SimpleDateFormat
-import java.util.*
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.allopen")
-    kotlin("plugin.serialization")
-    //id("io.quarkus")
+    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.kotlinAllOpen)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.quarkus)
 }
 
-val javaToolchain: String by project
-//java.sourceCompatibility = JavaVersion.VERSION_1_8
 kotlin {
-    jvmToolchain {
-        languageVersion = JavaLanguageVersion.of(javaToolchain)
-    }
+    compilerOptions.jvmTarget = JvmTarget.JVM_21
+}
+
+java {
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 allOpen {
@@ -24,18 +22,6 @@ allOpen {
     annotation("jakarta.enterprise.context.ApplicationScoped")
     annotation("io.quarkus.test.junit.QuarkusTest")
     annotation("io.quarkus.test.junit.QuarkusIntegrationTest")
-}
-
-quarkus {
-    // set java toolchain executable for quarkus build commands as long as quarkus does not honor toolchains
-    // https://github.com/quarkusio/quarkus/issues/20452
-    buildForkOptions {
-        val launcher = javaToolchains.launcherFor {
-            languageVersion = JavaLanguageVersion.of(javaToolchain)
-        }
-        val javaBin = launcher.map { it.executablePath.asFile.absolutePath }
-        javaBin.orNull?.let { executable = it }
-    }
 }
 
 dependencies {

@@ -14,12 +14,12 @@
         android:layout_marginStart="64dp"
         android:layout_marginTop="65dp"
         android:layout_marginEnd="64dp"
-        android:text="Start CardLink auth"
+        android:text="Epotheke demo"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"/>
+        app:layout_constraintVertical_bias="0.5" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
