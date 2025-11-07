@@ -67,7 +67,7 @@ publish-ios-pod-spec:
     - "mac"
     - "dev-cert"
   script:
-    - /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
+    - EXCLUDED_ARCHS="x86_64" /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
     - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec
   allow_failure: true
 
