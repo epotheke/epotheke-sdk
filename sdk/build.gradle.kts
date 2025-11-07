@@ -54,6 +54,7 @@ kotlin {
         summary = "iOS framework for integration of Epotheke services"
         authors = "florian.otto@ecsec.de"
         license = "GPLv3"
+        ios.deploymentTarget = "12.0"
         framework {
             baseName = "epotheke"
             export(libs.oec.smartcard.pcsc.ios)
