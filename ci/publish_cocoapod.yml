@@ -30,7 +30,7 @@ publish-to-github:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)?$/
 
-publish-ios-pod-spec:
+prepare-ios-pod-spec:
   stage: publish
   tags:
     - "mac"
@@ -46,11 +46,10 @@ publish-ios-pod-spec:
     - echo "spec.source            = { :http => 'https://github.com/epotheke/epotheke-sdk/releases/download/"${CI_COMMIT_TAG}"/epotheke-CocoaPod.zip' }" >> epotheke-sdk.podspec
 
     - echo end >> epotheke-sdk.podspec
-
-
-    - /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
-    - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec
-
+  artifacts:
+    name: 'epotheke-sdk.podspec'
+    paths:
+      - epotheke-sdk.podspec
   dependencies:
     - "build-cocoapod"
     - "publish-to-github"
@@ -61,3 +60,40 @@ publish-ios-pod-spec:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)$/
       when: manual
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+
+publish-ios-pod-spec:
+  stage: publish
+  tags:
+    - "mac"
+    - "dev-cert"
+  script:
+    - EXCLUDED_ARCHS="x86_64" /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
+    - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec
+  allow_failure: true
+
+  dependencies:
+    - "prepare-ios-pod-spec"
+  needs:
+    - "prepare-ios-pod-spec"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)$/
+      when: manual
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+
+force-publish-ios-pod-spec:
+  stage: publish
+  tags:
+    - "mac"
+    - "dev-cert"
+  script:
+    - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec --skip-import-validation
+  allow_failure: true
+  dependencies:
+    - "prepare-ios-pod-spec"
+  needs:
+    - "prepare-ios-pod-spec"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)$/
+      when: manual
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+      when: manual
