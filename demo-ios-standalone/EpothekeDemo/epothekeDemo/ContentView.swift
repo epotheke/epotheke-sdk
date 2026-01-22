@@ -187,6 +187,11 @@ struct ContentView: View {
         url: String,
         tenantToken: String? = nil
     ) {
+        
+        if(tenantToken == "DUMMY"){
+            status = "A valid tenant token is needed for this environment."
+            return
+        }
 
         let terminalFactory = IosTerminalFactory.companion.instance
         let epo = Epotheke.companion
