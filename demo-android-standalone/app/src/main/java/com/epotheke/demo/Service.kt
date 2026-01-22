@@ -6,16 +6,19 @@ package com.epotheke.demo
 *  $git update-index --skip-worktree demo-android-standalone/app/src/main/java/com/epotheke/demo/Service.kt
 *  can be used.
 */
+
+const val DUMMY : String = "DUMMY"
+
 enum class Service(val url: String, val tenantToken: String?) {
     MOCK("https://mock.test.epotheke.com/cardlink", null ),
     DEV("https://service.dev.epotheke.com/cardlink", null),
 
     STAGE(
         "https://service.staging.epotheke.com/cardlink",
-        "DUMMY"
+        DUMMY
     ),
     PROD(
         "https://service.epotheke.com/cardlink",
-        "DUMMY"
+        DUMMY
     ),
 }
