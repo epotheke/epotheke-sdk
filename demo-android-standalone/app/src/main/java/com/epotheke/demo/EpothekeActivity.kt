@@ -123,8 +123,14 @@ class EpothekeActivity : AppCompatActivity() {
      */
     private fun createEpotheke() {
 
-        AndroidTerminalFactory.instance(this).also { fact ->
-            terminalFactory = fact
+        terminalFactory = AndroidTerminalFactory.instance(this)
+        if(!terminalFactory.nfcAvailable) {
+            showInfo("NFC not available on device. Epotheke cannot work without NFC.")
+            return
+        }
+        if(!terminalFactory.nfcEnabled) {
+            showInfo("NFC not enabled on device. Epotheke cannot work without NFC. Please go to settings and enable NFC")
+            return
         }
 
         when (val tenantToken = storedValues.env.tenantToken) {
