@@ -123,18 +123,34 @@ class EpothekeActivity : AppCompatActivity() {
      */
     private fun createEpotheke() {
 
-        AndroidTerminalFactory.instance(this).also { fact ->
-            terminalFactory = fact
+        terminalFactory = AndroidTerminalFactory.instance(this)
+        if(!terminalFactory.nfcAvailable) {
+            showInfo("NFC not available on device. Epotheke cannot work without NFC.")
+            return
+        }
+        if(!terminalFactory.nfcEnabled) {
+            showInfo("NFC not enabled on device. Epotheke cannot work without NFC. Please go to settings and enable NFC")
+            return
         }
 
-        epotheke = Epotheke.createEpothekeService(
-            terminalFactory = terminalFactory,
-            serviceUrl = storedValues.env.url,
-            tenantToken = storedValues.env.tenantToken,
-            wsSessionId = null,
-            cifs = null,
-            recognition = null
-        )
+        when (val tenantToken = storedValues.env.tenantToken) {
+            DUMMY ->  {
+                epotheke?.close()
+                epotheke = null
+                showInfo("For using ${storedValues.env} a valid tenant token must be set in Services.kt")
+            }
+            else -> {
+                epotheke = Epotheke.createEpothekeService(
+                    terminalFactory = terminalFactory,
+                    serviceUrl = storedValues.env.url,
+                    tenantToken = tenantToken,
+                    wsSessionId = null,
+                    cifs = null,
+                    recognition = null
+                )
+                showInfo("Current environment: ${storedValues.env}")
+            }
+        }
 
         //just for showing the current environment
         findViewById<TextView>(R.id.service).apply {
@@ -147,13 +163,11 @@ class EpothekeActivity : AppCompatActivity() {
         currentJob?.cancel()
         currentJob = null
 
-        switchInputs(false)
-        setBusy(false)
-
         storedValues.env = env
 
         createEpotheke()
-        showInfo("Current environment: $env")
+        switchInputs(false)
+        setBusy(false)
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -208,7 +222,6 @@ class EpothekeActivity : AppCompatActivity() {
             }
         }
 
-        switchInputs(false)
         findViewById<Button>(R.id.btn_cancel).apply {
             setOnClickListener {
                 when (currentJob) {
@@ -217,6 +230,7 @@ class EpothekeActivity : AppCompatActivity() {
                 }
             }
         }
+        switchInputs(false)
         setBusy(false)
 
         super.onCreate(savedInstanceState)
@@ -419,7 +433,7 @@ class EpothekeActivity : AppCompatActivity() {
             ).map {
                 findViewById<View>(it)
             }.forEach {
-                it.visibility = if (!active && (currentJob == null || currentJob?.isActive == false) ) VISIBLE else INVISIBLE
+                it.visibility = if (epotheke != null && (!active && (currentJob == null || currentJob?.isActive == false)) ) VISIBLE else INVISIBLE
             }
 
             setBusy(!active)

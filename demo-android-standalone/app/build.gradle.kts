@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.epotheke.demo"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 36
         versionCode = 12
         versionName = "1.0.4"
@@ -54,14 +54,14 @@ dependencies {
     implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
 
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
 
     // the actual epotheke library
     implementation("com.epotheke:sdk:$epothekeSdkVersion") {
         exclude(group = "io.github.oshai", module = "kotlin-logging-android-debug")
     }
 
-    // logging library, use whatever you like to output the slf4j log statements
-    implementation("io.github.oshai:kotlin-logging-android:7.0.13")
+    // logging
+    implementation("io.github.oshai:kotlin-logging-android:7.0.14")
     implementation("com.github.tony19:logback-android:3.0.0")
 }
