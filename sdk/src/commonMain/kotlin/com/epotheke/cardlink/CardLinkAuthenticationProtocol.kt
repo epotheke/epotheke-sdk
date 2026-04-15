@@ -119,11 +119,15 @@ class CardLinkAuthenticationProtocol internal constructor(
                 -> throw e
 
                 is TimeoutCancellationException -> Timeout(cause = e)
+
                 // wrong card
                 is DeviceUnsupported -> CardInsufficient(cause = e)
+
                 // appears if card gets lost
                 is DeviceUnavailable -> CardRemoved(cause = e)
+
                 is ReaderUnavailable -> OtherNfcError(cause = e, message = "NFC not available or turned off.")
+
                 is SmartCardStackMissing -> OtherNfcError(cause = e)
 
                 else -> OtherClientError(cause = e)
@@ -209,11 +213,13 @@ class CardLinkAuthenticationProtocol internal constructor(
     ) {
         val number =
             when (lastResultCode) {
-                null ->
+                null -> {
                     interaction.onPhoneNumberRequest()
+                }
 
-                else ->
+                else -> {
                     interaction.onPhoneNumberRetry(lastResultCode, lastErrorMessage ?: "")
+                }
             }
         SendPhoneNumber(
             number,
@@ -222,7 +228,10 @@ class CardLinkAuthenticationProtocol internal constructor(
         val egkEnvelopeResponse = receiveEnvelope()
 
         when (val egkPayload = egkEnvelopeResponse.payload) {
-            is TasklistErrorPayload -> handleTaskListError(egkPayload)
+            is TasklistErrorPayload -> {
+                handleTaskListError(egkPayload)
+            }
+
             is ConfirmPhoneNumber -> {
                 when (egkPayload.resultCode) {
                     ResultCode.SUCCESS -> { // nothing we are happy
@@ -236,11 +245,15 @@ class CardLinkAuthenticationProtocol internal constructor(
                         requestTan(egkPayload.resultCode, egkPayload.errorMessage)
                     }
 
-                    else -> handleInvalidResultCode(egkPayload.resultCode)
+                    else -> {
+                        handleInvalidResultCode(egkPayload.resultCode)
+                    }
                 }
             }
 
-            else -> handleInvalidMessage(egkPayload)
+            else -> {
+                handleInvalidMessage(egkPayload)
+            }
         }
     }
 
@@ -268,7 +281,10 @@ class CardLinkAuthenticationProtocol internal constructor(
     ) {
         val userEnteredTan =
             when (lastResultCode) {
-                null -> interaction.onTanRequest()
+                null -> {
+                    interaction.onTanRequest()
+                }
+
                 else -> {
                     interaction.onTanRetry(
                         lastResultCode,
@@ -284,25 +300,39 @@ class CardLinkAuthenticationProtocol internal constructor(
 
         val response = receiveEnvelope()
         when (val egkPayload = response.payload) {
-            is TasklistErrorPayload -> handleTaskListError(egkPayload)
+            is TasklistErrorPayload -> {
+                handleTaskListError(egkPayload)
+            }
+
             is ConfirmTan -> {
                 when (val resultCode = egkPayload.resultCode) {
                     ResultCode.SUCCESS -> { // do nothing
                     }
+
                     ResultCode.INVALID_REQUEST,
                     ResultCode.TAN_INCORRECT,
                     -> {
                         // retry
                         confirmTan(egkPayload.resultCode, egkPayload.errorMessage)
                     }
-                    ResultCode.TAN_EXPIRED -> throw TanExpired()
-                    ResultCode.TAN_RETRY_LIMIT_EXCEEDED -> throw TanRetryLimitExceeded()
 
-                    else -> handleInvalidResultCode(resultCode)
+                    ResultCode.TAN_EXPIRED -> {
+                        throw TanExpired()
+                    }
+
+                    ResultCode.TAN_RETRY_LIMIT_EXCEEDED -> {
+                        throw TanRetryLimitExceeded()
+                    }
+
+                    else -> {
+                        handleInvalidResultCode(resultCode)
+                    }
                 }
             }
 
-            else -> handleInvalidMessage(egkPayload)
+            else -> {
+                handleInvalidMessage(egkPayload)
+            }
         }
     }
 
@@ -314,11 +344,13 @@ class CardLinkAuthenticationProtocol internal constructor(
                 cardLinkAuthResult.iccsnReassignmentTimestamp = payload.lastAssignment
                 handleRemoteApdus()
             }
+
             is RegisterEgkFinish -> {
                 // ready
                 logger.debug { "Received '${REGISTER_EGK_FINISH}' message from CardLink service." }
                 return
             }
+
             is SendApdu -> {
                 val cardResponse = sendApduToCard(payload.apdu)
                 SendApduResponse(
@@ -333,6 +365,7 @@ class CardLinkAuthenticationProtocol internal constructor(
                 logger.error { "Received task list error: ${payload.errormessage}" }
                 handleTaskListError(payload)
             }
+
             else -> {
                 logger.warn { "Received unexpected message: $payload - will continue." }
                 handleRemoteApdus()
