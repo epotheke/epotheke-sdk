@@ -7,7 +7,6 @@ import com.epotheke.cardlink.CardLinkAuthenticationConfig.readPersonalData
 import com.epotheke.prescription.prescriptionJsonFormatter
 import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.TimeoutCancellationException
@@ -18,6 +17,7 @@ import org.openecard.sal.iface.DeviceUnsupported
 import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.iface.ReaderUnavailable
 import org.openecard.sc.iface.SmartCardStackMissing
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid

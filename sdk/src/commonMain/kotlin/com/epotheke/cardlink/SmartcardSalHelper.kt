@@ -1,8 +1,8 @@
 package com.epotheke.cardlink
 
-import io.ktor.utils.io.CancellationException
 import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sal.sc.SmartcardSalSession
+import kotlin.coroutines.cancellation.CancellationException
 
 object SmartcardSalHelper {
     @Throws(
