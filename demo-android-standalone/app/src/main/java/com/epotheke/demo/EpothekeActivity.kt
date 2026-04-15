@@ -542,7 +542,7 @@ class EpothekeActivity : AppCompatActivity() {
                                 is MedicationFreeText -> item.freitextverordnung
                                 is MedicationIngredient -> item.listeBestandteilWirkstoffverordnung.joinToString(
                                     limit = 3
-                                ) { i -> i.wirkstoffname }
+                                ) { i -> i.wirkstoffname ?: "n.a." }
 
                                 is MedicationPzn -> item.handelsname
                             }
