@@ -65,6 +65,7 @@ const val PRACTICE_SUPPLY = "practiceSupply"
 const val PRACTITIONER = "practitioner"
 const val PRESCRIPTION = "prescription"
 const val COVERAGE = "coverage"
+const val TERATOGENIC = "teratogenic"
 
 @Serializable
 sealed interface PrescriptionMessage
@@ -197,8 +198,8 @@ data class Coverage(
 @Serializable
 @SerialName(BESTANDTEIL_WIRKSTOFF_VERORDNUNG)
 data class BestandteilWirkstoffverordnung(
-    val wirkstoffnummer: String,
-    val wirkstoffname: String,
+    val wirkstoffnummer: String? = null,
+    val wirkstoffname: String? = null,
     val wirkstaerke: String,
     val wirkstaerkeneinheit: String,
 )
@@ -238,10 +239,10 @@ sealed interface MedicationItem
 data class MedicationCompounding(
     val kategorie: String,
     val impfstoff: Boolean,
+    val darreichungsform: String? = null,
     val herstellungsanweisung: String? = null,
     val verpackung: String? = null,
     val rezepturname: String? = null,
-    val darreichungsform: String? = null,
     val gesamtmenge: String,
     val einheit: String? = null,
     val listeBestandteilRezepturverordnung: List<BestandteilRezepturverordnung>,
@@ -252,8 +253,8 @@ data class MedicationCompounding(
 data class MedicationFreeText(
     val kategorie: String,
     val impfstoff: Boolean,
-    val freitextverordnung: String,
     val darreichungsform: String? = null,
+    val freitextverordnung: String,
 ) : MedicationItem
 
 @Serializable
@@ -261,8 +262,8 @@ data class MedicationFreeText(
 data class MedicationIngredient(
     val kategorie: String,
     val impfstoff: Boolean,
-    val normgroesse: String? = null,
     val darreichungsform: String? = null,
+    val normgroesse: String? = null,
     val packungsgroesseNachMenge: String? = null,
     val einheit: String? = null,
     val packungsgroesseNachNBezeichnung: String? = null,
@@ -274,10 +275,10 @@ data class MedicationIngredient(
 data class MedicationPzn(
     val kategorie: String,
     val impfstoff: Boolean,
+    val darreichungsform: String? = null,
     val normgroesse: String? = null,
     val pzn: String,
     val handelsname: String,
-    val darreichungsform: String? = null,
     val packungsgroesseNachMenge: String? = null,
     val einheit: String? = null,
     val packungsgroesseNachNBezeichnung: String? = null,
@@ -368,8 +369,12 @@ data class Prescription(
     val ausstellungsdatum: String? = null,
     val noctu: Boolean? = null,
     val serKennzeichen: Boolean? = null,
+    val btmSonderkennzeichen: String? = null,
+    val ergaenzendeAngabenSubstitutionsmittel: String? = null,
+    val teratogenic: Teratogenic? = null,
     val bvg: Boolean? = null,
     val verschreiberID: String? = null,
+    val patientId: String? = null,
     val zuzahlungsstatus: String? = null,
     val autidem: Boolean? = null,
     val abgabehinweis: String? = null,
@@ -400,6 +405,16 @@ data class Practitioner(
     val telematikId: String? = null,
     val person: Person,
     val verantwortlichePerson: Practitioner? = null,
+)
+
+@Serializable
+@SerialName(TERATOGENIC)
+data class Teratogenic(
+    val offLabel: Boolean,
+    val gebaerfaehigeFrau: Boolean,
+    val einhaltungSicherheitsmassnahmen: Boolean,
+    val aushaendigungInformationsmaterialien: Boolean,
+    val erklaerungSachkenntnis: Boolean,
 )
 
 enum class SupplyOptionsType {

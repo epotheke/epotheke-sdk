@@ -1,5 +1,6 @@
 package com.epotheke.cardlink.mock
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.ClassDiscriminatorMode
@@ -7,19 +8,20 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import java.util.*
-
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 const val REQUEST_PRESCRIPTION_LIST = "requestPrescriptionList"
 const val AVAILABLE_PRESCRIPTION_LISTS = "availablePrescriptionLists"
 const val AVAILABLE_PRESCRIPTION_LIST = "availablePrescriptionList"
 const val SELECTED_PRESCRIPTION_LIST = "selectedPrescriptionList"
+const val PRESCRIPTION_FETCH_ERROR = "prescriptionFetchError"
 const val GENERIC_ERROR = "genericError"
 const val MEDICATION_PZN = "medicationPZN"
 const val MEDICATION_FREE_TEXT = "medicationFreeText"
 const val MEDICATION_COMPOUNDING = "medicationCompounding"
 const val MEDICATION_INGREDIENT = "medicationIngredient"
-const val BESTANDTEIL_WIRKSTOFF_VERORDNUNG= "bestandteilWirkstoffverordnung"
+const val BESTANDTEIL_WIRKSTOFF_VERORDNUNG = "bestandteilWirkstoffverordnung"
 const val BESTANDTEIL_REZEPTUR_VERORDNUNG = "bestandteilRezepturverordnung"
 const val SELECTED_PRESCRIPTION_LIST_RESPONSE = "selectedPrescriptionListResponse"
 const val PRESCRIPTION_BUNDLE = "prescriptionBundle"
@@ -33,51 +35,60 @@ const val PRACTICE_SUPPLY = "practiceSupply"
 const val PRACTITIONER = "practitioner"
 const val PRESCRIPTION = "prescription"
 const val COVERAGE = "coverage"
+const val TERATOGENIC = "teratogenic"
 
-
+@Serializable
 sealed interface PrescriptionMessage
 
 @Serializable
 @SerialName(REQUEST_PRESCRIPTION_LIST)
-data class RequestPrescriptionList(
-    @SerialName("ICCSNs")
-    val iccsns: List<ByteArrayAsBase64> = emptyList(),
-    val messageId: String = UUID.randomUUID().toString(),
-) : PrescriptionMessage
+data class RequestPrescriptionList
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        @SerialName("ICCSNs")
+        val iccsns: List<ByteArrayAsBase64> = emptyList(),
+        val messageId: String = Uuid.random().toString(),
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(AVAILABLE_PRESCRIPTION_LISTS)
-data class AvailablePrescriptionLists(
-    val availablePrescriptionLists: List<AvailablePrescriptionList>,
-    val messageId: String = UUID.randomUUID().toString(),
-    val correlationId: String,
-) : PrescriptionMessage
+data class AvailablePrescriptionLists
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        val availablePrescriptionLists: List<AvailablePrescriptionList>,
+        val messageId: String = Uuid.random().toString(),
+        val correlationId: String,
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST)
-data class SelectedPrescriptionList(
-    @SerialName("ICCSN")
-    val iccsn: ByteArrayAsBase64,
-    val prescriptionIndexList: List<String>,
-    val version: String? = null,
-    val supplyOptionsType: SupplyOptionsType,
-    val name: String? = null,
-    val address: StreetAddress? = null,
-    val hint: String? = null,
-    val text: String? = null,
-    val phone: String? = null,
-    val mail: String? = null,
-    val messageId: String = UUID.randomUUID().toString(),
-) : PrescriptionMessage
+data class SelectedPrescriptionList
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        @SerialName("ICCSN")
+        val iccsn: ByteArrayAsBase64,
+        val prescriptionIndexList: List<String>,
+        val version: String? = null,
+        val supplyOptionsType: SupplyOptionsType,
+        val name: String? = null,
+        val address: StreetAddress? = null,
+        val hint: String? = null,
+        val text: String? = null,
+        val phone: String? = null,
+        val mail: String? = null,
+        val messageId: String = Uuid.random().toString(),
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(GENERIC_ERROR)
-data class GenericErrorMessage(
-    val errorCode: GenericErrorResultType,
-    val errorMessage: String,
-    val messageId: String = UUID.randomUUID().toString(),
-    val correlationId: String? = null,
-) : PrescriptionMessage
+data class GenericErrorMessage
+    @OptIn(ExperimentalUuidApi::class)
+    constructor(
+        val errorCode: GenericErrorResultType,
+        val errorMessage: String,
+        val messageId: String = Uuid.random().toString(),
+        val correlationId: String? = null,
+    ) : PrescriptionMessage
 
 @Serializable
 @SerialName(SELECTED_PRESCRIPTION_LIST_RESPONSE)
@@ -98,22 +109,45 @@ data class AvailablePrescriptionList(
     @SerialName("ICCSN")
     val iccsn: ByteArrayAsBase64,
     val prescriptionBundleList: List<PrescriptionBundle>,
+    val fetchErrors: List<PrescriptionFetchError>? = null,
 )
+
+@Serializable
+@SerialName(PRESCRIPTION_FETCH_ERROR)
+data class PrescriptionFetchError(
+    val prescriptionId: String,
+    val errorCode: PrescriptionFetchErrorCode,
+    val errorMessage: String,
+)
+
+enum class PrescriptionFetchErrorCode(
+    val value: String,
+) {
+    TI_FORBIDDEN("TI_FORBIDDEN"),
+    TI_PRESCRIPTION_NOT_FOUND("TI_PRESCRIPTION_NOT_FOUND"),
+    TI_TOO_MANY_REQUESTS_SENT("TI_TOO_MANY_REQUESTS_SENT"),
+    TI_INTERNAL_SERVER_ERROR("TI_INTERNAL_SERVER_ERROR"),
+    TI_UNKNOWN_ERROR("TI_UNKNOWN_ERROR"),
+    CONNECT_TIMEOUT_ERROR("CONNECT_TIMEOUT_ERROR"),
+    SERIALIZATION_ERROR("SERIALIZATION_ERROR"),
+    UNKNOWN_ERROR("UNKNOWN_ERROR"),
+}
 
 @Serializable
 @SerialName(PRESCRIPTION_BUNDLE)
 data class PrescriptionBundle(
     val prescriptionId: String,
+    val accessCode: String? = null,
     val erstellungszeitpunkt: String,
     val status: String,
-    val krankenversicherung: Coverage,
+    val krankenversicherung: Coverage?,
     val pkvTarif: String? = null,
-    val patient: Patient,
+    val patient: Patient?,
     val arzt: Practitioner,
     val pruefnummer: String? = null,
     val organisation: Organization,
     val asvTn: String? = null,
-    val verordnung: PrescriptionInterface,
+    val verordnung: PrescriptionInterface?,
     val arzneimittel: Medication,
 )
 
@@ -134,8 +168,8 @@ data class Coverage(
 @Serializable
 @SerialName(BESTANDTEIL_WIRKSTOFF_VERORDNUNG)
 data class BestandteilWirkstoffverordnung(
-    val wirkstoffnummer: String,
-    val wirkstoffname: String,
+    val wirkstoffnummer: String? = null,
+    val wirkstoffname: String? = null,
     val wirkstaerke: String,
     val wirkstaerkeneinheit: String,
 )
@@ -151,7 +185,9 @@ data class BestandteilRezepturverordnung(
     val mengeUndEinheit: String? = null,
 )
 
-enum class GenericErrorResultType(val value: String) {
+enum class GenericErrorResultType(
+    val value: String,
+) {
     INVALID_MESSAGE_DATA("INVALID_MESSAGE_DATA"),
     TI_UNAVAILABLE("TI_UNAVAILABLE"),
     TI_SERVICE_ERROR("TI_SERVICE_ERROR"),
@@ -162,9 +198,10 @@ enum class GenericErrorResultType(val value: String) {
     UNSUPPORTED_ENVELOPE("UNSUPPORTED_ENVELOPE"),
     NO_PRESCRIPTIONS_AVAILABLE("NO_PRESCRIPTIONS_AVAILABLE"),
     NOT_FOUND("NOT_FOUND"),
-    UNKNOWN_ERROR("UNKNOWN_ERROR");
+    UNKNOWN_ERROR("UNKNOWN_ERROR"),
 }
 
+@Serializable
 sealed interface MedicationItem
 
 @Serializable
@@ -172,10 +209,10 @@ sealed interface MedicationItem
 data class MedicationCompounding(
     val kategorie: String,
     val impfstoff: Boolean,
+    val darreichungsform: String? = null,
     val herstellungsanweisung: String? = null,
     val verpackung: String? = null,
     val rezepturname: String? = null,
-    val darreichungsform: String? = null,
     val gesamtmenge: String,
     val einheit: String? = null,
     val listeBestandteilRezepturverordnung: List<BestandteilRezepturverordnung>,
@@ -186,8 +223,8 @@ data class MedicationCompounding(
 data class MedicationFreeText(
     val kategorie: String,
     val impfstoff: Boolean,
-    val freitextverordnung: String,
     val darreichungsform: String? = null,
+    val freitextverordnung: String,
 ) : MedicationItem
 
 @Serializable
@@ -195,8 +232,8 @@ data class MedicationFreeText(
 data class MedicationIngredient(
     val kategorie: String,
     val impfstoff: Boolean,
-    val normgroesse: String? = null,
     val darreichungsform: String? = null,
+    val normgroesse: String? = null,
     val packungsgroesseNachMenge: String? = null,
     val einheit: String? = null,
     val packungsgroesseNachNBezeichnung: String? = null,
@@ -208,10 +245,10 @@ data class MedicationIngredient(
 data class MedicationPzn(
     val kategorie: String,
     val impfstoff: Boolean,
+    val darreichungsform: String? = null,
     val normgroesse: String? = null,
     val pzn: String,
     val handelsname: String,
-    val darreichungsform: String? = null,
     val packungsgroesseNachMenge: String? = null,
     val einheit: String? = null,
     val packungsgroesseNachNBezeichnung: String? = null,
@@ -259,6 +296,7 @@ data class Person(
     val vorsatzwort: String? = null,
 )
 
+@Serializable
 sealed interface Address
 
 @Serializable
@@ -281,6 +319,7 @@ data class PobAddress(
     val postfach: String,
 ) : Address
 
+@Serializable
 sealed interface PrescriptionInterface
 
 @Serializable
@@ -288,6 +327,7 @@ sealed interface PrescriptionInterface
 data class PracticeSupply(
     val datum: String,
     val anzahl: Int,
+    val anzahlEinheit: String? = null,
     val kostentraegertyp: String,
     val ikNummer: String,
     val name: String,
@@ -298,11 +338,18 @@ data class PracticeSupply(
 data class Prescription(
     val ausstellungsdatum: String? = null,
     val noctu: Boolean? = null,
+    val serKennzeichen: Boolean? = null,
+    val btmSonderkennzeichen: String? = null,
+    val ergaenzendeAngabenSubstitutionsmittel: String? = null,
+    val teratogenic: Teratogenic? = null,
     val bvg: Boolean? = null,
+    val verschreiberID: String? = null,
+    val patientId: String? = null,
     val zuzahlungsstatus: String? = null,
     val autidem: Boolean? = null,
     val abgabehinweis: String? = null,
     val anzahl: Int? = null,
+    val anzahlEinheit: String? = null,
     val dosierung: Boolean? = null,
     val dosieranweisung: String? = null,
     val gebrauchsanweisung: String? = null,
@@ -330,41 +377,59 @@ data class Practitioner(
     val verantwortlichePerson: Practitioner? = null,
 )
 
+@Serializable
+@SerialName(TERATOGENIC)
+data class Teratogenic(
+    val offLabel: Boolean,
+    val gebaerfaehigeFrau: Boolean,
+    val einhaltungSicherheitsmassnahmen: Boolean,
+    val aushaendigungInformationsmaterialien: Boolean,
+    val erklaerungSachkenntnis: Boolean,
+)
+
 enum class SupplyOptionsType {
     @SerialName("onPremise")
     ON_PREMISE,
+
     @SerialName("shipment")
     SHIPMENT,
+
     @SerialName("delivery")
-    DELIVERY;
+    DELIVERY,
 }
 
-val prescriptionModule = SerializersModule {
-    polymorphic(PrescriptionMessage::class) {
-        subclass(RequestPrescriptionList::class)
-        subclass(AvailablePrescriptionLists::class)
-        subclass(SelectedPrescriptionList::class)
-        subclass(SelectedPrescriptionListResponse::class)
-        subclass(GenericErrorMessage::class)
+private val prescriptionModule =
+    SerializersModule {
+        polymorphic(PrescriptionMessage::class) {
+            subclass(RequestPrescriptionList::class)
+            subclass(AvailablePrescriptionLists::class)
+            subclass(SelectedPrescriptionList::class)
+            subclass(SelectedPrescriptionListResponse::class)
+            subclass(GenericErrorMessage::class)
+        }
+        polymorphic(MedicationItem::class) {
+            subclass(MedicationCompounding::class)
+            subclass(MedicationIngredient::class)
+            subclass(MedicationFreeText::class)
+            subclass(MedicationPzn::class)
+        }
+        polymorphic(PrescriptionInterface::class) {
+            subclass(PracticeSupply::class)
+            subclass(Prescription::class)
+        }
+        polymorphic(Address::class) {
+            subclass(StreetAddress::class)
+            subclass(PobAddress::class)
+        }
     }
-    polymorphic(MedicationItem::class) {
-        subclass(MedicationCompounding::class)
-        subclass(MedicationIngredient::class)
-        subclass(MedicationFreeText::class)
-        subclass(MedicationPzn::class)
-    }
-    polymorphic(PrescriptionInterface::class) {
-        subclass(PracticeSupply::class)
-        subclass(Prescription::class)
-    }
-    polymorphic(Address::class) {
-        subclass(StreetAddress::class)
-        subclass(PobAddress::class)
-    }
-}
 
-val prescriptionJsonFormatter = Json {
-    serializersModule = prescriptionModule;
-    classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS;
-    ignoreUnknownKeys = true
-}
+@OptIn(ExperimentalSerializationApi::class)
+val prescriptionJsonFormatter =
+    Json {
+        serializersModule = prescriptionModule
+        classDiscriminatorMode = ClassDiscriminatorMode.ALL_JSON_OBJECTS
+        ignoreUnknownKeys = true
+        // convert missing values to null and do not emit null values
+        explicitNulls = false
+        encodeDefaults = true
+    }
