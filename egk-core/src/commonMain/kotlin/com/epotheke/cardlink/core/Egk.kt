@@ -5,8 +5,14 @@ import org.openecard.cif.bundled.EgkCifDefinitions
 import org.openecard.sal.iface.dids.PaceDid
 import org.openecard.sal.sc.SmartcardApplication
 import org.openecard.sal.sc.SmartcardDeviceConnection
+import org.openecard.sc.apdu.checkOk
+import org.openecard.sc.apdu.command.InternalAuthenticate
+import org.openecard.sc.apdu.command.Mse
 import org.openecard.sc.apdu.toCommandApdu
 import org.openecard.sc.iface.SecureMessagingException
+import org.openecard.sc.tlv.Tag
+import org.openecard.sc.tlv.TlvPrimitive
+import org.openecard.utils.serialization.toPrintable
 import kotlin.ExperimentalUnsignedTypes
 import kotlin.OptIn
 
@@ -56,7 +62,47 @@ class Egk(
     }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    internal fun authenticate(can: String) {
+    fun internalAuthenticateAutCvcE256(challenge: ByteArray): UByteArray =
+        connection.applications
+            .find { app -> app.name == EgkCifDefinitions.Apps.Mf.name }
+            ?.let { app ->
+                if (!app.isConnected) {
+                    app.connect()
+                }
+
+                val mse =
+                    Mse.mseSet(
+                        Mse.P1Flags(
+                            smInCommand = false,
+                            smInResponse = false,
+                            computationDecipherIntAuthKeyAgree = true,
+                            verifyEncipherExtAuthKeyAgree = false,
+                        ),
+                        Mse.Tag.CRT_EXTERNAL_AUTHENTICATE,
+                        listOf(
+                            TlvPrimitive(
+                                Tag.forTagNumWithClass(0x84u),
+                                // keyId
+                                "09".hexToUByteArray().toPrintable(),
+                            ),
+                            TlvPrimitive(
+                                Tag.forTagNumWithClass(0x80u),
+                                // algId
+                                "00".hexToUByteArray().toPrintable(),
+                            ),
+                        ),
+                    )
+                val mseRes = app.device.channel.transmit(mse.apdu)
+                mseRes.checkOk()
+
+                val intAuth = InternalAuthenticate.withData(challenge.toUByteArray(), algorithm = 0x00u)
+                val intAuthRes = app.device.channel.transmit(intAuth.apdu)
+                intAuthRes.checkOk()
+                intAuthRes.data
+            } ?: throw CardInsufficient("MF application is not available")
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    internal fun authenticatePace(can: String) {
         connection.applications
             .find { app -> app.name == EgkCifDefinitions.Apps.Mf.name }
             ?.dids

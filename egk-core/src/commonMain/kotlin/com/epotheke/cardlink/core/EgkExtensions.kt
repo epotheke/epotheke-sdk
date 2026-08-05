@@ -13,7 +13,7 @@ suspend fun SmartcardSalSession.withAuthenticatedEgk(
     repeatIfWrongCan(interaction) { can ->
         val connection = interaction.requestCardInsertion(salSession)
         Egk(connection).run {
-            authenticate(can)
+            authenticatePace(can)
             block()
         }
     }
