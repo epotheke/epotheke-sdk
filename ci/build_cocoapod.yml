@@ -12,7 +12,7 @@ build-cocoapod:
     script:
         - !reference [.versioning, script]
         - export LANG=en_US.UTF-8
-        - /opt/homebrew/bin/pod repo update trunk
+        - /opt/homebrew/bin/pod repo update
         - ./gradlew podPublishReleaseXCFramework
         - mv sdk/build/cocoapods/publish/release/epotheke.xcframework epotheke.xcframework
         - mv sdk/build/cocoapods/publish/release/epotheke-sdk.podspec epotheke-sdk.podspec
