@@ -48,19 +48,22 @@ class Epotheke internal constructor(
             serviceUrl: String,
             tenantToken: String?,
             wsSessionId: String? = null,
-            cifs: Set<CardInfoDefinition>? = null,
-            recognition: CardRecognition? = null,
+            cifs: Set<CardInfoDefinition> = setOf(EgkCif),
+            recognition: CardRecognition = egkRecognition,
         ): Epotheke {
             val salSession =
                 SmartcardSal(
                     terminalFactory.load(),
-                    cifs ?: setOf(EgkCif),
-                    recognition ?: object : CardRecognition {
-                        override fun recognizeCard(channel: CardChannel) = EgkCif.metadata.id
-                    },
+                    cifs,
+                    recognition,
                     PaceFeatureSoftwareFactory(),
                 ).startSession()
             return Epotheke(serviceUrl, tenantToken, salSession, wsSessionId)
         }
+
+        private val egkRecognition =
+            object : CardRecognition {
+                override fun recognizeCard(channel: CardChannel) = EgkCif.metadata.id
+            }
     }
 }

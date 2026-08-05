@@ -1,5 +1,8 @@
 package com.epotheke.cardlink
 
+import com.epotheke.cardlink.data.AllgemeineVersicherungsdaten
+import com.epotheke.cardlink.data.PersoenlicheVersichertendaten
+
 class CardLinkAuthResult(
     var personalData: PersoenlicheVersichertendaten? = null,
     var insurerData: AllgemeineVersicherungsdaten? = null,

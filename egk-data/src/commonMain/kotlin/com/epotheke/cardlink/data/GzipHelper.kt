@@ -1,4 +1,4 @@
-package com.epotheke.cardlink
+package com.epotheke.cardlink.data
 
 import okio.Buffer
 import okio.GzipSource

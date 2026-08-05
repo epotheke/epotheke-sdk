@@ -1,4 +1,6 @@
-package com.epotheke.cardlink
+package com.epotheke.cardlink.core
+
+import com.epotheke.cardlink.core.Egk.Companion.CAN_LEN
 
 enum class CardCommunicationResultCode(
     val msg: String?,

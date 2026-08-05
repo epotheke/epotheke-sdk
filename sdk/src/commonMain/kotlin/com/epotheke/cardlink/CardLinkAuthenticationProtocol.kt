@@ -4,6 +4,14 @@ import com.epotheke.CardLinkProtocolBase
 import com.epotheke.Websocket
 import com.epotheke.cardlink.CardLinkAuthenticationConfig.readInsurerData
 import com.epotheke.cardlink.CardLinkAuthenticationConfig.readPersonalData
+import com.epotheke.cardlink.core.CardInsufficient
+import com.epotheke.cardlink.core.CardLinkClientError
+import com.epotheke.cardlink.core.CardRemoved
+import com.epotheke.cardlink.core.Egk
+import com.epotheke.cardlink.core.OtherClientError
+import com.epotheke.cardlink.core.OtherNfcError
+import com.epotheke.cardlink.core.Timeout
+import com.epotheke.cardlink.core.withAuthenticatedEgk
 import com.epotheke.prescription.prescriptionJsonFormatter
 import com.epotheke.protocolChannel
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -76,8 +84,7 @@ class CardLinkAuthenticationProtocol internal constructor(
                     confirmTan()
                 }
 
-                withAuthenticatedEgk(
-                    salSession,
+                salSession.withAuthenticatedEgk(
                     interaction,
                 ) {
                     if (readPersonalData) {

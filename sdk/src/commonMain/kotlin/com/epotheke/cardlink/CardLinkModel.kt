@@ -172,7 +172,6 @@ typealias ByteArrayAsBase64 =
     @Serializable(ByteArrayAsBase64Serializer::class)
     ByteArray
 
-@OptIn(ExperimentalEncodingApi::class)
 object ByteArrayAsBase64Serializer : KSerializer<ByteArray> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("ByteArrayAsBase64Serializer", PrimitiveKind.STRING)
