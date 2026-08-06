@@ -5,12 +5,14 @@ import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.apdu.ApduProcessingError
 import org.openecard.sc.iface.feature.PaceError
 
-suspend fun SmartcardSalSession.withAuthenticatedEgk(
+typealias EgkProcessingBlock<T> = suspend Egk.() -> T
+
+suspend fun <T> SmartcardSalSession.withAuthenticatedEgk(
     interaction: EgkInteraction,
-    block: suspend Egk.() -> Unit,
-) {
+    block: EgkProcessingBlock<T>,
+): T {
     val salSession = this
-    repeatIfWrongCan(interaction) { can ->
+    return repeatIfWrongCan(interaction) { can ->
         val connection = interaction.requestCardInsertion(salSession)
         Egk(connection).run {
             authenticatePace(can)
@@ -19,30 +21,30 @@ suspend fun SmartcardSalSession.withAuthenticatedEgk(
     }
 }
 
-private suspend fun SmartcardSalSession.repeatIfWrongCan(
+private suspend fun <T> SmartcardSalSession.repeatIfWrongCan(
     interaction: EgkInteraction,
-    block: suspend (can: String) -> Unit,
-) {
-    doRepetition(null, interaction, block)
-}
+    block: suspend (can: String) -> T,
+): T = doRepetition(null, interaction, block)
 
-private suspend fun SmartcardSalSession.doRepetition(
+private suspend fun <T> SmartcardSalSession.doRepetition(
     cardCommunicationResult: CardCommunicationResultCode?,
     interaction: EgkInteraction,
-    block: suspend (can: String) -> Unit,
-) {
+    block: suspend (can: String) -> T,
+): T {
     val salSession = this
     try {
+        // TODO: rewrite to put cleanup into finalize or similar
         val can = getCheckedCan(interaction, cardCommunicationResult)
         salSession.initializeStack()
-        block(can)
+        val result = block(can)
         salSession.shutdownStack()
+        return result
     } catch (e: Exception) {
         salSession.shutdownStack()
         when (e) {
             is ApduProcessingError,
             -> {
-                doRepetition(
+                return doRepetition(
                     CardCommunicationResultCode.CARD_ERROR,
                     interaction,
                     block,
@@ -51,7 +53,7 @@ private suspend fun SmartcardSalSession.doRepetition(
 
             is PaceError,
             -> {
-                doRepetition(
+                return doRepetition(
                     CardCommunicationResultCode.CAN_INCORRECT,
                     interaction,
                     block,

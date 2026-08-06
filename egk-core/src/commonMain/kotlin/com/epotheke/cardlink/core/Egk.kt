@@ -18,7 +18,7 @@ import kotlin.OptIn
 
 private val logger = KotlinLogging.logger { }
 
-class Egk(
+class Egk internal constructor(
     private val connection: SmartcardDeviceConnection,
 ) {
     @OptIn(ExperimentalUnsignedTypes::class)
