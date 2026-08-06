@@ -1,4 +1,4 @@
-package com.epotheke.cardlink
+package com.epotheke.cardlink.data
 
 import com.fleeksoft.charset.Charsets
 import com.fleeksoft.charset.decodeToString
@@ -10,7 +10,7 @@ import nl.adaptivity.xmlutil.serialization.XmlSerialName
 private val logger = KotlinLogging.logger { }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun UByteArray.toInsurerData(): AllgemeineVersicherungsdaten? =
+fun UByteArray.toInsurerData(): AllgemeineVersicherungsdaten? =
     try {
         val start = this[0].toInt().shl(8).or(this[1].toInt())
         val end = this[2].toInt().shl(8).or(this[3].toInt())

@@ -10,41 +10,38 @@ plugins {
 
 kotlin {
     sourceSets {
-
         commonMain.dependencies {
             implementation(libs.kotlin.logging)
+
             implementation(libs.kotlin.coroutines.core)
             implementation(libs.kotlin.serialization.json)
+
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.websocket)
             implementation(libs.ktor.client.auth)
 
-            implementation(libs.xmlutil.core)
-            implementation(libs.xmlutil.ser)
-            implementation(libs.fleeksoft.charset)
-            implementation(libs.bundles.oec.cardlink)
+            api(project(":egk-core"))
+            api(project(":egk-data"))
+            // used directly in Epotheke class, so transitive implementation dependency is not enough
+            implementation(libs.oec.bundled.cifs)
+            implementation(libs.oec.pace)
+        }
 
-            implementation(libs.okio)
-            api(libs.oec.smartcard.sal)
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
 
         commonTest.dependencies {
             implementation(libs.bundles.test.basics.kotlin)
         }
 
-        androidMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
-            api(libs.oec.smartcard.pcsc.android)
-        }
-
         androidHostTest.dependencies { }
         androidDeviceTest.dependencies {
             implementation(libs.bundles.test.android.kotlin)
-        }
-
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-            api(libs.oec.smartcard.pcsc.ios)
         }
     }
 

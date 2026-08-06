@@ -1,9 +1,8 @@
 package com.epotheke.cardlink
 
-import org.openecard.sal.sc.SmartcardDeviceConnection
-import org.openecard.sal.sc.SmartcardSalSession
+import com.epotheke.cardlink.core.EgkInteraction
 
-interface UserInteraction {
+interface UserInteraction : EgkInteraction {
     suspend fun onPhoneNumberRequest(): String
 
     suspend fun onPhoneNumberRetry(
@@ -17,10 +16,4 @@ interface UserInteraction {
         resultCode: ResultCode,
         msg: String?,
     ): String
-
-    suspend fun onCanRequest(): String
-
-    suspend fun onCanRetry(resultCode: CardCommunicationResultCode): String
-
-    suspend fun requestCardInsertion(session: SmartcardSalSession): SmartcardDeviceConnection
 }

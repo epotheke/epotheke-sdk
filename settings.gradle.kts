@@ -30,6 +30,8 @@ rootProject.name = "epotheke-sdk"
 
 include("manual")
 
+include("egk-core")
+include("egk-data")
 include("sdk")
 // include("demo-app")
 

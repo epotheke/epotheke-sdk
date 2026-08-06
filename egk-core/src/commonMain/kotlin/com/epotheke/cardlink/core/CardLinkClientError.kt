@@ -1,4 +1,4 @@
-package com.epotheke.cardlink
+package com.epotheke.cardlink.core
 
 sealed class CardLinkClientError(
     override val message: String,

@@ -1,5 +1,7 @@
-package com.epotheke.cardlink
+package com.epotheke.cardlink.core
 
+import com.epotheke.cardlink.core.CardLinkClientError
+import com.epotheke.cardlink.core.OtherNfcError
 import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sal.sc.SmartcardSalSession
 import kotlin.coroutines.cancellation.CancellationException
