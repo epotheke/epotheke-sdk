@@ -1,5 +1,5 @@
-val androidCompileSdk: String by project
-val androidMinSdk: String by project
+val androidCompileSdk = project.property("androidCompileSdk") as String
+val androidMinSdk = project.property("androidMinSdk") as String
 
 plugins {
     id("epotheke.kmp-conventions")
