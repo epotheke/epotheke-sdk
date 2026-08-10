@@ -8,18 +8,19 @@ publish-to-github:
     # Create Release
     - TAG=$(echo "${CI_COMMIT_TAG}" | cut -c 2-)
     - >-
-      RELEASE_ID=$(curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} -X POST -v \
+      RELEASE_ID=$(curl -X POST -v \
+        -H "Authorization: Bearer ${GITHUB_TOKEN}"
         -H "Accept: application/vnd.github+json" \
-        -H "X-GitHub-Api-Version: 2022-11-28" \
+        -H "X-GitHub-Api-Version: 2026-03-10" \
         https://api.github.com/repos/epotheke/epotheke-sdk/releases \
         -d '{ "tag_name":"'"${CI_COMMIT_TAG}"'", "name":"'"${TAG}"'", "draft":false, "prerelease":false, "generate_release_notes":false }' | jq '.id')
     # Upload iOS Framework
     - zip -r epothekePod.zip LICENSE* epotheke.xcframework
     - >-
-      curl -u ${GITHUB_USERNAME}:${GITHUB_TOKEN} \
-        -X POST -v \
+      curl -X POST -v \
+        -H "Authorization: Bearer ${GITHUB_TOKEN}"
         -H "Accept: application/vnd.github+json" \
-        -H "X-GitHub-Api-Version: 2022-11-28" \
+        -H "X-GitHub-Api-Version: 2026-03-10" \
         -H "Content-Type: application/zip" \
         --data-binary "@epothekePod.zip" \
         https://uploads.github.com/repos/epotheke/epotheke-sdk/releases/${RELEASE_ID}/assets?name=epotheke-CocoaPod.zip
