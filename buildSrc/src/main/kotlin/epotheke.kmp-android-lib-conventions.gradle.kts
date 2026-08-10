@@ -7,8 +7,8 @@ plugins {
 }
 
 kotlin {
-        namespace = "com.epotheke"
     android {
+        namespace = "${project.group}.${project.name}".replace("-", "_")
 
         minSdk = androidMinSdk.toInt()
         compileSdk = androidCompileSdk.toInt()
