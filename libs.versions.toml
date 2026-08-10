@@ -24,6 +24,7 @@ androidx-test-runner = "1.7.0"
 
 kover = "0.9.8"
 mokkery = "3.3.0"
+vanniktech-publish = "0.37.+"
 
 compose = "1.10.6"
 compose-plugin = "1.10.3"
@@ -139,6 +140,7 @@ kotlinKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 asciidoctor = { id = "org.asciidoctor.jvm.convert", version.ref = "asciidoctor" }
 rawPublish = { id = "de.ecsec.nexus-raw-publish", version.ref = "publishraw" }
+vanniktechPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-publish" }
 
 quarkus = { id = "io.quarkus", version.ref = "quarkus" }
 mokkery = { id = "dev.mokkery", version.ref = "mokkery"}
