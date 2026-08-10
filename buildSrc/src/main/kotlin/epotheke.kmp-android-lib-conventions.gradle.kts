@@ -5,9 +5,10 @@ plugins {
     id("epotheke.kmp-conventions")
     id("com.android.kotlin.multiplatform.library")
 }
+
 kotlin {
-    androidLibrary {
         namespace = "com.epotheke"
+    android {
 
         minSdk = androidMinSdk.toInt()
         compileSdk = androidCompileSdk.toInt()
