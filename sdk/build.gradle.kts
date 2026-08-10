@@ -5,6 +5,7 @@ plugins {
     // id("epotheke.kmp-jvm-lib-conventions")
     id("epotheke.kmp-android-lib-conventions")
     id("epotheke.kmp-ios-lib-conventions")
+    id("epotheke.cocoapods-conventions")
 }
 
 kotlin {

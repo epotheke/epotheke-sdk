@@ -1,0 +1,3 @@
+plugins {
+    kotlin("native.cocoapods")
+}
