@@ -68,7 +68,13 @@ publish-ios-pod-spec:
     - "mac"
     - "dev-cert"
   script:
-    - EXCLUDED_ARCHS="x86_64" /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
+    - |
+      cat > "$CI_PROJECT_DIR/cocoapods-lint.xcconfig" <<'EOF'
+      ARCHS = arm64
+      ONLY_ACTIVE_ARCH = YES
+      EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64
+      EOF
+    - XCODE_XCCONFIG_FILE="$CI_PROJECT_DIR/cocoapods-lint.xcconfig" /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
     - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec
   allow_failure: true
 
