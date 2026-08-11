@@ -19,7 +19,7 @@ android {
     defaultConfig {
         applicationId = "com.epotheke.demo"
         minSdk = 23
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 12
         versionName = "1.0.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
