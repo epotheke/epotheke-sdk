@@ -3,9 +3,9 @@ package com.epotheke.cardlink
 import com.epotheke.cardlink.core.CardInsufficient
 import com.epotheke.cardlink.core.Egk
 import com.epotheke.cardlink.data.AllgemeineVersicherungsdaten
+import com.epotheke.cardlink.data.AllgemeineVersicherungsdaten.Companion.toInsurerData
 import com.epotheke.cardlink.data.PersoenlicheVersichertendaten
-import com.epotheke.cardlink.data.toInsurerData
-import com.epotheke.cardlink.data.toPersonalData
+import com.epotheke.cardlink.data.PersoenlicheVersichertendaten.Companion.toPersonalData
 import org.openecard.cif.bundled.EgkCifDefinitions
 import org.openecard.sc.tlv.toTlvSimple
 
