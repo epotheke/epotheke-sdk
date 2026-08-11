@@ -4,6 +4,10 @@ import com.epotheke.CardLinkProtocolBase
 import com.epotheke.Websocket
 import com.epotheke.cardlink.CardLinkAuthenticationConfig.readInsurerData
 import com.epotheke.cardlink.CardLinkAuthenticationConfig.readPersonalData
+import com.epotheke.cardlink.EgkExtensions.iccsn
+import com.epotheke.cardlink.EgkExtensions.insurerData
+import com.epotheke.cardlink.EgkExtensions.mfData
+import com.epotheke.cardlink.EgkExtensions.personalData
 import com.epotheke.cardlink.core.CardInsufficient
 import com.epotheke.cardlink.core.CardLinkClientError
 import com.epotheke.cardlink.core.CardRemoved

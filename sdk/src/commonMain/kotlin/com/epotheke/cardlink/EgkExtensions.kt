@@ -18,35 +18,39 @@ class MFData(
     val atr: UByteArray,
 )
 
-@OptIn(ExperimentalUnsignedTypes::class)
-val Egk.personalData: PersoenlicheVersichertendaten
-    get() {
-        return personalDataBytes.toPersonalData() ?: readError(EgkCifDefinitions.Apps.Hca.Datasets.efPd)
-    }
-
-@OptIn(ExperimentalUnsignedTypes::class)
-val Egk.insurerData: AllgemeineVersicherungsdaten
-    get() {
-        return insurerDataBytes.toInsurerData() ?: readError(EgkCifDefinitions.Apps.Hca.Datasets.efVd)
-    }
-
-@OptIn(ExperimentalUnsignedTypes::class)
-val Egk.mfData: MFData get() {
-    return MFData(gdo, cardVersion, cvcAuth, cvcCA, atr)
-}
-
-@OptIn(ExperimentalUnsignedTypes::class)
-val Egk.iccsn: String get() {
-    return gdo.toTlvSimple().tlv.let {
-        if (it.tag.tagNumWithClass == 0x5f5A.toULong()) {
-            it.contentAsBytesBer.toHexString()
-        } else {
-            null
+object EgkExtensions {
+    @OptIn(ExperimentalUnsignedTypes::class)
+    val Egk.personalData: PersoenlicheVersichertendaten
+        get() {
+            return personalDataBytes.toPersonalData() ?: readError(EgkCifDefinitions.Apps.Hca.Datasets.efPd)
         }
-    } ?: readError("ICCSN")
-}
 
-private fun readError(toBeRead: String): Nothing =
-    throw CardInsufficient(
-        "Could not read $toBeRead.",
-    )
+    @OptIn(ExperimentalUnsignedTypes::class)
+    val Egk.insurerData: AllgemeineVersicherungsdaten
+        get() {
+            return insurerDataBytes.toInsurerData() ?: readError(EgkCifDefinitions.Apps.Hca.Datasets.efVd)
+        }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    val Egk.mfData: MFData
+        get() {
+            return MFData(gdo, cardVersion, cvcAuth, cvcCA, atr)
+        }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    val Egk.iccsn: String
+        get() {
+            return gdo.toTlvSimple().tlv.let {
+                if (it.tag.tagNumWithClass == 0x5f5A.toULong()) {
+                    it.contentAsBytesBer.toHexString()
+                } else {
+                    null
+                }
+            } ?: readError("ICCSN")
+        }
+
+    private fun readError(toBeRead: String): Nothing =
+        throw CardInsufficient(
+            "Could not read $toBeRead.",
+        )
+}
