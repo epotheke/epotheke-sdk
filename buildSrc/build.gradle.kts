@@ -11,8 +11,11 @@ dependencies {
     implementation(libs.plugins.kotlinKover)
     implementation(libs.plugins.kotlinSerialization)
     implementation(libs.plugins.mokkery)
+    implementation(libs.plugins.vanniktechPublish)
 
     implementation(libs.plugins.androidKmpLibrary)
+    implementation(libs.plugins.touchlabSkie)
+
 }
 
 fun DependencyHandlerScope.implementation(pluginProv: Provider<PluginDependency>) {

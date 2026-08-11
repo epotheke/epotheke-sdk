@@ -1,5 +1,6 @@
 package com.epotheke
 
+import co.touchlab.skie.configuration.annotations.DefaultArgumentInterop
 import com.epotheke.cardlink.CardLinkAuthenticationProtocol
 import com.epotheke.prescription.PrescriptionProtocolImp
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -43,6 +44,7 @@ class Epotheke internal constructor(
     }
 
     companion object {
+        @DefaultArgumentInterop.Enabled
         fun createEpothekeService(
             terminalFactory: TerminalFactory,
             serviceUrl: String,

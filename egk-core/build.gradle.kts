@@ -4,7 +4,6 @@ plugins {
     id("epotheke.kmp-lib-conventions")
     id("epotheke.kmp-android-lib-conventions")
     id("epotheke.kmp-ios-lib-conventions")
-    id("epotheke.publish-conventions")
 }
 
 kotlin {

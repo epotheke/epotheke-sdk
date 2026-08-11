@@ -9,24 +9,6 @@ import nl.adaptivity.xmlutil.serialization.XmlSerialName
 
 private val logger = KotlinLogging.logger { }
 
-@OptIn(ExperimentalUnsignedTypes::class)
-fun UByteArray.toInsurerData(): AllgemeineVersicherungsdaten? =
-    try {
-        val start = this[0].toInt().shl(8).or(this[1].toInt())
-        val end = this[2].toInt().shl(8).or(this[3].toInt())
-
-        val vd = this.sliceArray(IntRange(start, end))
-
-        val xmlString =
-            gunzip(
-                vd,
-            ).decodeToString(Charsets.forName("ISO-8859-15"))
-        xml.decodeFromString(AllgemeineVersicherungsdaten.serializer(), xmlString)
-    } catch (e: Exception) {
-        logger.warn(e) { "Exception during reading of ef.vd" }
-        null
-    }
-
 private const val VSDM_NAMESPACE = "http://ws.gematik.de/fa/vsdm/vsd/v5.2"
 
 @Serializable
@@ -36,7 +18,27 @@ class AllgemeineVersicherungsdaten(
     var cdmVersion: String? = null,
     @XmlSerialName("Versicherter")
     var versicherter: VersicherterVD? = null,
-)
+) {
+    companion object {
+        @OptIn(ExperimentalUnsignedTypes::class)
+        fun UByteArray.toInsurerData(): AllgemeineVersicherungsdaten? =
+            try {
+                val start = this[0].toInt().shl(8).or(this[1].toInt())
+                val end = this[2].toInt().shl(8).or(this[3].toInt())
+
+                val vd = this.sliceArray(IntRange(start, end))
+
+                val xmlString =
+                    gunzip(
+                        vd,
+                    ).decodeToString(Charsets.forName("ISO-8859-15"))
+                xml.decodeFromString(AllgemeineVersicherungsdaten.serializer(), xmlString)
+            } catch (e: Exception) {
+                logger.warn(e) { "Exception during reading of ef.vd" }
+                null
+            }
+    }
+}
 
 @Serializable
 @XmlSerialName("Versicherter")

@@ -87,7 +87,7 @@ struct ContentView: View {
                 Text(inputMsg)
             }
         }.onDisappear {
-            epotheke?.close_()
+            epotheke?.close()
         }
     }
 
@@ -200,8 +200,6 @@ struct ContentView: View {
                 serviceUrl: url,
                 tenantToken: tenantToken,
                 wsSessionId: nil,
-                cifs: nil,
-                recognition: nil
             )
         let authProt = epo.cardLinkAuthenticationProtocol
         CardLinkAuthenticationConfig().readPersonalData = true

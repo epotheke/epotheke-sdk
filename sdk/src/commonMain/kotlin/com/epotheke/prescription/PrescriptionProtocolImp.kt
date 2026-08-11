@@ -1,4 +1,4 @@
-/****************************************************************************
+/*
  * Copyright (C) 2024 ecsec GmbH.
  * All rights reserved.
  * Contact: ecsec GmbH (info@ecsec.de)
@@ -18,7 +18,7 @@
  * and conditions contained in a signed written agreement between
  * you and ecsec GmbH.
  *
- ***************************************************************************/
+ */
 
 package com.epotheke.prescription
 
@@ -118,7 +118,10 @@ class PrescriptionProtocolImp internal constructor(
                 when (
                     response
                 ) {
-                    is T -> return response
+                    is T -> {
+                        return response
+                    }
+
                     is GenericErrorMessage -> {
                         logger.debug { "Received generic error: ${response.errorMessage}" }
                         throw PrescriptionProtocolException(response)
@@ -153,10 +156,16 @@ class PrescriptionProtocolImp internal constructor(
             return resp
         } catch (e: Exception) {
             when (e) {
-                is PrescriptionProtocolException -> throw e
-                is WebSocketException -> throw PrescriptionProtocolException(
-                    cause = e,
-                )
+                is PrescriptionProtocolException -> {
+                    throw e
+                }
+
+                is WebSocketException -> {
+                    throw PrescriptionProtocolException(
+                        cause = e,
+                    )
+                }
+
                 else -> {
                     logger.error(e) { "Unspecified error" }
                     throw PrescriptionProtocolException(
@@ -181,10 +190,16 @@ class PrescriptionProtocolImp internal constructor(
             return resp
         } catch (e: Exception) {
             when (e) {
-                is PrescriptionProtocolException -> throw e
-                is WebSocketException -> throw PrescriptionProtocolException(
-                    cause = e,
-                )
+                is PrescriptionProtocolException -> {
+                    throw e
+                }
+
+                is WebSocketException -> {
+                    throw PrescriptionProtocolException(
+                        cause = e,
+                    )
+                }
+
                 else -> {
                     logger.error(e) { "Unspecified error" }
                     throw PrescriptionProtocolException(

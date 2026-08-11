@@ -13,18 +13,6 @@ import nl.adaptivity.xmlutil.serialization.XmlSerialName
 
 private val logger = KotlinLogging.logger { }
 
-@OptIn(ExperimentalUnsignedTypes::class)
-fun UByteArray.toPersonalData(): PersoenlicheVersichertendaten? =
-    try {
-        val len = this[0].toInt().shl(8).or(this[1].toInt())
-        val pd = this.sliceArray(IntRange(2, 2 + len - 1))
-        val xmlString = gunzip(pd).decodeToString(Charsets.forName("ISO-8859-15"))
-        xml.decodeFromString(PersoenlicheVersichertendaten.serializer(), xmlString)
-    } catch (e: Exception) {
-        logger.warn(e) { "Exception during reading of ef.pd" }
-        null
-    }
-
 fun PersoenlicheVersichertendaten.json() = Json.encodeToString(this)
 
 private const val VSDM_NAMESPACE = "http://ws.gematik.de/fa/vsdm/vsd/v5.2"
@@ -37,6 +25,22 @@ class PersoenlicheVersichertendaten {
 
     @XmlSerialName("Versicherter")
     var versicherter: Versicherter? = null
+
+    companion object {
+        @OptIn(ExperimentalUnsignedTypes::class)
+        fun UByteArray.toPersonalData(): PersoenlicheVersichertendaten? =
+            try {
+                val len = this[0].toInt().shl(8).or(this[1].toInt())
+                val pd = this.sliceArray(IntRange(2, 2 + len - 1))
+                val xmlString = gunzip(pd).decodeToString(Charsets.forName("ISO-8859-15"))
+                xml.decodeFromString(PersoenlicheVersichertendaten.serializer(), xmlString)
+            } catch (e: Exception) {
+                logger.warn(e) { "Exception during reading of ef.pd" }
+                null
+            }
+
+        fun PersoenlicheVersichertendaten.json() = Json.encodeToString(this)
+    }
 }
 
 @Serializable
