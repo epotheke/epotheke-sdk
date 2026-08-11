@@ -42,10 +42,12 @@ fleeksoft = "0.0.8"
 
 asciidoctor = "4.0.5"
 publishraw = "1.0.0"
+skie = "0.10.14"
 
 
 [libraries]
 
+skie-configuration-annotation = { module = "co.touchlab.skie:configuration-annotations", version.ref = "skie"}
 ktlint-githubreporter = { module = "io.github.tobi2k:ktlint-gitlab-reporter", version.ref = "ktlint-githubreporter" }
 
 oec-smartcard-sal = {module = "org.openecard.sal:smartcard-sal", version.ref = "oec"}
@@ -137,6 +139,7 @@ kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = 
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinKover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+touchlabSkie = { id = "co.touchlab.skie", version.ref = "skie" }
 
 asciidoctor = { id = "org.asciidoctor.jvm.convert", version.ref = "asciidoctor" }
 rawPublish = { id = "de.ecsec.nexus-raw-publish", version.ref = "publishraw" }

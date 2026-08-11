@@ -6,6 +6,7 @@ plugins {
     id("epotheke.kmp-android-lib-conventions")
     id("epotheke.kmp-ios-lib-conventions")
     id("epotheke.cocoapods-conventions")
+    id("epotheke.skie-conventions")
 }
 
 kotlin {
@@ -25,6 +26,7 @@ kotlin {
             // used directly in Epotheke class, so transitive implementation dependency is not enough
             implementation(libs.oec.bundled.cifs)
             implementation(libs.oec.pace)
+            implementation(libs.skie.configuration.annotation)
         }
 
         androidMain.dependencies {
@@ -56,6 +58,8 @@ kotlin {
             baseName = "epotheke"
             export(libs.oec.smartcard.pcsc.ios)
             export(libs.oec.smartcard.sal)
+            export(project(":egk-core"))
+            export(project(":egk-data"))
             binaryOption("bundleId", "com.epotheke.sdk")
         }
     }
