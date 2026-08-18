@@ -8,6 +8,10 @@ import org.openecard.sc.iface.feature.PaceError
 object EgkExtensions {
     typealias EgkProcessingBlock<T> = suspend Egk.() -> T
 
+    fun clearMemoizedCans() {
+        correctCansPerSession.clear()
+    }
+
     /**
      * Saves correctly entered CANs for SAL sessionIds.
      * The CAN is saved once it is entered successfully.
