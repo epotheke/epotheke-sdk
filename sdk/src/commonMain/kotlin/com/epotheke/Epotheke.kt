@@ -53,6 +53,7 @@ class Epotheke internal constructor(
             cifs: Set<CardInfoDefinition> = setOf(EgkCif),
             recognition: CardRecognition = egkRecognition,
         ): Epotheke {
+            // TODO: Sal session should be started per process with a card not once for the whole library.
             val salSession =
                 SmartcardSal(
                     terminalFactory.load(),
