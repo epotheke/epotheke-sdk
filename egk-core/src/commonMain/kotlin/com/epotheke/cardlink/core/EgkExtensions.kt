@@ -21,6 +21,7 @@ object EgkExtensions {
 
     suspend fun <T> SmartcardSalSession.withAuthenticatedEgk(
         interaction: EgkInteraction,
+        memoizeCan: Boolean = false,
         block: EgkProcessingBlock<T>,
     ): T {
         val salSession = this
@@ -28,7 +29,9 @@ object EgkExtensions {
             val connection = interaction.requestCardInsertion(salSession)
             Egk(connection).run {
                 authenticatePace(can)
-                correctCansPerSession[sessionId] = can
+                if (memoizeCan) {
+                    correctCansPerSession[sessionId] = can
+                }
                 val result = block()
                 correctCansPerSession.remove(sessionId)
                 result
