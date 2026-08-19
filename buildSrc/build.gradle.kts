@@ -15,7 +15,6 @@ dependencies {
 
     implementation(libs.plugins.androidKmpLibrary)
     implementation(libs.plugins.touchlabSkie)
-
 }
 
 fun DependencyHandlerScope.implementation(pluginProv: Provider<PluginDependency>) {

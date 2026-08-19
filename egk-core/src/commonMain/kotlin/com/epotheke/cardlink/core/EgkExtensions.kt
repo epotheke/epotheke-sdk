@@ -8,8 +8,20 @@ import org.openecard.sc.iface.feature.PaceError
 object EgkExtensions {
     typealias EgkProcessingBlock<T> = suspend Egk.() -> T
 
+    fun clearMemoizedCans() {
+        correctCansPerSession.clear()
+    }
+
+    /**
+     * Saves correctly entered CANs for SAL sessionIds.
+     * The CAN is saved once it is entered successfully.
+     * If the process is then restarted, the CAN is tried again omitting the interaction call for requesting the CAN.
+     */
+    private val correctCansPerSession = mutableMapOf<String, String>()
+
     suspend fun <T> SmartcardSalSession.withAuthenticatedEgk(
         interaction: EgkInteraction,
+        memoizeCan: Boolean = false,
         block: EgkProcessingBlock<T>,
     ): T {
         val salSession = this
@@ -17,7 +29,12 @@ object EgkExtensions {
             val connection = interaction.requestCardInsertion(salSession)
             Egk(connection).run {
                 authenticatePace(can)
-                block()
+                if (memoizeCan) {
+                    correctCansPerSession[sessionId] = can
+                }
+                val result = block()
+                correctCansPerSession.remove(sessionId)
+                result
             }
         }
     }
@@ -35,7 +52,7 @@ object EgkExtensions {
         val salSession = this
         try {
             // TODO: rewrite to put cleanup into finalize or similar
-            val can = getCheckedCan(interaction, cardCommunicationResult)
+            val can = correctCansPerSession[sessionId] ?: getCheckedCan(interaction, cardCommunicationResult)
             salSession.initializeStack()
             val result = block(can)
             salSession.shutdownStack()
@@ -54,6 +71,7 @@ object EgkExtensions {
 
                 is PaceError,
                 -> {
+                    correctCansPerSession.remove(sessionId)
                     return doRepetition(
                         CardCommunicationResultCode.CAN_INCORRECT,
                         interaction,
