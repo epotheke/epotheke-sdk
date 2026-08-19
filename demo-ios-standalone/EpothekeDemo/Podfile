@@ -6,7 +6,7 @@ target 'epothekeDemo' do
   use_frameworks!
 
   # Pod for epothekeDemo
-  pod 'epotheke-sdk','>= 2.0.3'
+  pod 'epotheke-sdk','>= 2.0.4'
 
 end
 
