@@ -1,5 +1,6 @@
 package com.epotheke.cardlink
 
+import co.touchlab.skie.configuration.annotations.DefaultArgumentInterop
 import com.epotheke.CardLinkProtocolBase
 import com.epotheke.Websocket
 import com.epotheke.cardlink.CardLinkAuthenticationConfig.readInsurerData
@@ -40,7 +41,7 @@ private val logger = KotlinLogging.logger { }
 
 class CardLinkAuthenticationProtocol internal constructor(
     private val ws: Websocket,
-    private val salSession: SmartcardSalSession,
+    internal val salSession: SmartcardSalSession,
 ) : CardLinkProtocolBase(ws) {
     data class SessionInfo(
         val cardSessionId: String,
@@ -69,7 +70,11 @@ class CardLinkAuthenticationProtocol internal constructor(
         CancellationException::class,
     )
     @OptIn(ExperimentalUnsignedTypes::class)
-    suspend fun establishCardLink(interaction: UserInteraction): CardLinkAuthResult =
+    @DefaultArgumentInterop.Enabled
+    suspend fun establishCardLink(
+        interaction: UserInteraction,
+        progressNotification: ProgressNotification? = null,
+    ): CardLinkAuthResult =
         withContext(Dispatchers.IO) {
             mapErrors {
                 this@CardLinkAuthenticationProtocol.interaction = interaction
@@ -92,26 +97,42 @@ class CardLinkAuthenticationProtocol internal constructor(
                     interaction,
                 ) {
                     if (readPersonalData) {
+                        progressNotification?.onProgress(
+                            CardlinkProcessStep(CardlinkProcessStepKind.READ_PERSONAL_DATA),
+                        )
                         cardLinkAuthResult.personalData = personalData
                     }
                     if (readInsurerData) {
+                        progressNotification?.onProgress(CardlinkProcessStep(CardlinkProcessStepKind.READ_INSURER_DATA))
                         cardLinkAuthResult.insurerData = insurerData
                     }
 
+                    progressNotification?.onProgress(
+                        CardlinkProcessStep(CardlinkProcessStepKind.READ_CARD_DATA, "ICCSN"),
+                    )
                     cardLinkAuthResult.iccsn = iccsn
 
-                    RegisterEgk(
-                        sessionInfo.cardSessionId,
-                        gdo = mfData.gdo.toByteArray(),
-                        cardVersion = mfData.cardVersion.toByteArray(),
-                        cvcAuth = mfData.cvcAuth.toByteArray(),
-                        cvcCA = mfData.cvcCA.toByteArray(),
-                        atr = mfData.atr.toByteArray(),
-                        x509AuthECC = cert.toByteArray(),
-                        x509AuthRSA = null,
-                    ).send()
+                    val readMfData =
+                        mfData { s ->
+                            progressNotification?.onProgress(
+                                CardlinkProcessStep(CardlinkProcessStepKind.READ_CARD_DATA, s),
+                            )
+                        }
+                    val regEgk =
+                        RegisterEgk(
+                            sessionInfo.cardSessionId,
+                            gdo = readMfData.gdo.toByteArray(),
+                            cardVersion = readMfData.cardVersion.toByteArray(),
+                            cvcAuth = readMfData.cvcAuth.toByteArray(),
+                            cvcCA = readMfData.cvcCA.toByteArray(),
+                            atr = readMfData.atr.toByteArray(),
+                            x509AuthECC = cert.toByteArray(),
+                            x509AuthRSA = null,
+                        )
+                    progressNotification?.onProgress(CardlinkProcessStep(CardlinkProcessStepKind.SEND_REGISTER_EGK))
+                    regEgk.send()
 
-                    handleRemoteApdus()
+                    handleRemoteApdus(progressNotification)
                 }
 
                 cardLinkAuthResult
@@ -347,7 +368,7 @@ class CardLinkAuthenticationProtocol internal constructor(
         }
     }
 
-    private suspend fun Egk.handleRemoteApdus() {
+    private suspend fun Egk.handleRemoteApdus(progressNotification: ProgressNotification? = null) {
         val envelope = receiveEnvelope()
         when (val payload = envelope.payload) {
             is ICCSNReassignment -> {
@@ -363,6 +384,7 @@ class CardLinkAuthenticationProtocol internal constructor(
             }
 
             is SendApdu -> {
+                progressNotification?.onProgress(CardlinkProcessStep(CardlinkProcessStepKind.HANDLE_REMOTE_APDU))
                 val cardResponse = sendApduToCard(payload.apdu)
                 SendApduResponse(
                     payload.cardSessionId,

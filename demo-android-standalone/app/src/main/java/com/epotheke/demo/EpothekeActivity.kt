@@ -41,6 +41,9 @@ import androidx.lifecycle.lifecycleScope
 import com.epotheke.Epotheke
 import com.epotheke.cardlink.CardLinkAuthResult
 import com.epotheke.cardlink.CardLinkAuthenticationConfig
+import com.epotheke.cardlink.CardlinkProcessStep
+import com.epotheke.cardlink.CardlinkProcessStepKind
+import com.epotheke.cardlink.ProgressNotification
 import com.epotheke.cardlink.ResultCode
 import com.epotheke.cardlink.UserInteraction
 import com.epotheke.cardlink.core.CardCommunicationResultCode
@@ -476,6 +479,39 @@ class EpothekeActivity : AppCompatActivity() {
             }
         }
 
+    class StatefulProgressNotification(
+        val show: (msg: String) -> Unit,
+    ) : ProgressNotification {
+        var apduCount = 0
+        var readDataCount = 0
+
+        override suspend fun onProgress(step: CardlinkProcessStep) {
+            show(
+                when (step.kind) {
+                    CardlinkProcessStepKind.READ_PERSONAL_DATA -> {
+                        "Reading personal data from card."
+                    }
+
+                    CardlinkProcessStepKind.READ_INSURER_DATA -> {
+                        "Reading insurer data from card."
+                    }
+
+                    CardlinkProcessStepKind.READ_CARD_DATA -> {
+                        "Read card data ${".".repeat(++readDataCount)}"
+                    }
+
+                    CardlinkProcessStepKind.SEND_REGISTER_EGK -> {
+                        "Send register card request."
+                    }
+
+                    CardlinkProcessStepKind.HANDLE_REMOTE_APDU -> {
+                        "Handle apdus from server${".".repeat(++apduCount)}"
+                    }
+                },
+            )
+        }
+    }
+
     /**
      * As mentioned before, epotheke provides an instance of cardlinkAuthenticationProtocol.
      * This can be used to call establishCardlink() function as shown here.
@@ -493,8 +529,10 @@ class EpothekeActivity : AppCompatActivity() {
 
                 epotheke
                     ?.cardLinkAuthenticationProtocol
-                    ?.establishCardLink(interaction = userInteraction)
-                    ?.let { result: CardLinkAuthResult ->
+                    ?.establishCardLink(
+                        interaction = userInteraction,
+                        StatefulProgressNotification { s -> showInfo(s) },
+                    )?.let { result: CardLinkAuthResult ->
                         authenticationResults.add(result)
                         showInfo(
                             listOf(

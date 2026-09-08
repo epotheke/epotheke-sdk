@@ -32,10 +32,20 @@ object EgkExtensions {
         }
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    val Egk.mfData: MFData
-        get() {
-            return MFData(gdo, cardVersion, cvcAuth, cvcCA, atr)
-        }
+    suspend fun Egk.mfData(processIndicator: (suspend (detail: String) -> Unit)? = null): MFData {
+        processIndicator?.invoke("GDO")
+        val gdo = gdo
+        processIndicator?.invoke("cardVersion")
+        val cardVersion = cardVersion
+        processIndicator?.invoke("cvcAuth")
+        val cvcAuth = cvcAuth
+        processIndicator?.invoke("cvcCA")
+        val cvcCA = cvcCA
+        processIndicator?.invoke("atr")
+        val atr = atr
+
+        return MFData(gdo, cardVersion, cvcAuth, cvcCA, atr)
+    }
 
     @OptIn(ExperimentalUnsignedTypes::class)
     val Egk.iccsn: String

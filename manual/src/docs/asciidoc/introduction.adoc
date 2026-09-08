@@ -107,6 +107,32 @@ There is a default implementation `SmartcardSalHelper.connectFirstTerminalOnInse
 
 |===
 
+==== ProgressNotification
+It is possible to provide an implementation of `ProgressNotification` in `establishCardlink()` function. (Null is possible)
+If given the function `onProgress()` gets called on various points during the cardlink process.
+As a parameter the function gets a `CardlinkProcessStep` provided which carries a type and an optional detail.
+The information can then be used to inform the user on the progress.
+
+[source,kotlin]
+----
+class CardlinkProcessStep(
+    val kind: CardlinkProcessStepKind,
+    val detail: String? = null,
+)
+enum class CardlinkProcessStepKind {
+    READ_PERSONAL_DATA,
+    READ_INSURER_DATA,
+    READ_CARD_DATA,
+    SEND_REGISTER_EGK,
+    HANDLE_REMOTE_APDU,
+}
+----
+
+Note that on iOS, during NFC communication there is a system provided NFC overlay, which hides the contents of the app.
+It is only possible to update the text which is shown within the overlay.
+On iOS, the `Epotheke` instance provides the function `setNFCDialogMessage()` which can be called in the implementation of `ProgressNotification`.
+
+
 === Prescriptions
 The `PrescriptionProtocol` allows to call `requestPrescriptions()` which will fetch all available prescriptions for all cards added to a session.
 The result of `requestPrescriptions()` is an `AvailablePrescriptionLists` object which provides a list of `AvailablePrescriptionList` objects, one for each card which is added to a cardlink session.

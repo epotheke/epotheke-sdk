@@ -91,6 +91,41 @@ struct ContentView: View {
         }
     }
 
+    @MainActor
+    class ProgressIndication: NSObject, ProgressNotification {
+
+        var v: ContentView
+        var epo: Epotheke
+        var dataReadCount = 1
+
+        init(v: ContentView, epo: Epotheke) {
+            self.v = v
+            self.epo = epo
+            super.init()
+        }
+
+        func onProgress(step: CardlinkProcessStep) async throws {
+            print("Cardlink progress: \(step.kind) - \(step.detail)")
+            switch (step.kind){
+            case CardlinkProcessStepKind.readPersonalData:
+                epo.setNFCDialogMessage(message: "Reading personal data")
+            case CardlinkProcessStepKind.readInsurerData:
+                epo.setNFCDialogMessage(message: "Reading insurer data")
+            case CardlinkProcessStepKind.readCardData :
+                let dots = String(repeating: ".", count: dataReadCount)
+                dataReadCount+=1
+                epo.setNFCDialogMessage(message: "Read card data \(dots)")
+            case CardlinkProcessStepKind.sendRegisterEgk:
+                epo.setNFCDialogMessage(message: "Send register eGK message")
+            case CardlinkProcessStepKind.handleRemoteApdu:
+                epo.setNFCDialogMessage(message: "Handling commands from server.")
+            default: break
+                // cannot happen
+            }
+        }
+
+    }
+
     /* This class implements the interactions with the sdk during the cardlink process
      When for example the CAN of the card is needed, the sdk will call the appropriate function.
      Within the app the user can get asked for the CAN.
@@ -187,8 +222,8 @@ struct ContentView: View {
         url: String,
         tenantToken: String? = nil
     ) {
-        
-        if(tenantToken == "DUMMY"){
+
+        if tenantToken == "DUMMY" {
             status = "A valid tenant token is needed for this environment."
             return
         }
@@ -207,7 +242,10 @@ struct ContentView: View {
 
         Task {
             do {
-                let authResult = try await authProt.establishCardLink(interaction: CardLinkInteraction(v: self))
+                let authResult = try await authProt.establishCardLink(
+                    interaction: CardLinkInteraction(v: self),
+                    progressNotification: ProgressIndication(v: self, epo: epo),
+                )
                 epotheke = epo
                 status =
                     "Cardlink established for \(authResult.personalData?.versicherter?.person?.vorname ?? "vn") \(authResult.personalData?.versicherter?.person?.nachname ?? "nn")"
