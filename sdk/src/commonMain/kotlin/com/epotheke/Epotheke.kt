@@ -23,7 +23,7 @@ private val logger = KotlinLogging.logger {}
 class Epotheke internal constructor(
     serviceUrl: String,
     tenantToken: String?,
-    salSession: SmartcardSalSession,
+    sal: SmartcardSal,
     wsSessionId: String? = null,
 ) : AutoCloseable {
     private val ws = Websocket(serviceUrl, tenantToken, wsSessionId)
@@ -31,7 +31,7 @@ class Epotheke internal constructor(
     val cardLinkAuthenticationProtocol =
         CardLinkAuthenticationProtocol(
             ws,
-            salSession,
+            sal,
         )
     val prescriptionProtocol = PrescriptionProtocolImp(ws)
 
@@ -53,15 +53,14 @@ class Epotheke internal constructor(
             cifs: Set<CardInfoDefinition> = setOf(EgkCif),
             recognition: CardRecognition = egkRecognition,
         ): Epotheke {
-            // TODO: Sal session should be started per process with a card not once for the whole library.
-            val salSession =
+            val sal =
                 SmartcardSal(
                     terminalFactory.load(),
                     cifs,
                     recognition,
                     PaceFeatureSoftwareFactory(),
-                ).startSession()
-            return Epotheke(serviceUrl, tenantToken, salSession, wsSessionId)
+                )
+            return Epotheke(serviceUrl, tenantToken, sal, wsSessionId)
         }
 
         private val egkRecognition =

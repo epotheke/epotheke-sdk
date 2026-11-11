@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.openecard.sal.iface.DeviceUnavailable
 import org.openecard.sal.iface.DeviceUnsupported
+import org.openecard.sal.sc.SmartcardSal
 import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.iface.ReaderUnavailable
 import org.openecard.sc.iface.SmartCardStackMissing
@@ -41,7 +42,7 @@ private val logger = KotlinLogging.logger { }
 
 class CardLinkAuthenticationProtocol internal constructor(
     private val ws: Websocket,
-    internal val salSession: SmartcardSalSession,
+    internal val sal: SmartcardSal,
 ) : CardLinkProtocolBase(ws) {
     data class SessionInfo(
         val cardSessionId: String,
@@ -93,7 +94,7 @@ class CardLinkAuthenticationProtocol internal constructor(
                     confirmTan()
                 }
 
-                salSession.withAuthenticatedEgk(
+                sal.startSession().withAuthenticatedEgk(
                     interaction,
                 ) {
                     if (readPersonalData) {
