@@ -21,13 +21,9 @@ import org.openecard.sc.pace.PaceFeatureSoftwareFactory
 private val logger = KotlinLogging.logger {}
 
 class Epotheke internal constructor(
-    serviceUrl: String,
-    tenantToken: String?,
     sal: SmartcardSal,
-    wsSessionId: String? = null,
+    val ws: Websocket,
 ) : AutoCloseable {
-    private val ws = Websocket(serviceUrl, tenantToken, wsSessionId)
-
     val cardLinkAuthenticationProtocol =
         CardLinkAuthenticationProtocol(
             ws,
@@ -60,7 +56,9 @@ class Epotheke internal constructor(
                     recognition,
                     PaceFeatureSoftwareFactory(),
                 )
-            return Epotheke(serviceUrl, tenantToken, sal, wsSessionId)
+
+            val ws = Websocket(serviceUrl, tenantToken, wsSessionId)
+            return Epotheke(sal, ws)
         }
 
         private val egkRecognition =
