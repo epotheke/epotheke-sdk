@@ -44,6 +44,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,6 +59,7 @@ class Websocket(
     private var url: String,
     tenantToken: String?,
     private var wsSessionId: String? = null,
+    val receptionScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) {
     private var receiveJob: Job? = null
 
@@ -177,7 +179,7 @@ class Websocket(
             log.debug { "Websocket connected" }
 
             receiveJob =
-                CoroutineScope(Dispatchers.IO).launch {
+                receptionScope.launch {
                     log.debug { "Entering websocket receive loop." }
                     wsSession?.receiveLoop()
                 }
@@ -215,6 +217,7 @@ class Websocket(
         reason: String?,
     ) = withContext(wsSessionContext) {
         log.debug { "Close was called. Close frame will be send." }
+        receptionScope.cancel()
         val sessToClose = wsSession
         wsSession = null
         sessToClose?.close(
