@@ -56,14 +56,15 @@ import com.epotheke.prescription.PrescriptionBundle
 import com.epotheke.prescription.PrescriptionProtocolException
 import com.epotheke.prescription.RequestPrescriptionList
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.pcsc.AndroidTerminalFactory
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 private val logger = KotlinLogging.logger { }
 
@@ -233,9 +234,15 @@ class EpothekeActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btn_cancel).apply {
             setOnClickListener {
-                when (currentJob) {
-                    null -> finish()
-                    else -> switchEnv(storedValues.env)
+                when (val j = currentJob) {
+                    null -> {
+                        finish()
+                    }
+
+                    else -> {
+                        currentJob = null
+                        j.cancel()
+                    }
                 }
             }
         }
@@ -285,7 +292,7 @@ class EpothekeActivity : AppCompatActivity() {
              * The number must be in a format valid for german mobile numbers to be accepted by the mock service.
              */
             override suspend fun onPhoneNumberRequest() =
-                suspendCoroutine { continuation ->
+                suspendCancellableCoroutine { continuation ->
                     getValueFromUser(
                         "Please provide valid german phone number (mock won't send sms)",
                         storedValues.phoneNumber,
@@ -302,7 +309,7 @@ class EpothekeActivity : AppCompatActivity() {
             override suspend fun onPhoneNumberRetry(
                 resultCode: ResultCode,
                 msg: String?,
-            ) = suspendCoroutine { continuation ->
+            ) = suspendCancellableCoroutine { continuation ->
                 getValueFromUser(
                     "Problem with phone number: $resultCode. Please try again",
                     storedValues.phoneNumber,
@@ -319,7 +326,7 @@ class EpothekeActivity : AppCompatActivity() {
              * Note: The mock service will accept 123123 as valid TAN.
              */
             override suspend fun onTanRequest() =
-                suspendCoroutine { continuation ->
+                suspendCancellableCoroutine { continuation ->
                     getValueFromUser(
                         "Please provide TAN from sms (mock accepts 123123)",
                         "123123",
@@ -335,7 +342,7 @@ class EpothekeActivity : AppCompatActivity() {
             override suspend fun onTanRetry(
                 resultCode: ResultCode,
                 msg: String?,
-            ) = suspendCoroutine { continuation ->
+            ) = suspendCancellableCoroutine { continuation ->
                 getValueFromUser(
                     "Problem with TAN: $resultCode. Please provide TAN from sms (mock accepts all)",
                     "123123",
@@ -349,7 +356,7 @@ class EpothekeActivity : AppCompatActivity() {
              * and needs the CAN to establish NFC channel.
              */
             override suspend fun onCanRequest() =
-                suspendCoroutine { continuation ->
+                suspendCancellableCoroutine { continuation ->
                     getValueFromUser("Please provide CAN of card", storedValues.can) { value ->
                         storedValues.can = value
                         continuation.resume(value)
@@ -361,7 +368,7 @@ class EpothekeActivity : AppCompatActivity() {
              * Information about what went wrong can be gathered by resultCode and message.
              */
             override suspend fun onCanRetry(resultCode: CardCommunicationResultCode) =
-                suspendCoroutine { continuation ->
+                suspendCancellableCoroutine { continuation ->
                     getValueFromUser("${resultCode.msg} - Please provide CAN of card", storedValues.can) { value ->
                         storedValues.can = value
                         continuation.resume(value)
@@ -563,8 +570,16 @@ class EpothekeActivity : AppCompatActivity() {
                         )
                     }
             } catch (e: Exception) {
-                showInfo("Error: ${e.message}")
-                logger.error(e) { "Exception authenticating" }
+                when (e) {
+                    is CancellationException -> {
+                        showInfo("Cancelled")
+                    }
+
+                    else -> {
+                        showInfo("Error: ${e.message}")
+                        logger.error(e) { "Exception authenticating" }
+                    }
+                }
             }
             switchInputs(false)
             setBusy(false)
