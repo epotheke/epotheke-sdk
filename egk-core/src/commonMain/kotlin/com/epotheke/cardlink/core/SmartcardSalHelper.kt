@@ -21,8 +21,12 @@ object SmartcardSalHelper {
             terminal.waitForCardPresent()
             salSession.connect(terminal.name)
         } catch (e: Exception) {
-            throw OtherNfcError(
-                cause = e,
-            )
+            when (e) {
+                is CancellationException -> throw e
+
+                else -> throw OtherNfcError(
+                    cause = e,
+                )
+            }
         }
 }

@@ -252,6 +252,8 @@ struct ContentView: View {
             } catch let error as NSError {
 
                 switch error.kotlinError {
+                case let e as KotlinCancellationException:
+                    status = "Cancelled"
                 case let e as CardLinkClientError:
                     status = e.message
                 case let e as CardLinkError:
