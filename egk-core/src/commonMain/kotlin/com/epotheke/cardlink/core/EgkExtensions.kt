@@ -48,43 +48,42 @@ object EgkExtensions {
         cardCommunicationResult: CardCommunicationResultCode?,
         interaction: EgkInteraction,
         block: suspend (can: String) -> T,
-    ): T {
-        val salSession = this
-        try {
-            // TODO: rewrite to put cleanup into finalize or similar
+    ): T =
+        runCatching {
             val can = correctCansPerSession[sessionId] ?: getCheckedCan(interaction, cardCommunicationResult)
-            salSession.initializeStack()
+            initializeStack()
             val result = block(can)
-            salSession.shutdownStack()
-            return result
-        } catch (e: Exception) {
-            salSession.shutdownStack()
-            when (e) {
-                is ApduProcessingError,
-                -> {
-                    return doRepetition(
-                        CardCommunicationResultCode.CARD_ERROR,
-                        interaction,
-                        block,
-                    )
-                }
-
-                is PaceError,
-                -> {
-                    correctCansPerSession.remove(sessionId)
-                    return doRepetition(
-                        CardCommunicationResultCode.CAN_INCORRECT,
-                        interaction,
-                        block,
-                    )
-                }
-
-                else -> {
-                    throw e
-                }
-            }
+            result
         }
-    }
+            // clean up stack before returning or trying again
+            .onSuccess { shutdownStack() }
+            .recover { e ->
+                shutdownStack()
+                when (e) {
+                    is ApduProcessingError,
+                    -> {
+                        doRepetition(
+                            CardCommunicationResultCode.CARD_ERROR,
+                            interaction,
+                            block,
+                        )
+                    }
+
+                    is PaceError,
+                    -> {
+                        correctCansPerSession.remove(sessionId)
+                        doRepetition(
+                            CardCommunicationResultCode.CAN_INCORRECT,
+                            interaction,
+                            block,
+                        )
+                    }
+
+                    else -> {
+                        throw e
+                    }
+                }
+            }.getOrThrow()
 
     private suspend fun getCheckedCan(
         interaction: EgkInteraction,
