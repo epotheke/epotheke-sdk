@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sal.sc.SmartcardSalSession
-import org.openecard.sc.pcsc.AndroidTerminalFactory
+import org.openecard.sc.pcsc.AndroidTerminalFactory.Companion.terminalFactory
 import kotlin.coroutines.resume
 
 private val logger = KotlinLogging.logger { }
@@ -100,8 +100,9 @@ class EpothekeActivity : AppCompatActivity() {
     /**
      * Epotheke uses NFC to communicate with eGK cards.
      * The AndroidTerminalFactory is provided by the used open-ecard library and enables NFC usage.
+     * terminalFactory is an extension on androids Acitivty and can be accessed from Activity.
      */
-    private lateinit var terminalFactory: AndroidTerminalFactory
+    private var nfcTerminalFactory = terminalFactory
 
     /**
      * The epotheke instance which can be used for authenticating or adding eGK cards to a cardlink session and to
@@ -132,12 +133,11 @@ class EpothekeActivity : AppCompatActivity() {
      * Note that the AndroidTerminalFactory needs a reference to the activity and we also store a referenced of it (see onNewIntent).
      */
     private fun createEpotheke() {
-        terminalFactory = AndroidTerminalFactory.instance(this)
-        if (!terminalFactory.nfcAvailable) {
+        if (!nfcTerminalFactory.nfcAvailable) {
             showInfo("NFC not available on device. Epotheke cannot work without NFC.")
             return
         }
-        if (!terminalFactory.nfcEnabled) {
+        if (!nfcTerminalFactory.nfcEnabled) {
             showInfo(
                 "NFC not enabled on device. Epotheke cannot work without NFC. Please go to settings and enable NFC",
             )
@@ -152,9 +152,10 @@ class EpothekeActivity : AppCompatActivity() {
             }
 
             else -> {
+                epotheke?.close()
                 epotheke =
                     Epotheke.createEpothekeService(
-                        terminalFactory = terminalFactory,
+                        terminalFactory = nfcTerminalFactory,
                         serviceUrl = storedValues.env.url,
                         tenantToken = tenantToken,
                         wsSessionId = null,
@@ -186,8 +187,6 @@ class EpothekeActivity : AppCompatActivity() {
         setContentView(R.layout.epo_layout)
 
         findViewById<TextView>(R.id.input).setSelectAllOnFocus(true)
-
-        createEpotheke()
 
         findViewById<TextView>(R.id.input).apply {
             isEnabled = true
@@ -263,7 +262,7 @@ class EpothekeActivity : AppCompatActivity() {
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        terminalFactory.tagIntentHandler.invoke(intent)
+        nfcTerminalFactory.tagIntentHandler.invoke(intent)
     }
 
     /**
