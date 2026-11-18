@@ -9,10 +9,10 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
 
-        mavenLocal()
         maven {
             url = uri("https://mvn.ecsec.de/repository/openecard-public")
         }
