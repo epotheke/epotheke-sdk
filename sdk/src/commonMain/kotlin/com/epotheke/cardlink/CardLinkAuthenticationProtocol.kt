@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.openecard.sal.iface.DeviceUnavailable
 import org.openecard.sal.iface.DeviceUnsupported
+import org.openecard.sal.iface.SharingViolation
 import org.openecard.sal.sc.SmartcardSal
 import org.openecard.sal.sc.SmartcardSalSession
 import org.openecard.sc.iface.ReaderUnavailable
@@ -160,6 +161,8 @@ class CardLinkAuthenticationProtocol internal constructor(
                 is DeviceUnavailable -> CardRemoved(cause = e)
 
                 is ReaderUnavailable -> OtherNfcError(cause = e, message = "NFC not available or turned off.")
+
+                is SharingViolation -> OtherNfcError(cause = e)
 
                 is SmartCardStackMissing -> OtherNfcError(cause = e)
 
