@@ -75,9 +75,14 @@ publish-ios-pod-spec:
       EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64
       EOF
     - XCODE_XCCONFIG_FILE="$CI_PROJECT_DIR/cocoapods-lint.xcconfig" /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
-    - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec
-  allow_failure: true
-
+    - git clone "https://git.ecsec.de/ecpub/cocoa-pods.git"
+    - mkdir -p cocoa-pods/epotheke-sdk/${VERSION}
+    - mv epotheke-sdk.podspec cocoa-pods/epotheke-sdk/${VERSION}/
+    - cd cocoa-pods
+    - git remote set-url origin https://cocoapod:${COCOAPOD_GITLAB_TOKEN}@git.ecsec.de/ecpub/cocoa-pods.git
+    - git add .
+    - git commit -m "CI Publish new epotheke-sdk version ${VERSION}"
+    - git push
   dependencies:
     - "prepare-ios-pod-spec"
   needs:
@@ -87,20 +92,3 @@ publish-ios-pod-spec:
       when: manual
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
 
-force-publish-ios-pod-spec:
-  stage: publish
-  tags:
-    - "mac"
-    - "dev-cert"
-  script:
-    - /opt/homebrew/bin/pod trunk push epotheke-sdk.podspec --skip-import-validation
-  allow_failure: true
-  dependencies:
-    - "prepare-ios-pod-spec"
-  needs:
-    - "prepare-ios-pod-spec"
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc.\d+)$/
-      when: manual
-    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
-      when: manual
