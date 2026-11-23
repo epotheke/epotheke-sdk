@@ -63,7 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.openecard.sal.sc.SmartcardDeviceConnection
 import org.openecard.sal.sc.SmartcardSalSession
-import org.openecard.sc.pcsc.AndroidTerminalFactory
+import org.openecard.sc.pcsc.AndroidTerminalFactory.Companion.terminalFactory
 import kotlin.coroutines.resume
 
 private val logger = KotlinLogging.logger { }
@@ -98,12 +98,6 @@ class EpothekeActivity : AppCompatActivity() {
     lateinit var storedValues: InputStore
 
     /**
-     * Epotheke uses NFC to communicate with eGK cards.
-     * The AndroidTerminalFactory is provided by the used open-ecard library and enables NFC usage.
-     */
-    private lateinit var terminalFactory: AndroidTerminalFactory
-
-    /**
      * The epotheke instance which can be used for authenticating or adding eGK cards to a cardlink session and to
      * request prescriptions for all registered cards in a session.
      *
@@ -132,7 +126,6 @@ class EpothekeActivity : AppCompatActivity() {
      * Note that the AndroidTerminalFactory needs a reference to the activity and we also store a referenced of it (see onNewIntent).
      */
     private fun createEpotheke() {
-        terminalFactory = AndroidTerminalFactory.instance(this)
         if (!terminalFactory.nfcAvailable) {
             showInfo("NFC not available on device. Epotheke cannot work without NFC.")
             return
@@ -152,6 +145,7 @@ class EpothekeActivity : AppCompatActivity() {
             }
 
             else -> {
+                epotheke?.close()
                 epotheke =
                     Epotheke.createEpothekeService(
                         terminalFactory = terminalFactory,
@@ -186,8 +180,6 @@ class EpothekeActivity : AppCompatActivity() {
         setContentView(R.layout.epo_layout)
 
         findViewById<TextView>(R.id.input).setSelectAllOnFocus(true)
-
-        createEpotheke()
 
         findViewById<TextView>(R.id.input).apply {
             isEnabled = true
