@@ -16,11 +16,9 @@
 
     <!-- Set specific log levels for different packages -->
     <logger name="org.openecard" level="DEBUG">
-        <appender-ref ref="logcat" />
     </logger>
 
     <logger name="com.epotheke.sdk" level="DEBUG">
-        <appender-ref ref="logcat" />
     </logger>
 
 </configuration>
