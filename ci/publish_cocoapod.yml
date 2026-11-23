@@ -75,6 +75,7 @@ publish-ios-pod-spec:
       EXCLUDED_ARCHS[sdk=iphonesimulator*] = x86_64
       EOF
     - XCODE_XCCONFIG_FILE="$CI_PROJECT_DIR/cocoapods-lint.xcconfig" /opt/homebrew/bin/pod spec lint epotheke-sdk.podspec --verbose
+    - export VERSION=$(echo "${CI_COMMIT_TAG}" | cut -c 6-)
     - git clone "https://git.ecsec.de/ecpub/cocoa-pods.git"
     - mkdir -p cocoa-pods/epotheke-sdk/${VERSION}
     - mv epotheke-sdk.podspec cocoa-pods/epotheke-sdk/${VERSION}/
