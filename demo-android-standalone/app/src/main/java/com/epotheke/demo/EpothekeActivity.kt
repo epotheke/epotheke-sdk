@@ -98,13 +98,6 @@ class EpothekeActivity : AppCompatActivity() {
     lateinit var storedValues: InputStore
 
     /**
-     * Epotheke uses NFC to communicate with eGK cards.
-     * The AndroidTerminalFactory is provided by the used open-ecard library and enables NFC usage.
-     * terminalFactory is an extension on androids Acitivty and can be accessed from Activity.
-     */
-    private var nfcTerminalFactory = terminalFactory
-
-    /**
      * The epotheke instance which can be used for authenticating or adding eGK cards to a cardlink session and to
      * request prescriptions for all registered cards in a session.
      *
@@ -133,11 +126,11 @@ class EpothekeActivity : AppCompatActivity() {
      * Note that the AndroidTerminalFactory needs a reference to the activity and we also store a referenced of it (see onNewIntent).
      */
     private fun createEpotheke() {
-        if (!nfcTerminalFactory.nfcAvailable) {
+        if (!terminalFactory.nfcAvailable) {
             showInfo("NFC not available on device. Epotheke cannot work without NFC.")
             return
         }
-        if (!nfcTerminalFactory.nfcEnabled) {
+        if (!terminalFactory.nfcEnabled) {
             showInfo(
                 "NFC not enabled on device. Epotheke cannot work without NFC. Please go to settings and enable NFC",
             )
@@ -155,7 +148,7 @@ class EpothekeActivity : AppCompatActivity() {
                 epotheke?.close()
                 epotheke =
                     Epotheke.createEpothekeService(
-                        terminalFactory = nfcTerminalFactory,
+                        terminalFactory = terminalFactory,
                         serviceUrl = storedValues.env.url,
                         tenantToken = tenantToken,
                         wsSessionId = null,
@@ -262,7 +255,7 @@ class EpothekeActivity : AppCompatActivity() {
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        nfcTerminalFactory.tagIntentHandler.invoke(intent)
+        terminalFactory.tagIntentHandler.invoke(intent)
     }
 
     /**
